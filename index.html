@@ -350,7 +350,93 @@ var _tfidf={docs:[],df:{},totalDocs:0};
 function tokenize(s){return s.toLowerCase().replace(/[^\u4e00-\u9fa5a-z0-9]/g," ").split(/\s+/).filter(function(t){return t.length>1||/[\u4e00-\u9fa5]/.test(t);});}
 function buildTfidf(){_tfidf.docs=[];_tfidf.df={};_tfidf.totalDocs=0;var all=[];DATA.forEach(function(q){all.push({type:"question",id:q.id,text:q.question+" "+(q.answer||"")+" "+(q.knowledge||[]).join(" "),ref:q});});for(var k in KNOWLEDGE){var kn=KNOWLEDGE[k];all.push({type:"knowledge",id:k,text:k+" "+(kn.overview||"")+" "+(kn.key||[]).join(" ")+" "+(kn.exam||""),ref:kn});}if(ANSWER_BANK&&ANSWER_BANK.categories)ANSWER_BANK.categories.forEach(function(c){c.items.forEach(function(it){all.push({type:"answerbank",id:it.name,text:it.name+" "+(it.content||""),ref:it});});});all.forEach(function(d){var tokens=tokenize(d.text);var tf={};tokens.forEach(function(t){tf[t]=(tf[t]||0)+1;});d.tf=tf;d.tokens=tokens;for(var t in tf){_tfidf.df[t]=(_tfidf.df[t]||0)+1;}});_tfidf.docs=all;_tfidf.totalDocs=all.length;}
 function ragRetrieve(query,topN){topN=topN||5;var qTokens=tokenize(query);var scores=_tfidf.docs.map(function(d){var score=0;qTokens.forEach(function(t){if(d.tf[t]){var idf=Math.log(_tfidf.totalDocs/_tfidf.df[t]);score+=d.tf[t]*idf*idf;}});return{doc:d,score:score};});scores.sort(function(a,b){return b.score-a.score;});return scores.slice(0,topN).filter(function(s){return s.score>0;}).map(function(s){return s.doc;});}
-function buildAIContext(query){var ctx="";var results=ragRetrieve(query,5);var qs=[],ks=[],abs=[];results.forEach(function(r){if(r.type==="question")qs.push(r);else if(r.type==="knowledge")ks.push(r);else if(r.type==="answerbank")abs.push(r);});if(qs.length){ctx+="\n\n【相关真题范例（完整答案）】\n";qs.slice(0,3).forEach(function(r){ctx+="\n("+r.ref.year+"年#"+r.ref.num+" "+r.ref.type+") "+r.ref.question;if(r.ref.answer)ctx+="\n【标准答案】"+r.ref.answer;ctx+="\n";});}if(ks.length){ctx+="\n\n【相关知识点】\n";ks.slice(0,3).forEach(function(r){ctx+="\n"+r.id+": "+(r.ref.overview||"");if(r.ref.key)ctx+=" 要点: "+r.ref.key.slice(0,3).join(";");ctx+="\n";});}if(abs.length){ctx+="\n\n【答题语料库匹配】\n";abs.slice(0,2).forEach(function(r){ctx+="\n"+r.id+": "+(r.ref.content||"")+"\n";});}if(EXAM_PATTERN&&EXAM_PATTERN.exam_rules){ctx+="\n\n【人大434命题规律】\n";ctx+="题型: "+EXAM_PATTERN.exam_rules["题型结构"]+"\n";ctx+="命题特点: "+EXAM_PATTERN.exam_rules["命题特点"].join("; ")+"\n";ctx+="答题规范: "+EXAM_PATTERN.exam_rules["答题规范"].join("; ")+"\n";}return ctx;}
+function buildAIContext(query) {
+  var ctx = '';
+  
+  // === LEARNING PROFILE ===
+  var doneQ = 0, starQ = 0, totalQ = DATA.length;
+  DATA.forEach(function(q) { if (marks[q.id] && marks[q.id].done) doneQ++; if (marks[q.id] && marks[q.id].star) starQ++; });
+  var viewedKN = Object.keys(knowledgeViews).length, totalKN = Object.keys(KNOWLEDGE).length;
+  var weakModules = [];
+  var modScores = {};
+  for (var k in KNOWLEDGE) {
+    var m = KNOWLEDGE[k].module || '';
+    if (m) {
+      if (!modScores[m]) modScores[m] = { total: 0, viewed: 0 };
+      modScores[m].total++;
+      if (knowledgeViews[k]) modScores[m].viewed++;
+    }
+  }
+  var profile = '【学习者画像】\n已完成真题：' + doneQ + '/' + totalQ + '\n已标记重点：' + starQ + '\n已浏览知识点：' + viewedKN + '/' + totalKN + '\n';
+  for (var mod in modScores) {
+    profile += mod + ': ' + modScores[mod].viewed + '/' + modScores[mod].total + ' ';
+  }
+  profile += '\n\n';
+  ctx += profile;
+  
+  // === HIGHLIGHTS (top-3 RAG for quick reference) ===
+  if (typeof ragRetrieve === 'function') {
+    var results = ragRetrieve(query, 5);
+    var qs = [], ks = [];
+    results.forEach(function(r) {
+      if (r.type === 'question') qs.push(r.ref);
+      else if (r.type === 'knowledge') ks.push(r.ref);
+    });
+    if (qs.length || ks.length) {
+      ctx += '【与当前问题最相关的条目】\n';
+      qs.slice(0, 3).forEach(function(q) {
+        ctx += '★ ' + q.year + '年#' + q.num + ' ' + q.type + ': ' + q.question + '\n';
+      });
+      ks.slice(0, 3).forEach(function(k) {
+        ctx += '★ 知识点：' + k.id + '\n';
+      });
+      ctx += '\n';
+    }
+  }
+  
+  // === ALL EXAM QUESTIONS WITH ANSWERS ===
+  ctx += '=== 全部真题与标准答案（' + totalQ + '道） ===\n\n';
+  DATA.forEach(function(q) {
+    ctx += '【' + q.year + '年 第' + q.num + '题 ' + q.type + '】\n';
+    ctx += '题目：' + q.question + '\n';
+    if (q.answer && q.answer.length > 5) {
+      ctx += '标准答案：' + q.answer + '\n';
+    }
+    ctx += '\n';
+  });
+  
+  // === ALL KNOWLEDGE POINTS ===
+  ctx += '=== 全部知识点（' + totalKN + '个） ===\n\n';
+  for (var k in KNOWLEDGE) {
+    var kn = KNOWLEDGE[k];
+    ctx += '【' + k + '】';
+    if (kn.module) ctx += ' 模块：' + kn.module;
+    ctx += '\n';
+    if (kn.overview) ctx += '概述：' + kn.overview + '\n';
+    if (kn.key && kn.key.length) ctx += '要点：' + kn.key.join('；') + '\n';
+    ctx += '\n';
+  }
+  
+  // === HOT TOPICS ===
+  if (typeof HOT_TOPICS !== 'undefined' && HOT_TOPICS && HOT_TOPICS.sections) {
+    ctx += '=== 热点素材 ===\n\n';
+    ctx += '主题：' + HOT_TOPICS.title + '\n';
+    ctx += '概述：' + HOT_TOPICS.overview + '\n\n';
+    HOT_TOPICS.sections.forEach(function(s) {
+      ctx += '【' + s.title + '】内容：' + s.content + '\n\n';
+    });
+  }
+  
+  // === EXAM PATTERN ===
+  if (typeof EXAM_PATTERN !== 'undefined' && EXAM_PATTERN && EXAM_PATTERN.exam_rules) {
+    ctx += '=== 命题规律 ===\n';
+    if (EXAM_PATTERN.exam_rules['题型结构']) ctx += '题型：' + EXAM_PATTERN.exam_rules['题型结构'] + '\n';
+    if (EXAM_PATTERN.exam_rules['命题特点']) ctx += '特点：' + EXAM_PATTERN.exam_rules['命题特点'].join('；') + '\n';
+    if (EXAM_PATTERN.exam_rules['答题规范']) ctx += '规范：' + EXAM_PATTERN.exam_rules['答题规范'].join('；') + '\n';
+  }
+  
+  return ctx;
+}
 function callDS(msg,cid){var el=document.getElementById(cid);if(!el)return;var key=getAPIKey();if(!key){el.innerHTML="<span style=color:var(--r)>未设置API Key，AI功能不可用</span>";return;}fetch(DS_URL,{method:"POST",headers:{Authorization:"Bearer "+key,"Content-Type":"application/json"},body:JSON.stringify({model:"mimo-v2.5",messages:msg,stream:true,temperature:0.3})}).then(function(r){if(!r.ok)throw Error("HTTP "+r.status);return r.body.getReader();}).then(function(rd){var b="",t="",d=new TextDecoder();function n(){rd.read().then(function(r){if(r.done){el.innerHTML=renderMarkdown(t);
   var fid=el.id||cid;
   if(fid&&!document.getElementById('follow_'+fid)){
