@@ -2300,7 +2300,7 @@ function aiExplain(knowledge) {
   if (kn.key) ctx += '\n核心要点：' + kn.key.join('；');
   if (kn.formula) ctx += '\n公式：' + kn.formula;
   if (kn.exam) ctx += '\n历年考察：' + kn.exam;
-  var sys = '你是人大434考研辅导老师，擅长用苏格拉底式教学法讲解知识点。要求：\n1.先用通俗类比引入\n2.再逐步深入核心逻辑\n3.用对比突出关键区别\n4.最后出2道判断题检验理解\n5.用中文，结构化输出\n\n知识库参考：'+ctx+'\n\n相关真题与语料：'+ragCtx;
+  var sys = '你是人大434考研辅导老师，请根据真题标准答案的风格讲解这个知识点，分点作答、条理清晰\n\n知识库参考：'+ctx+'\n\n相关真题与语料：'+ragCtx;
   callDS([{role:'system',content:sys},{role:'user',content:'请讲解知识点：'+knowledge}],'aiExplainContent');
 }
 
