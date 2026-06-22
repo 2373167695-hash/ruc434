@@ -625,7 +625,31 @@ function findRelatedTopics(key) {
 function renderMarkdown(text) {
   if (!text) return '';
   var h = text;
-  // Bold **text** or **text**
+  // Escape HTML
+  h = h.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+  // Tables: | col1 | col2 |  or |---|---|
+  var lines = h.split('\n');
+  var out = [], inTable = false, tableHtml = '';
+  for (var i = 0; i < lines.length; i++) {
+    var line = lines[i].trim();
+    if (line.startsWith('|') && line.endsWith('|')) {
+      var cells = line.split('|').slice(1, -1).map(function(c){return c.trim();});
+      var isSep = cells.every(function(c){return /^[-:]+$/.test(c);});
+      if (isSep) { continue; }
+      if (!inTable) { inTable = true; tableHtml = '<table style="border-collapse:collapse;width:100%;font-size:12px;margin:8px 0">'; }
+      if (tableHtml.indexOf('<tbody>') < 0 && tableHtml.indexOf('<thead>') < 0) {
+        tableHtml += '<thead><tr>' + cells.map(function(c){return '<th style="border:1px solid #ddd;padding:4px 8px;background:#f5f3ef;text-align:left">'+c+'</th>';}).join('') + '</tr></thead><tbody>';
+      } else {
+        tableHtml += '<tr>' + cells.map(function(c){return '<td style="border:1px solid #ddd;padding:4px 8px">'+c+'</td>';}).join('') + '</tr>';
+      }
+    } else {
+      if (inTable) { tableHtml += '</tbody></table>'; out.push(tableHtml); inTable = false; tableHtml = ''; }
+      out.push(lines[i]);
+    }
+  }
+  if (inTable) { tableHtml += '</tbody></table>'; out.push(tableHtml); }
+  h = out.join('\n');
+  // Bold **text**
   h = h.replace(/\*\*(.+?)\*\*/g, '<strong>$1</strong>');
   // Italic *text*
   h = h.replace(/\*(.+?)\*/g, '<em>$1</em>');
@@ -638,6 +662,8 @@ function renderMarkdown(text) {
   // Numbered/bullet lists
   h = h.replace(/^(\d+[\.、])\s+(.+)/gm, '<div style="margin:2px 0;padding-left:16px"><strong>$1</strong> $2</div>');
   h = h.replace(/^[-•·]\s+(.+)/gm, '<div style="margin:2px 0;padding-left:16px">· $1</div>');
+  // Block quotes
+  h = h.replace(/^&gt; (.+)$/gm, '<blockquote style="border-left:3px solid var(--pu);padding-left:12px;margin:6px 0;color:#666">$1</blockquote>');
   // Line breaks
   h = h.replace(/\n\n/g, '<br><br>');
   h = h.replace(/\n/g, '<br>');
