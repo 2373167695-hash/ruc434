@@ -1356,7 +1356,7 @@ function showProfessors() {
     h += '<div class="prof-row"><strong>最新成果：</strong>' + p.recent + '</div>';
     if (p.award) h += '<div class="prof-row"><strong>荣誉：</strong>' + p.award + '</div>';
     h += '<div class="prof-row"><strong>考点关联：</strong>' + p.exam_link + '</div>';
-    var profId = 'profAI_' + name.replace(/[^a-zA-Z0-9]/g, '_');
+    var profId = 'profAI_' + name.replace(/[^\u4e00-\u9fa5a-zA-Z0-9]/g, '_');
     var researchStr = p.research.join('、').replace(/'/g,"\\'");
     var recentStr = p.recent.replace(/'/g,"\\'");
     h += '<div style="margin-top:10px"><button onclick="aiProfessorPredict(\'' + name.replace(/'/g,"\\'") + '\',[\'' + researchStr + '\'],\'' + recentStr + '\')" style="padding:6px 14px;background:linear-gradient(135deg,var(--pu),#9333ea);color:#fff;border:none;border-radius:6px;font-size:12px;cursor:pointer">🤖 AI推测出题方向</button></div>';
@@ -1874,7 +1874,7 @@ function callDSFast(msg, cid) {
   if (!el) return;
   var key = getAPIKey();
   if (!key) { el.innerHTML = '<span style="color:var(--r)">未设置API Key</span>'; return; }
-  el.innerHTML = '⏳ 思考中...';
+  el.style.whiteSpace = 'pre-wrap'; el.style.wordBreak = 'break-word'; el.style.overflowWrap = 'break-word'; el.style.maxHeight = '600px'; el.style.overflowY = 'auto'; el.innerHTML = '⏳ 思考中...';
   fetch(DS_URL, {method:'POST', headers:{Authorization:'Bearer '+key, 'Content-Type':'application/json'},
     body: JSON.stringify({model:'mimo-v2.5-pro', messages:msg, stream:true, temperature:0.3})
   }).then(function(r){if(!r.ok)throw Error('HTTP '+r.status);return r.body.getReader();})
@@ -1941,7 +1941,7 @@ function aiGraphRelate(id1, id2) {
 
 // 7. 导师AI出题推测
 function aiProfessorPredict(name, research, recent) {
-  var rid = 'profAI_' + name.replace(/[^a-zA-Z0-9]/g, '_');
+  var rid = 'profAI_' + name.replace(/[^\u4e00-\u9fa5a-zA-Z0-9]/g, '_');
   var el = document.getElementById(rid);
   if (!el) return;
   var ctx = (typeof buildAIContext === 'function') ? buildAIContext(name + ' ' + research.join(' ')) : '';
@@ -2102,7 +2102,7 @@ function showCards() {
     var log = cardLog[kn] || {};
     var isDue = !log.date || (new Date() - new Date(log.date)) > (log.interval || 1) * 86400000;
     if (isDue) dueCount++;
-    var front='<div style="display:flex;justify-content:space-between;align-items:center"><span>'+kn+'</span>'+(isDue?'<span style="font-size:10px;color:#f44336">待复习</span>':'<span style="font-size:10px;color:#4CAF50">已掌握</span>')+'</div>';
+    var front='<div style="display:flex;justify-content:space-between;align-items:center"><span>'+kn+'</span>'+(isDue?'<span style="font-size:10px;color:#f44336">待复习</span>':'<span style="font-size:10px;color:#4CAF50">已复习(间隔'+prev.interval+'天)</span>')+'</div>';
     var back='';
     if(item.overview)back+='<p style="margin:0 0 8px">'+item.overview+'</p>';
     if(item.key&&item.key.length)back+='<p style="margin:0 0 4px"><strong>要点：</strong><br>'+item.key.slice(0,3).join('<br>')+'</p>';
