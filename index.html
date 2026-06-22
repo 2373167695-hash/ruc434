@@ -811,6 +811,7 @@ function showMacro() {
       h += '<div class="hot-topic-hint">💡 <strong>考试提示：</strong>' + t.exam_hint + '</div>';
     }
     
+    h += '<div style="margin-top:10px"><button onclick="event.stopPropagation();aiMacroInterpret(\'' + t.title.replace(/'/g,"\\'") + '\')" style="padding:6px 14px;background:linear-gradient(135deg,#059669,#10b981);color:#fff;border:none;border-radius:6px;font-size:12px;cursor:pointer">🤖 AI考点解读</button></div>';
     h += '</div></div>';
   });
   
@@ -877,6 +878,7 @@ function showMacro() {
     });
   }
   
+  h += '<div id="macroAIResult" style="display:none;margin-top:16px"><div class="pcard"><div class="pcard-hdr"><h3>🤖 AI考点解读</h3></div><div class="pcard-body" id="macroAIContent"></div></div></div>';
   document.getElementById("ct").innerHTML = h;
   
   // Initialize charts after DOM is ready
@@ -1350,6 +1352,11 @@ function showProfessors() {
     h += '<div class="prof-row"><strong>最新成果：</strong>' + p.recent + '</div>';
     if (p.award) h += '<div class="prof-row"><strong>荣誉：</strong>' + p.award + '</div>';
     h += '<div class="prof-row"><strong>考点关联：</strong>' + p.exam_link + '</div>';
+    var profId = 'profAI_' + name.replace(/[^a-zA-Z0-9]/g, '_');
+    var researchStr = p.research.join('、').replace(/'/g,"\\'");
+    var recentStr = p.recent.replace(/'/g,"\\'");
+    h += '<div style="margin-top:10px"><button onclick="aiProfessorPredict(\'' + name.replace(/'/g,"\\'") + '\',[\'' + researchStr + '\'],\'' + recentStr + '\')" style="padding:6px 14px;background:linear-gradient(135deg,var(--pu),#9333ea);color:#fff;border:none;border-radius:6px;font-size:12px;cursor:pointer">🤖 AI推测出题方向</button></div>';
+    h += '<div id="' + profId + '" style="margin-top:10px;font-size:13px;line-height:1.7"></div>';
     h += '<div class="prof-tags">';
     p.research.forEach(function(r) { h += '<span class="prof-tag">' + r + '</span>'; });
     h += '</div></div></div>';
@@ -1558,7 +1565,11 @@ function qCard(q) {
     '<div style="margin-top:12px"><div class="kn-accordion"><div class="kn-acc-hdr" onclick="this.parentElement.classList.toggle(\'open\')"><span class="kn-acc-arrow">▸</span> 🤖 AI批改这道题</div>' +
     '<div class="kn-acc-body" id="grade-' + qid + '"><textarea id="ta-' + qid + '" placeholder="在此输入你的作答..." style="width:100%;min-height:60px;border:1px solid #d0cdc6;border-radius:8px;padding:10px;font-size:13px;resize:vertical;font-family:inherit"></textarea>' +
     '<button onclick="event.stopPropagation();aiGradeQuestion(\'' + q.id + '\',\'' + qid + '\')" style="margin-top:8px;padding:6px 16px;background:var(--pu);color:#fff;border:none;border-radius:6px;font-size:13px;cursor:pointer">提交批改</button>' +
-    '<div id="result-' + qid + '" style="margin-top:10px;padding:10px;display:none"></div></div></div></div></div></div>';
+    '<div id="result-' + qid + '" style="margin-top:10px;padding:10px;display:none"></div></div></div>' +
+    '<div class="kn-accordion"><div class="kn-acc-hdr" onclick="this.parentElement.classList.toggle(\'open\')"><span class="kn-acc-arrow">▸</span> 🎓 AI讲解这道题</div>' +
+    '<div class="kn-acc-body"><div id="qe_' + qid + '" style="font-size:13px;line-height:1.7"></div>' +
+    '<button onclick="event.stopPropagation();aiQuestionExplain(\'' + q.id + '\')" style="margin-top:8px;padding:6px 16px;background:#059669;color:#fff;border:none;border-radius:6px;font-size:13px;cursor:pointer">开始讲解</button></div></div>' +
+    '</div></div></div>';
 }
 
 function toggleM(id, type) {
@@ -1850,6 +1861,89 @@ function showExamYear(year) {
   document.getElementById('ct').innerHTML = h;
 }
 
+
+// === AI Deep Integration Functions ===
+
+function callDSFast(msg, cid) {
+  var el = document.getElementById(cid);
+  if (!el) return;
+  var key = getAPIKey();
+  if (!key) { el.innerHTML = '<span style="color:var(--r)">未设置API Key</span>'; return; }
+  el.innerHTML = '⏳ 思考中...';
+  fetch(DS_URL, {method:'POST', headers:{Authorization:'Bearer '+key, 'Content-Type':'application/json'},
+    body: JSON.stringify({model:'mimo-v2.5-pro', messages:msg, stream:true, temperature:0.3, max_tokens:1500})
+  }).then(function(r){if(!r.ok)throw Error('HTTP '+r.status);return r.body.getReader();})
+  .then(function(rd){var b='',t='',d=new TextDecoder();function n(){rd.read().then(function(r){
+    if(r.done){el.innerHTML=renderMarkdown(t);return;}
+    b+=d.decode(r.value,{stream:true});var ls=b.split('\n');b=ls.pop()||'';
+    ls.forEach(function(l){if(l.startsWith('data: ')){var dd=l.substring(6);if(dd=='[DONE]')return;
+      try{var p=JSON.parse(dd);if(p.choices&&p.choices[0].delta){var x=p.choices[0].delta.content||'';if(x){t+=x;el.innerHTML=renderMarkdown(t);}}}catch(e){}}});n();})}n();
+  }).catch(function(err){el.innerHTML='<span style="color:var(--r)">请求失败：'+err.message+'</span>';});
+}
+
+// 2. 记忆卡AI讲解
+function aiCardExplain(kn) {
+  var el = document.getElementById('cardAI');
+  if (!el) { el = document.createElement('div'); el.id = 'cardAI'; el.style.cssText = 'margin-top:8px;padding:10px;background:#f8f6f2;border-radius:8px;font-size:12px;line-height:1.7'; }
+  var parent = document.querySelector('.cback');
+  if (parent) parent.appendChild(el);
+  var ctx = (typeof buildAIContext === 'function') ? buildAIContext(kn) : '';
+  var sys = '你是人大434考研辅导老师。请用通俗易懂的语言讲解这个知识点，要求：\n1.用一个生活中的类比引入\n2.核心逻辑3句话概括\n3.易混淆点对比\n4.一句话记忆口诀\n5.中文，200字内\n\n相关真题与语料：' + ctx;
+  callDSFast([{role:'system', content:sys}, {role:'user', content:'请讲解：' + kn}], 'cardAI');
+}
+
+// 3. 真题AI讲解
+function aiQuestionExplain(qid) {
+  var q = null; DATA.forEach(function(x) { if (x.id == qid) q = x; });
+  if (!q) return;
+  var rid = 'qe_' + qid.replace(/[^a-zA-Z0-9]/g, '_');
+  var el = document.getElementById(rid);
+  if (!el) return;
+  var ctx = (typeof buildAIContext === 'function') ? buildAIContext(q.question) : '';
+  var sys = '你是人大434考研阅卷老师。请讲解这道真题，要求：\n1.这道题考什么知识点\n2.命题意图和出题角度\n3.标准答题结构（分几步、每步写什么）\n4.常见失分点\n5.中文，300字内\n\n相关真题范例与语料：' + ctx;
+  callDSFast([{role:'system', content:sys}, {role:'user', content:'题目（'+q.year+'年#'+q.num+' '+q.type+'）：'+q.question}], rid);
+}
+
+// 5. 宏观数据AI解读
+function aiMacroInterpret(topic) {
+  var container = document.getElementById('macroAIResult');
+  if (!container) return;
+  container.style.display = 'block';
+  var body = document.getElementById('macroAIContent');
+  if (body) body.innerHTML = '<div id="macroAIInner" style="font-size:13px;line-height:1.7"></div>';
+  container.scrollIntoView({behavior:'smooth'});
+  var ctx = (typeof buildAIContext === 'function') ? buildAIContext(topic) : '';
+  var sys = '你是人大434考研辅导老师，擅长分析宏观经济与考试的关联。请分析这个宏观热点，要求：\n1.这个事件的核心要点\n2.可能考什么知识点（列出2-3个）\n3.可能怎么出题（简答/论述/案例）\n4.建议怎么答（答题框架）\n5.中文，300字内\n\n相关真题与知识库：' + ctx;
+  callDSFast([{role:'system', content:sys}, {role:'user', content:'请分析宏观热点：' + topic}], 'macroAIInner');
+}
+
+// 6. 图谱AI关系推理
+function aiGraphRelate(id1, id2) {
+  var rid = 'graphAI';
+  var panel = document.getElementById('graphDetail');
+  if (!panel) return;
+  var existing = document.getElementById(rid);
+  if (!existing) {
+    var div = document.createElement('div');
+    div.id = rid;
+    div.style.cssText = 'margin-top:12px;padding:12px;background:#f8f6f2;border-radius:8px;font-size:12px;line-height:1.7';
+    panel.querySelector('.pcard-body, div[style*="padding:16px"]') ? panel.querySelector('div[style*="padding:16px"]').appendChild(div) : panel.appendChild(div);
+  }
+  var ctx = (typeof buildAIContext === 'function') ? buildAIContext(id1 + ' ' + id2) : '';
+  var sys = '你是人大434考研辅导老师。请分析两个知识点之间的关系，要求：\n1.理论演进关系（谁发展了谁）\n2.核心异同点对比（用表格）\n3.考试中常怎么一起考\n4.答题时怎么关联引用\n5.中文，300字内';
+  callDSFast([{role:'system', content:sys}, {role:'user', content:'请分析这两个知识点的关系：\n知识点A：' + id1 + '\n知识点B：' + id2 + '\n\n相关语料：' + ctx}], rid);
+}
+
+// 7. 导师AI出题推测
+function aiProfessorPredict(name, research, recent) {
+  var rid = 'profAI_' + name.replace(/[^a-zA-Z0-9]/g, '_');
+  var el = document.getElementById(rid);
+  if (!el) return;
+  var ctx = (typeof buildAIContext === 'function') ? buildAIContext(name + ' ' + research.join(' ')) : '';
+  var sys = '你是人大434考研辅导老师。请基于导师的研究方向推测可能的出题方向，要求：\n1.该导师研究方向与434考试的关联\n2.推测2-3个可能的出题角度\n3.每个角度的答题框架\n4.需要重点复习的知识点\n5.中文，300字内\n\n相关真题与知识库：' + ctx;
+  callDSFast([{role:'system', content:sys}, {role:'user', content:'导师：'+name+'\n研究方向：'+research.join('、')+'\n最新成果：'+recent}], rid);
+}
+
 function showGraph() {
   document.getElementById('bc').innerHTML = '<span>🕸️ 知识图谱</span>';
   var G = {nodes:[], edges:[], nodeMap:{}, filters:{mod:{}, edgeType:'all', unviewed:false, kw:''}};
@@ -1923,7 +2017,7 @@ function graphFilter(){var G=window._graph;G.filters.kw=(document.getElementById
 function isNodeVisible(n,G){if(!G.filters.mod[n.module])return false;if(G.filters.unviewed&&n.viewed)return false;if(G.filters.kw&&n.label.indexOf(G.filters.kw)<0)return false;return true;}
 function graphRender(){var G=window._graph;var mc={'国际贸易':'#7c3aed','国际投资与跨国公司':'#2563eb','国际金融':'#059669','新兴议题':'#ea580c'};var ml={'国际贸易':'#ede9fe','国际投资与跨国公司':'#dbeafe','国际金融':'#d1fae5','新兴议题':'#ffedd5'};var eh='';G.edges.forEach(function(e){if(G.filters.edgeType!=='all'&&e.type!==G.filters.edgeType)return;var ni=G.nodes[G.nodeMap[e.source]],nj=G.nodes[G.nodeMap[e.target]];if(!isNodeVisible(ni,G)||!isNodeVisible(nj,G))return;var mx=(ni.x+nj.x)/2,my=(ni.y+nj.y)/2,dx=nj.x-ni.x,dy=nj.y-ni.y;var ec=e.type==='evolution'?'#a78bfa':'#cbd5e1';var ew=Math.min(e.weight*1.2,3.5);eh+='<path d="M'+ni.x.toFixed(1)+' '+ni.y.toFixed(1)+' Q'+(mx-dy*0.08).toFixed(1)+' '+(my+dx*0.08).toFixed(1)+' '+nj.x.toFixed(1)+' '+nj.y.toFixed(1)+'" stroke="'+ec+'" stroke-width="'+ew+'" fill="none" opacity="0.3" class="graph-edge" data-source="'+e.source.replace(/"/g,'&quot;')+'" data-target="'+e.target.replace(/"/g,'&quot;')+'"/>';});document.getElementById('graphEdges').innerHTML=eh;var nh='';G.nodes.forEach(function(n){if(!isNodeVisible(n,G))return;var gid='grad-'+n.module.substring(0,2);nh+='<g class="graph-node" style="cursor:pointer" data-id="'+n.id.replace(/"/g,'&quot;')+'" onclick="graphNodeClick(\''+n.id.replace(/'/g,"\\'")+'\')">';if(n.viewed)nh+='<circle cx="'+n.x.toFixed(1)+'" cy="'+n.y.toFixed(1)+'" r="'+(n.size+4)+'" fill="none" stroke="#10b981" stroke-width="1.5" opacity="0.5" stroke-dasharray="3 2"/>';nh+='<circle cx="'+n.x.toFixed(1)+'" cy="'+(n.y+2).toFixed(1)+'" r="'+n.size+'" fill="rgba(0,0,0,0.08)"/>';nh+='<circle cx="'+n.x.toFixed(1)+'" cy="'+n.y.toFixed(1)+'" r="'+n.size+'" fill="url(#'+gid+')" stroke="'+n.color+'" stroke-width="1.5" class="graph-circle" data-id="'+n.id.replace(/"/g,'&quot;')+'"><title>'+n.label+' ('+n.examCount+'次考察)</title></circle>';var fs=n.size>18?10:8;nh+='<text x="'+n.x.toFixed(1)+'" y="'+(n.y+n.size+12).toFixed(1)+'" text-anchor="middle" font-size="'+fs+'" fill="#4b5563" style="pointer-events:none;font-weight:600">'+n.label.substring(0,7)+'</text>';nh+='</g>';});document.getElementById('graphNodes').innerHTML=nh;var svg=document.getElementById('graphSvg');svg.querySelectorAll('.graph-node').forEach(function(g){g.addEventListener('mouseenter',function(){var id=this.dataset.id;svg.querySelectorAll('.graph-edge').forEach(function(e){if(e.dataset.source===id||e.dataset.target===id){e.style.opacity='0.8';e.style.strokeWidth=parseFloat(e.getAttribute('stroke-width'))*2;}else e.style.opacity='0.06';});svg.querySelectorAll('.graph-node').forEach(function(n){if(n.dataset.id!==id)n.style.opacity='0.2';});});g.addEventListener('mouseleave',function(){svg.querySelectorAll('.graph-edge').forEach(function(e){e.style.opacity='0.3';e.style.strokeWidth='';});svg.querySelectorAll('.graph-node').forEach(function(n){n.style.opacity='1';});});});}
 
-function graphNodeClick(id){var G=window._graph;var n=G.nodes[G.nodeMap[id]];if(!n)return;var panel=document.getElementById('graphDetail');panel.style.display='block';var rel=[];G.edges.forEach(function(e){if(e.source===id)rel.push({id:e.target,type:e.type,weight:e.weight});else if(e.target===id)rel.push({id:e.source,type:e.type,weight:e.weight});});var qs=[];DATA.forEach(function(q){if((q.knowledge||[]).some(function(k){return k.indexOf(id)>=0||id.indexOf(k)>=0;}))qs.push(q);});var h='<div style="padding:16px"><div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px"><h3 style="font-size:16px;font-weight:700">'+n.label+'</h3><button onclick="document.getElementById(\'graphDetail\').style.display=\'none\'" style="background:none;border:none;font-size:18px;cursor:pointer;color:var(--ts)">✕</button></div>';h+='<div style="display:flex;gap:6px;flex-wrap:wrap;margin-bottom:12px"><span style="font-size:11px;padding:3px 8px;border-radius:10px;background:'+n.color+'22;color:'+n.color+'">'+n.module+'</span><span style="font-size:11px;padding:3px 8px;border-radius:10px;background:#f0ede6;color:#666">📝 '+n.examCount+'次</span><span style="font-size:11px;padding:3px 8px;border-radius:10px;background:'+(n.viewed?'#d1fae5':'#fee2e2')+';color:'+(n.viewed?'#059669':'#dc2626')+'">'+(n.viewed?'已浏览':'未浏览')+'</span></div>';if(rel.length){h+='<div style="margin-bottom:14px"><div style="font-size:12px;font-weight:700;color:var(--ts);margin-bottom:6px">🔗 关联知识点（'+rel.length+'）</div>';rel.sort(function(a,b){return b.weight-a.weight;});rel.forEach(function(r){var rn=G.nodes[G.nodeMap[r.id]];if(!rn)return;h+='<div onclick="graphNodeClick(\''+r.id.replace(/'/g,"\\'")+'\')" style="display:flex;justify-content:space-between;align-items:center;padding:6px 8px;margin:3px 0;background:#fafaf7;border-radius:6px;cursor:pointer;font-size:12px"><span>'+r.id+'</span><span style="font-size:10px;color:var(--ts)">'+(r.type==='evolution'?'演进':'共现')+' · '+r.weight+'</span></div>';});h+='</div>';}if(qs.length){h+='<div style="margin-bottom:14px"><div style="font-size:12px;font-weight:700;color:var(--ts);margin-bottom:6px">📝 关联真题（'+qs.length+'道）</div>';qs.slice(0,8).forEach(function(q){h+='<div onclick="showExamQ(\''+q.id+'\')" style="padding:6px 8px;margin:3px 0;background:#fafaf7;border-radius:6px;cursor:pointer;font-size:11px"><strong>'+q.year+'#'+q.num+'</strong> '+q.type+' · '+q.question.substring(0,30)+'...</div>';});if(qs.length>8)h+='<div style="font-size:10px;color:var(--ts);text-align:center;padding:4px">还有'+(qs.length-8)+'道...</div>';h+='</div>';}h+='<div style="display:flex;gap:6px;margin-top:12px"><button onclick="navigateByKnowledge(\''+id.replace(/'/g,"\\'")+'\')" style="flex:1;padding:8px;background:var(--pu);color:#fff;border:none;border-radius:6px;cursor:pointer;font-size:12px">📖 详情</button><button onclick="aiExplain(\''+id.replace(/'/g,"\\'")+'\')" style="flex:1;padding:8px;background:#059669;color:#fff;border:none;border-radius:6px;cursor:pointer;font-size:12px">🎓 AI讲解</button></div></div>';panel.innerHTML=h;}
+function graphNodeClick(id){var G=window._graph;var n=G.nodes[G.nodeMap[id]];if(!n)return;var panel=document.getElementById('graphDetail');panel.style.display='block';var rel=[];G.edges.forEach(function(e){if(e.source===id)rel.push({id:e.target,type:e.type,weight:e.weight});else if(e.target===id)rel.push({id:e.source,type:e.type,weight:e.weight});});var qs=[];DATA.forEach(function(q){if((q.knowledge||[]).some(function(k){return k.indexOf(id)>=0||id.indexOf(k)>=0;}))qs.push(q);});var h='<div style="padding:16px"><div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px"><h3 style="font-size:16px;font-weight:700">'+n.label+'</h3><button onclick="document.getElementById(\'graphDetail\').style.display=\'none\'" style="background:none;border:none;font-size:18px;cursor:pointer;color:var(--ts)">✕</button></div>';h+='<div style="display:flex;gap:6px;flex-wrap:wrap;margin-bottom:12px"><span style="font-size:11px;padding:3px 8px;border-radius:10px;background:'+n.color+'22;color:'+n.color+'">'+n.module+'</span><span style="font-size:11px;padding:3px 8px;border-radius:10px;background:#f0ede6;color:#666">📝 '+n.examCount+'次</span><span style="font-size:11px;padding:3px 8px;border-radius:10px;background:'+(n.viewed?'#d1fae5':'#fee2e2')+';color:'+(n.viewed?'#059669':'#dc2626')+'">'+(n.viewed?'已浏览':'未浏览')+'</span></div>';if(rel.length){h+='<div style="margin-bottom:14px"><div style="font-size:12px;font-weight:700;color:var(--ts);margin-bottom:6px">🔗 关联知识点（'+rel.length+'）</div>';rel.sort(function(a,b){return b.weight-a.weight;});rel.forEach(function(r){var rn=G.nodes[G.nodeMap[r.id]];if(!rn)return;h+='<div onclick="graphNodeClick(\''+r.id.replace(/'/g,"\\'")+'\')" style="display:flex;justify-content:space-between;align-items:center;padding:6px 8px;margin:3px 0;background:#fafaf7;border-radius:6px;cursor:pointer;font-size:12px"><span>'+r.id+'</span><span style="font-size:10px;color:var(--ts)">'+(r.type==='evolution'?'演进':'共现')+' · '+r.weight+'</span></div>';});h+='</div>';}if(qs.length){h+='<div style="margin-bottom:14px"><div style="font-size:12px;font-weight:700;color:var(--ts);margin-bottom:6px">📝 关联真题（'+qs.length+'道）</div>';qs.slice(0,8).forEach(function(q){h+='<div onclick="showExamQ(\''+q.id+'\')" style="padding:6px 8px;margin:3px 0;background:#fafaf7;border-radius:6px;cursor:pointer;font-size:11px"><strong>'+q.year+'#'+q.num+'</strong> '+q.type+' · '+q.question.substring(0,30)+'...</div>';});if(qs.length>8)h+='<div style="font-size:10px;color:var(--ts);text-align:center;padding:4px">还有'+(qs.length-8)+'道...</div>';h+='</div>';}h+='<div style="display:flex;gap:6px;margin-top:12px"><button onclick="navigateByKnowledge(\''+id.replace(/'/g,"\\'")+'\')" style="flex:1;padding:8px;background:var(--pu);color:#fff;border:none;border-radius:6px;cursor:pointer;font-size:12px">📖 详情</button><button onclick="aiExplain(\''+id.replace(/'/g,"\\'")+'\')" style="flex:1;padding:8px;background:#059669;color:#fff;border:none;border-radius:6px;cursor:pointer;font-size:12px">AI讲解</button><button onclick="var rel2=G.edges.filter(function(e){return e.source===\''+id+'\'||e.target===\''+id+'\'}).map(function(e){return e.source===\''+id+'\'?e.target:e.source});if(rel2.length)aiGraphRelate(\''+id+'\',rel2[0])" style="flex:1;padding:8px;background:var(--or);color:#fff;border:none;border-radius:6px;cursor:pointer;font-size:12px">AI关系分析</button></div></div>';panel.innerHTML=h;}
 
 function graphZoom(f){window._gz=Math.max(0.3,Math.min(3,window._gz*f));var vp=document.getElementById('graphViewport');if(vp)vp.setAttribute('transform','translate('+window._gpx+','+window._gpy+') scale('+window._gz+')');}
 function graphReset(){window._gz=1;window._gpx=0;window._gpy=0;var vp=document.getElementById('graphViewport');if(vp)vp.setAttribute('transform','');}
@@ -1951,9 +2045,10 @@ function showCards() {
     if(item.exam)back+='<p style="margin:4px 0;color:var(--ts)"><small>📝 '+item.exam+'</small></p>';
     back+='<p style="margin-top:8px"><small><a href="javascript:void(0)" onclick="event.stopPropagation();navigateByKnowledge(\''+kn.replace(/'/g,"\\'")+'\')">打开完整页面→</a></small></p>';
     back+='<div style="margin-top:10px;display:flex;gap:6px;justify-content:center" onclick="event.stopPropagation()">'+
-      '<button onclick="reviewCard(\''+kn+'\',0)" style="padding:4px 10px;background:#f44336;color:#fff;border:none;border-radius:4px;font-size:11px;cursor:pointer">不认识</button>'+
-      '<button onclick="reviewCard(\''+kn+'\',1)" style="padding:4px 10px;background:#FF9800;color:#fff;border:none;border-radius:4px;font-size:11px;cursor:pointer">模糊</button>'+
-      '<button onclick="reviewCard(\''+kn+'\',3)" style="padding:4px 10px;background:#4CAF50;color:#fff;border:none;border-radius:4px;font-size:11px;cursor:pointer">认识</button></div>';
+      '<button onclick="event.stopPropagation();reviewCard(\''+kn+'\',0)" style="padding:4px 10px;background:#f44336;color:#fff;border:none;border-radius:4px;font-size:11px;cursor:pointer">不认识</button>'+
+      '<button onclick="event.stopPropagation();reviewCard(\''+kn+'\',1)" style="padding:4px 10px;background:#FF9800;color:#fff;border:none;border-radius:4px;font-size:11px;cursor:pointer">模糊</button>'+
+      '<button onclick="event.stopPropagation();reviewCard(\''+kn+'\',3)" style="padding:4px 10px;background:#4CAF50;color:#fff;border:none;border-radius:4px;font-size:11px;cursor:pointer">认识</button>'+
+      '<button onclick="event.stopPropagation();aiCardExplain(\''+kn.replace(/'/g,"\\'")+'\')" style="padding:4px 10px;background:#059669;color:#fff;border:none;border-radius:4px;font-size:11px;cursor:pointer">🎓 AI讲解</button></div>';
     cardsHtml+='<div class="pcard" style="cursor:pointer;min-height:140px" onclick="var b=this.querySelector(\'.cback\');b.style.display=b.style.display===\'none\'?\'block\':\'none\';var f=this.querySelector(\'.cfront\');f.style.display=f.style.display===\'none\'?\'block\':\'none\'">'
       +'<div class="cfront" style="padding:16px;font-weight:700;font-size:15px;display:flex;align-items:center;justify-content:center;min-height:100px">'+front+'</div>'
       +'<div class="cback" style="display:none;padding:16px;font-size:13px;line-height:1.8">'+back+'</div></div>';
