@@ -2032,7 +2032,8 @@ function aiProfessorPredict(name, research, recent) {
 function showAllQuestions() {
   document.getElementById('bc').innerHTML = '<span>📝 全部真题</span>';
   var ansCount = DATA.filter(function(q){return q.answer && q.answer.length > 5;}).length;
-  var h = '<div class="hero"><h1>📝 全部真题（' + DATA.length + '道，' + ansCount + '道有答案）</h1><div class="desc">2011-2023年人大434国际商务真题。答案默认展开显示。点击题目折叠/展开。v20260622-2</div></div>';
+  if (ansCount === 0) { console.error('DEBUG: DATA has no answers!', DATA.length, JSON.stringify(DATA[0]).substring(0,200)); }
+  var h = '<div class="hero"><h1>📝 全部真题（' + DATA.length + '道，' + ansCount + '道有答案）</h1><div class="desc">答案默认展开。点击题目可折叠。v20260622-3</div></div>';
   // Filter bar
   h += '<div class="pcard" style="margin-bottom:12px"><div class="pcard-body" style="display:flex;gap:10px;flex-wrap:wrap;align-items:center">';
   h += '<select id="aqYear" onchange="filterAllQuestions()" style="padding:5px 8px;border:1px solid var(--bdr);border-radius:6px;font-size:12px;background:#fff"><option value="">全部年份</option>';
