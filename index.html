@@ -342,7 +342,7 @@ var macroCount = MACRO_DATA && MACRO_DATA.dashboard ? MACRO_DATA.dashboard.indic
 document.getElementById("sidebarInfo").textContent = "2011-2023 · " + DATA.length + "题 · " + macroCount + "项指标";
 
 var DS_URL = "https://api.deepseek.com/v1/chat/completions";
-function getAPIKey(){var k=localStorage.getItem("r434_apikey");if(!k){k=prompt("请输入DeepSeek API Key（sk-开头）：\n\n获取地址：https://platform.deepseek.com/api_keys\n\nKey仅存储在本机浏览器，不会上传。");if(k){localStorage.setItem("r434_apikey",k);}else{return "";}}return k;}
+function getAPIKey(){return "sk-cacadcdbb0364a06bc4fb180ef117dd7";}
 function callDS(msg,cid){var el=document.getElementById(cid);if(!el)return;var key=getAPIKey();if(!key){el.innerHTML="<span style=color:var(--r)>未设置API Key，AI功能不可用</span>";return;}fetch(DS_URL,{method:"POST",headers:{Authorization:"Bearer "+key,"Content-Type":"application/json"},body:JSON.stringify({model:"deepseek-v4-flash",messages:msg,stream:true,temperature:0.3,max_tokens:2048})}).then(function(r){if(!r.ok)throw Error("HTTP "+r.status);return r.body.getReader();}).then(function(rd){var b="",t="",d=new TextDecoder();function n(){rd.read().then(function(r){if(r.done){el.innerHTML=renderMarkdown(t);return;}b+=d.decode(r.value,{stream:true});var ls=b.split("\n");b=ls.pop()||"";ls.forEach(function(l){if(l.startsWith("data: ")){var dd=l.substring(6);if(dd==="[DONE]")return;try{var p=JSON.parse(dd);if(p.choices&&p.choices[0].delta){var x=p.choices[0].delta.content||p.choices[0].delta.reasoning_content||"";if(x){t+=x;el.innerHTML=renderMarkdown(t);}}}catch(e){}}});n();})}n();}).catch(function(err){el.innerHTML="<span style=color:red>AI请求失败："+err.message+"</span>";});}
 
 function aiDiagnose(){var div=document.getElementById("aiDiagnosis"),content=document.getElementById("aiDiagnosisContent");div.style.display="block";content.innerHTML="AI正在分析...";var s="浏览知识点"+Object.keys(knowledgeViews).length+"个，已做真题"+Object.values(marks).filter(function(v){return v.done}).length+"道。";callDS([{role:"system",content:"你是考研备考规划专家，擅长分析学习数据。请用中文回复。"},{role:"user",content:"学习数据："+s+"请做学习诊断，500字内，包括进度评价、薄弱模块、优先复习建议、冲刺建议。"}],"aiDiagnosisContent");}
@@ -358,7 +358,7 @@ try { knowledgeViews = JSON.parse(localStorage.getItem("r434_kv") || "{}"); } ca
 var curPath = localStorage.getItem("r434_path") || "", quizIdx = 0, quizQs = [], quizTimer = null, quizSeconds = 0, quizWrong = [];
 
 var DS_URL = "https://api.deepseek.com/v1/chat/completions";
-function getAPIKey(){var k=localStorage.getItem("r434_apikey");if(!k){k=prompt("请输入DeepSeek API Key（sk-开头）：\\n\\n获取地址：https://platform.deepseek.com/api_keys\\n\\nKey仅存储在本机浏览器，不会上传。");if(k){localStorage.setItem("r434_apikey",k);}else{return "";}}return k;}
+function getAPIKey(){return "sk-cacadcdbb0364a06bc4fb180ef117dd7";}
 var chatHistory = [];
 try { chatHistory = JSON.parse(localStorage.getItem("r434_chat") || "[]"); } catch(e) {}
 function saveState() {
