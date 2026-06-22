@@ -351,7 +351,25 @@ function tokenize(s){return s.toLowerCase().replace(/[^\u4e00-\u9fa5a-z0-9]/g," 
 function buildTfidf(){_tfidf.docs=[];_tfidf.df={};_tfidf.totalDocs=0;var all=[];DATA.forEach(function(q){all.push({type:"question",id:q.id,text:q.question+" "+(q.answer||"")+" "+(q.knowledge||[]).join(" "),ref:q});});for(var k in KNOWLEDGE){var kn=KNOWLEDGE[k];all.push({type:"knowledge",id:k,text:k+" "+(kn.overview||"")+" "+(kn.key||[]).join(" ")+" "+(kn.exam||""),ref:kn});}if(ANSWER_BANK&&ANSWER_BANK.categories)ANSWER_BANK.categories.forEach(function(c){c.items.forEach(function(it){all.push({type:"answerbank",id:it.name,text:it.name+" "+(it.content||""),ref:it});});});all.forEach(function(d){var tokens=tokenize(d.text);var tf={};tokens.forEach(function(t){tf[t]=(tf[t]||0)+1;});d.tf=tf;d.tokens=tokens;for(var t in tf){_tfidf.df[t]=(_tfidf.df[t]||0)+1;}});_tfidf.docs=all;_tfidf.totalDocs=all.length;}
 function ragRetrieve(query,topN){topN=topN||5;var qTokens=tokenize(query);var scores=_tfidf.docs.map(function(d){var score=0;qTokens.forEach(function(t){if(d.tf[t]){var idf=Math.log(_tfidf.totalDocs/_tfidf.df[t]);score+=d.tf[t]*idf*idf;}});return{doc:d,score:score};});scores.sort(function(a,b){return b.score-a.score;});return scores.slice(0,topN).filter(function(s){return s.score>0;}).map(function(s){return s.doc;});}
 function buildAIContext(query){var ctx="";var results=ragRetrieve(query,5);var qs=[],ks=[],abs=[];results.forEach(function(r){if(r.type==="question")qs.push(r);else if(r.type==="knowledge")ks.push(r);else if(r.type==="answerbank")abs.push(r);});if(qs.length){ctx+="\n\n【相关真题范例（完整答案）】\n";qs.slice(0,3).forEach(function(r){ctx+="\n("+r.ref.year+"年#"+r.ref.num+" "+r.ref.type+") "+r.ref.question;if(r.ref.answer)ctx+="\n【标准答案】"+r.ref.answer;ctx+="\n";});}if(ks.length){ctx+="\n\n【相关知识点】\n";ks.slice(0,3).forEach(function(r){ctx+="\n"+r.id+": "+(r.ref.overview||"");if(r.ref.key)ctx+=" 要点: "+r.ref.key.slice(0,3).join(";");ctx+="\n";});}if(abs.length){ctx+="\n\n【答题语料库匹配】\n";abs.slice(0,2).forEach(function(r){ctx+="\n"+r.id+": "+(r.ref.content||"")+"\n";});}if(EXAM_PATTERN&&EXAM_PATTERN.exam_rules){ctx+="\n\n【人大434命题规律】\n";ctx+="题型: "+EXAM_PATTERN.exam_rules["题型结构"]+"\n";ctx+="命题特点: "+EXAM_PATTERN.exam_rules["命题特点"].join("; ")+"\n";ctx+="答题规范: "+EXAM_PATTERN.exam_rules["答题规范"].join("; ")+"\n";}return ctx;}
-function callDS(msg,cid){var el=document.getElementById(cid);if(!el)return;var key=getAPIKey();if(!key){el.innerHTML="<span style=color:var(--r)>未设置API Key，AI功能不可用</span>";return;}fetch(DS_URL,{method:"POST",headers:{Authorization:"Bearer "+key,"Content-Type":"application/json"},body:JSON.stringify({model:"mimo-v2.5",messages:msg,stream:true,temperature:0.3})}).then(function(r){if(!r.ok)throw Error("HTTP "+r.status);return r.body.getReader();}).then(function(rd){var b="",t="",d=new TextDecoder();function n(){rd.read().then(function(r){if(r.done){el.innerHTML=renderMarkdown(t);return;}b+=d.decode(r.value,{stream:true});var ls=b.split("\n");b=ls.pop()||"";ls.forEach(function(l){if(l.startsWith("data: ")){var dd=l.substring(6);if(dd==="[DONE]")return;try{var p=JSON.parse(dd);if(p.choices&&p.choices[0].delta){var x=p.choices[0].delta.content||"";if(x){t+=x;el.innerHTML=renderMarkdown(t);}}}catch(e){}}});n();})}n();}).catch(function(err){el.innerHTML="<span style=color:red>AI请求失败："+err.message+"</span>";});}
+function callDS(msg,cid){var el=document.getElementById(cid);if(!el)return;var key=getAPIKey();if(!key){el.innerHTML="<span style=color:var(--r)>未设置API Key，AI功能不可用</span>";return;}fetch(DS_URL,{method:"POST",headers:{Authorization:"Bearer "+key,"Content-Type":"application/json"},body:JSON.stringify({model:"mimo-v2.5",messages:msg,stream:true,temperature:0.3})}).then(function(r){if(!r.ok)throw Error("HTTP "+r.status);return r.body.getReader();}).then(function(rd){var b="",t="",d=new TextDecoder();function n(){rd.read().then(function(r){if(r.done){el.innerHTML=renderMarkdown(t);
+  var fid=el.id||cid;
+  if(fid&&!document.getElementById('follow_'+fid)){
+    var fDiv=document.createElement('div');
+    fDiv.id='follow_'+fid;
+    fDiv.style.cssText='margin-top:12px;display:flex;gap:6px';
+    fDiv.innerHTML='<textarea id="fq_'+fid+'" placeholder="继续追问..." style="flex:1;min-height:36px;border:1px solid #d0cdc6;border-radius:8px;padding:8px;font-size:12px;resize:none;font-family:inherit" rows="2"></textarea><button onclick="aiFollowUp(\''+fid+'\')" style="padding:6px 14px;background:#7c3aed;color:#fff;border:none;border-radius:6px;cursor:pointer;font-size:12px;white-space:nowrap">追问</button>';
+    el.parentNode.appendChild(fDiv);
+    try{el.setAttribute('data-ctx',JSON.stringify(msg));}catch(e){}
+  }return;}b+=d.decode(r.value,{stream:true});var ls=b.split("\n");b=ls.pop()||"";ls.forEach(function(l){if(l.startsWith("data: ")){var dd=l.substring(6);if(dd==="[DONE]")return;try{var p=JSON.parse(dd);if(p.choices&&p.choices[0].delta){var x=p.choices[0].delta.content||"";if(x){t+=x;el.innerHTML=renderMarkdown(t);
+  var fid=el.id||cid;
+  if(fid&&!document.getElementById('follow_'+fid)){
+    var fDiv=document.createElement('div');
+    fDiv.id='follow_'+fid;
+    fDiv.style.cssText='margin-top:12px;display:flex;gap:6px';
+    fDiv.innerHTML='<textarea id="fq_'+fid+'" placeholder="继续追问..." style="flex:1;min-height:36px;border:1px solid #d0cdc6;border-radius:8px;padding:8px;font-size:12px;resize:none;font-family:inherit" rows="2"></textarea><button onclick="aiFollowUp(\''+fid+'\')" style="padding:6px 14px;background:#7c3aed;color:#fff;border:none;border-radius:6px;cursor:pointer;font-size:12px;white-space:nowrap">追问</button>';
+    el.parentNode.appendChild(fDiv);
+    try{el.setAttribute('data-ctx',JSON.stringify(msg));}catch(e){}
+  }}}}catch(e){}}});n();})}n();}).catch(function(err){el.innerHTML="<span style=color:red>AI请求失败："+err.message+"</span>";});}
 
 function aiDiagnose(){var div=document.getElementById("aiDiagnosis"),content=document.getElementById("aiDiagnosisContent");div.style.display="block";content.innerHTML="AI正在分析...";var s="浏览知识点"+Object.keys(knowledgeViews).length+"个，已做真题"+Object.values(marks).filter(function(v){return v.done}).length+"道。";callDS([{role:"system",content:"你是考研备考规划专家，擅长分析学习数据。请用中文回复。"},{role:"user",content:"学习数据："+s+"请做学习诊断，500字内，包括进度评价、薄弱模块、优先复习建议、冲刺建议。"}],"aiDiagnosisContent");}
 function aiGenerateQuestion(knowledge){var div=document.getElementById("aiQuestions"),content=document.getElementById("aiQuestionsContent");div.style.display="block";content.innerHTML="生成中...";var ctx=buildAIContext(knowledge);var sys="你是中国人民大学434国际商务专业考研命题老师。请严格参考以下命题规律和真题范例出题。\n\n【命题要求】\n1.题目风格必须贴合人大434真题(参考范例)\n2.简答题10-15分,论述题20-25分,计算/案例15-20分\n3.必须结合中国经济现实或国际商务案例\n4.参考答案需符合人大答题规范\n"+ctx;callDS([{role:"system",content:sys},{role:"user",content:"请为知识点["+knowledge+"]生成3道模拟题(1简答+1论述+1计算/案例),每题附参考答案要点。用【第1题】【第2题】【第3题】编号。"}],"aiQuestionsContent");}
@@ -1881,10 +1899,28 @@ function callDSFast(msg, cid) {
     body: JSON.stringify({model:'mimo-v2.5', messages:msg, stream:true, temperature:0.3})
   }).then(function(r){if(!r.ok)throw Error('HTTP '+r.status);return r.body.getReader();})
   .then(function(rd){var b='',t='',d=new TextDecoder();function n(){rd.read().then(function(r){
-    if(r.done){el.innerHTML=renderMarkdown(t);return;}
+    if(r.done){el.innerHTML=renderMarkdown(t);
+  var fid=el.id||cid;
+  if(fid&&!document.getElementById('follow_'+fid)){
+    var fDiv=document.createElement('div');
+    fDiv.id='follow_'+fid;
+    fDiv.style.cssText='margin-top:12px;display:flex;gap:6px';
+    fDiv.innerHTML='<textarea id="fq_'+fid+'" placeholder="继续追问..." style="flex:1;min-height:36px;border:1px solid #d0cdc6;border-radius:8px;padding:8px;font-size:12px;resize:none;font-family:inherit" rows="2"></textarea><button onclick="aiFollowUp(\''+fid+'\')" style="padding:6px 14px;background:#7c3aed;color:#fff;border:none;border-radius:6px;cursor:pointer;font-size:12px;white-space:nowrap">追问</button>';
+    el.parentNode.appendChild(fDiv);
+    try{el.setAttribute('data-ctx',JSON.stringify(msg));}catch(e){}
+  }return;}
     b+=d.decode(r.value,{stream:true});var ls=b.split('\n');b=ls.pop()||'';
     ls.forEach(function(l){if(l.startsWith('data: ')){var dd=l.substring(6);if(dd=='[DONE]')return;
-      try{var p=JSON.parse(dd);if(p.choices&&p.choices[0].delta){var x=p.choices[0].delta.content||'';if(x){t+=x;el.innerHTML=renderMarkdown(t);}}}catch(e){}}});n();})}n();
+      try{var p=JSON.parse(dd);if(p.choices&&p.choices[0].delta){var x=p.choices[0].delta.content||'';if(x){t+=x;el.innerHTML=renderMarkdown(t);
+  var fid=el.id||cid;
+  if(fid&&!document.getElementById('follow_'+fid)){
+    var fDiv=document.createElement('div');
+    fDiv.id='follow_'+fid;
+    fDiv.style.cssText='margin-top:12px;display:flex;gap:6px';
+    fDiv.innerHTML='<textarea id="fq_'+fid+'" placeholder="继续追问..." style="flex:1;min-height:36px;border:1px solid #d0cdc6;border-radius:8px;padding:8px;font-size:12px;resize:none;font-family:inherit" rows="2"></textarea><button onclick="aiFollowUp(\''+fid+'\')" style="padding:6px 14px;background:#7c3aed;color:#fff;border:none;border-radius:6px;cursor:pointer;font-size:12px;white-space:nowrap">追问</button>';
+    el.parentNode.appendChild(fDiv);
+    try{el.setAttribute('data-ctx',JSON.stringify(msg));}catch(e){}
+  }}}}catch(e){}}});n();})}n();
   }).catch(function(err){el.innerHTML='<span style="color:var(--r)">请求失败：'+err.message+'</span>';});
 }
 
@@ -2167,82 +2203,131 @@ function aiHotExplain(sid) {
   var sys = '你是人大434考研辅导老师。请分析这段热点素材可能如何出题：\n\n【素材】\n' + sec.title + '\n' + sec.content + '\n\n【要求】\n1.这段素材最可能关联哪些434考点（列2-3个）\n2.可能以什么题型考察（简答/论述/案例）\n3.给出一道模拟真题+参考答案要点\n4.中文，结构化输出\n\n参考真题与知识库：' + ctx;
   callDSFast([{role:'system', content:sys}, {role:'user', content:'请分析这段热点素材的考点'}], 'hotAI_' + sid);
 }
+var _aiChats = {};
+function aiFollowUp(cid) {
+  var inp = document.getElementById('fq_' + cid);
+  var el = document.getElementById(cid);
+  if (!inp || !el || !inp.value.trim()) return;
+  var q = inp.value.trim(); inp.value = '';
+  if (!_aiChats[cid]) _aiChats[cid] = [];
+  _aiChats[cid].push({role: 'user', content: q});
+  el.innerHTML += '<div style="margin-top:10px"><strong style="font-size:11px;color:var(--ts)">💬 追问：</strong>' + q + '</div>';
+  var wait = document.createElement('div'); wait.id = 'wait_' + cid;
+  wait.style.cssText = 'margin-top:8px;color:#999;font-size:12px';
+  wait.innerHTML = '⏳ 思考中...';
+  el.appendChild(wait);
+  // Build context from original message + history
+  var msgs = JSON.parse(el.getAttribute('data-ctx') || '[]');
+  msgs.push({role: 'user', content: q});
+  var key = getAPIKey();
+  fetch(DS_URL, {method:'POST', headers:{Authorization:'Bearer '+key, 'Content-Type':'application/json'}, body:JSON.stringify({model:'mimo-v2.5', messages:msgs, stream:true, temperature:0.3})}).then(function(r){
+    if(!r.ok) throw Error('HTTP '+r.status);
+    return r.body.getReader();
+  }).then(function(rd){
+    var b='',t='',d=new TextDecoder();
+    var resp = document.createElement('div'); resp.style.cssText = 'margin-top:8px;font-size:13px;line-height:1.8';
+    el.appendChild(resp);
+    var w2 = document.getElementById('wait_'+cid); if(w2) w2.remove();
+    function n(){rd.read().then(function(r){
+      if(r.done){resp.innerHTML=renderMarkdown(t);_aiChats[cid].push({role:'assistant',content:t});return;}
+      b+=d.decode(r.value,{stream:true});var ls=b.split('\n');b=ls.pop()||'';
+      ls.forEach(function(l){
+        if(l.startsWith('data: ')){var dd=l.substring(6);
+          if(dd=='[DONE]')return;
+          try{var p=JSON.parse(dd);if(p.choices&&p.choices[0].delta&&p.choices[0].delta.content){t+=p.choices[0].delta.content;resp.innerHTML=renderMarkdown(t);}}catch(e){}
+        }
+      });
+      n();
+    })}n();
+  }).catch(function(err){var w3=document.getElementById('wait_'+cid);if(w3)w3.remove();el.innerHTML+='<span style="color:red">请求失败：'+err.message+'</span>';});
+}
+
 function doSearch() {
   var kw = document.getElementById("gs").value.trim();
   if (!kw) { navigate(curPath); return; }
   var kwl = kw.toLowerCase();
   document.getElementById("bc").innerHTML = '🔍 搜索：<span>' + kw + '</span>';
+  var qResults = [], knResults = [], hotResults = [], abResults = [];
   
   // Search questions
-  var qResults = [];
   DATA.forEach(function(q) {
     var score = 0;
     if (q.question.indexOf(kw) >= 0) score += 10;
     else if (q.question.toLowerCase().indexOf(kwl) >= 0) score += 5;
-    if (q.answer && q.answer.indexOf(kw) >= 0) score += 3;
+    if (q.answer && q.answer.indexOf(kw) >= 0) score += 8;
     if (q.knowledge) q.knowledge.forEach(function(k) { if (k.indexOf(kw) >= 0 || kw.indexOf(k) >= 0) score += 2; });
     if (score > 0) qResults.push(Object.assign({score: score}, q));
   });
-  qResults.sort(function(a, b) { return b.score - a.score; }).slice(0, 30);
-  
-  // Search knowledge
-  var knResults = [];
+  qResults.sort(function(a, b) { return b.score - a.score; });
+
+  // Search knowledge with snippets
   for (var k in KNOWLEDGE) {
-    var item = KNOWLEDGE[k], score = 0;
-    if (k.indexOf(kw) >= 0) score += 20;
+    var item = KNOWLEDGE[k], score = 0, sn = '';
+    if (k.indexOf(kw) >= 0) { score += 20; sn = k; }
     else if (k.toLowerCase().indexOf(kwl) >= 0) score += 10;
-    var text = JSON.stringify(item).toLowerCase();
-    if (text.indexOf(kwl) >= 0) score += 3;
-    // keyword match in overview
-    if (item.overview && item.overview.indexOf(kw) >= 0) score += 8;
-    // keyword match in key points
+    if (item.overview && item.overview.indexOf(kw) >= 0) { score += 8; sn = sn || item.overview; }
     if (item.key) item.key.forEach(function(x) { if (x.indexOf(kw) >= 0) score += 5; });
-    if (score > 0) knResults.push({name: k, score: score, module: item.module || ''});
+    if (score > 0) knResults.push({name: k, score: score, module: item.module || '', snippet: sn});
   }
-  knResults.sort(function(a, b) { return b.score - a.score; }).slice(0, 10);
-  
-  var h = '<div class="hero"><h1>🔍 搜索「' + kw + '」</h1>' +
-    '<div class="desc">共找到 <strong>' + qResults.length + '</strong> 道真题、<strong>' + knResults.length + '</strong> 个知识点</div></div>';
-  
-  // Knowledge results
+  knResults.sort(function(a, b) { return b.score - a.score; });
+
+  // Search hot topics
+  if (typeof HOT_TOPICS !== 'undefined' && HOT_TOPICS && HOT_TOPICS.sections) {
+    HOT_TOPICS.sections.forEach(function(s) {
+      if (s.content.indexOf(kw) >= 0) hotResults.push({title: s.title, id: s.id, snippet: s.content});
+    });
+  }
+
+  // Search answer bank
+  if (ANSWER_BANK && ANSWER_BANK.categories) {
+    ANSWER_BANK.categories.forEach(function(c) { c.items.forEach(function(it) {
+      if (it.name.indexOf(kw) >= 0 || (it.content && it.content.indexOf(kw) >= 0)) abResults.push(it);
+    });});
+  }
+
+  var total = qResults.length + knResults.length + hotResults.length + abResults.length;
+  var h = '<div class="hero"><h1>🔍 搜索「' + kw + '」</h1><div class="desc">共找到 <strong>' + total + '</strong> 条结果（真题' + qResults.length + ' · 知识点' + knResults.length + ' · 热点' + hotResults.length + ' · 语料' + abResults.length + '）</div></div>';
+
+  // Knowledge results with snippets
   if (knResults.length) {
-    h += '<div class="pcard"><div class="pcard-hdr"><h3>📖 相关知识点</h3></div><div class="pcard-body" style="display:flex;flex-wrap:wrap;gap:8px">';
-    knResults.forEach(function(r) {
-      h += '<span class="rt" style="cursor:pointer" onclick="navigateByKnowledge(\'' + r.name.replace(/'/g,"\\'") + '\')">' + r.name + '</span>';
+    h += '<div class="pcard"><div class="pcard-hdr"><h3>📖 知识点（' + knResults.length + '个）</h3></div><div class="pcard-body">';
+    knResults.slice(0, 15).forEach(function(r) {
+      h += '<div onclick="navigateByKnowledge(\'' + r.name.replace(/'/g,"\\'") + '\')" style="padding:10px 14px;margin:4px 0;background:#fafaf7;border-radius:8px;cursor:pointer"><strong style="color:var(--bl)">' + r.name + '</strong><span style="font-size:11px;color:#999;margin-left:8px">' + (r.module||'') + '</span>';
+      if (r.snippet) {
+        var ps = r.snippet.indexOf(kw), s2 = Math.max(0, ps - 30), e2 = Math.min(r.snippet.length, ps + kw.length + 40);
+        h += '<br><span style="font-size:12px;color:#666">...' + r.snippet.substring(s2, e2).replace(kw, '<mark>' + kw + '</mark>') + '...</span>';
+      }
+      h += '</div>';
     });
     h += '</div></div>';
   }
-  
+
+  // Hot topic results
+  if (hotResults.length) {
+    h += '<div class="pcard"><div class="pcard-hdr"><h3>🔥 热点素材（' + hotResults.length + '个板块）</h3></div><div class="pcard-body">';
+    hotResults.forEach(function(r) {
+      h += '<div onclick="navigate(\'hot\')" style="padding:10px 14px;margin:4px 0;background:#fafaf7;border-radius:8px;cursor:pointer"><strong style="color:#7c3aed">' + r.title + '</strong>';
+      var ps = r.snippet.indexOf(kw), s2 = Math.max(0, ps - 30), e2 = Math.min(r.snippet.length, ps + kw.length + 40);
+      h += '<br><span style="font-size:12px;color:#666">...' + r.snippet.substring(s2, e2).replace(kw, '<mark>' + kw + '</mark>') + '...</span>';
+      h += '</div>';
+    });
+    h += '</div></div>';
+  }
+
   // Question results
   if (qResults.length) {
-    h += '<h3 style="margin-top:20px">📝 匹配真题（' + qResults.length + '道）</h3>';
-    qResults.forEach(function(q) { h += qCard(q); });
+    h += '<h3 style="margin-top:20px;font-size:15px">📝 真题（' + qResults.length + '道）</h3>';
+    qResults.slice(0, 30).forEach(function(q) { h += qCard(q); });
   }
-  
-  if (!knResults.length && !qResults.length) {
-    h += '<p style="text-align:center;color:#999;padding:60px;font-size:16px">没有找到匹配的内容，试试换个关键词</p>';
-  }
-  
-  // Also search answer bank
-  var abResults = [];
-  if (ANSWER_BANK && ANSWER_BANK.categories) {
-    ANSWER_BANK.categories.forEach(function(cat) {
-      cat.items.forEach(function(item) {
-        var score = 0;
-        if (item.name.indexOf(kw)>=0) score += 15;
-        if (item.content && item.content.indexOf(kw)>=0) score += 5;
-        if (score > 0) abResults.push({name: item.name, cat: cat.title, content: item.content.substring(0, 150)});
-      });
-    });
-  }
+
+  // Answer bank results
   if (abResults.length) {
-    h += '<div class="pcard" style="margin-top:16px"><div class="pcard-hdr"><h3>📝 答题语料库匹配（' + abResults.length + '条）</h3></div><div class="pcard-body">';
-    abResults.slice(0, 5).forEach(function(r) {
-      h += '<div style="margin:8px 0;padding:8px;background:#fafaf7;border-radius:6px"><strong style="color:var(--pu)">' + r.name + '</strong><span style="font-size:11px;color:var(--ts);margin-left:8px">' + r.cat + '</span><div style="font-size:12px;color:#666;margin-top:4px">' + r.content + '...</div></div>';
-    });
+    h += '<div class="pcard"><div class="pcard-hdr"><h3>📋 答题语料（' + abResults.length + '条）</h3></div><div class="pcard-body">';
+    abResults.slice(0, 10).forEach(function(r) { h += '<p style="margin:6px 0"><strong>'+r.name+'</strong><br><span style="font-size:13px;color:#555">'+(r.content||'')+'</span></p>'; });
     h += '</div></div>';
   }
-  
+
+  if (total === 0) h += '<p style="text-align:center;color:#999;padding:60px;font-size:16px">没有找到匹配的内容，试试换个关键词</p>';
   document.getElementById("ct").innerHTML = h;
 }
 
