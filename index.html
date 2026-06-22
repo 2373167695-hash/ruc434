@@ -349,7 +349,7 @@ window.addEventListener('unhandledrejection', function(e) {
 </div>
 <script>
 // ===== DATA LOADING =====
-var SIDEBAR, TQM, KNOWLEDGE, PROFESSORS, PREDICTIONS, MACRO_DAILY, MACRO_DATA, KNOWLEDGE_NAV, MOCK_EXAMS; // DATA, ANSWER_BANK already inlined
+var SIDEBAR, TQM, KNOWLEDGE, PROFESSORS, PREDICTIONS, MACRO_DAILY, MACRO_DATA, KNOWLEDGE_NAV, MOCK_EXAMS; // DATA, ANSWER_BANK inlined
 
 function loadJSON(url) {
   return new Promise(function(resolve, reject) {
@@ -380,7 +380,7 @@ Promise.all([
   loadJSON('data/answerbank.json'),
   loadJSON('data/mock_exams.json'),
 ]).then(function(results) {
-  // DATA = results[0]; // already inlined, skip
+  // DATA = results[0]; // already inlined
   SIDEBAR = results[1];
   TQM = results[2];
   KNOWLEDGE = results[3];
@@ -401,10 +401,18 @@ Promise.all([
   if (curPath && curPath !== '') navigate(curPath);
   else showHome();
 }).catch(function(err) {
-  console.error('Data load failed:', err);
-  document.getElementById('ct').innerHTML = 
-    '<div class="loading"><h3>数据加载失败</h3><p style="color:var(--r)">' + err.message + '</p>' +
-    '<p style="margin-top:8px;font-size:12px">请确认用 python server.py 启动服务器后访问 http://127.0.0.1:8000</p></div>';
+  if (typeof DATA !== 'undefined' && DATA && DATA.length > 0) {
+    // DATA already inlined, ignore XHR failure
+    console.warn('XHR data load skipped (DATA already inlined):', err.message);
+    buildNav();
+    if (curPath && curPath !== '') navigate(curPath);
+    else showHome();
+  } else {
+    console.error('Data load failed:', err);
+    document.getElementById('ct').innerHTML = 
+      '<div class="loading"><h3>数据加载失败</h3><p style="color:var(--r)">' + err.message + '</p>' +
+      '<p style="margin-top:8px;font-size:12px">请确认用 python server.py 启动服务器后访问 http://127.0.0.1:8000</p></div>';
+  }
 });
 
 // ===== STATE =====
