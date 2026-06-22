@@ -624,50 +624,81 @@ function findRelatedTopics(key) {
 
 function renderMarkdown(text) {
   if (!text) return '';
-  var h = text;
-  // Escape HTML
-  h = h.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
-  // Tables: | col1 | col2 |  or |---|---|
-  var lines = h.split('\n');
-  var out = [], inTable = false, tableHtml = '';
-  for (var i = 0; i < lines.length; i++) {
-    var line = lines[i].trim();
-    if (line.startsWith('|') && line.endsWith('|')) {
-      var cells = line.split('|').slice(1, -1).map(function(c){return c.trim();});
-      var isSep = cells.every(function(c){return /^[-:]+$/.test(c);});
-      if (isSep) { continue; }
-      if (!inTable) { inTable = true; tableHtml = '<table style="border-collapse:collapse;width:100%;font-size:12px;margin:8px 0">'; }
-      if (tableHtml.indexOf('<tbody>') < 0 && tableHtml.indexOf('<thead>') < 0) {
-        tableHtml += '<thead><tr>' + cells.map(function(c){return '<th style="border:1px solid #ddd;padding:4px 8px;background:#f5f3ef;text-align:left">'+c+'</th>';}).join('') + '</tr></thead><tbody>';
-      } else {
-        tableHtml += '<tr>' + cells.map(function(c){return '<td style="border:1px solid #ddd;padding:4px 8px">'+c+'</td>';}).join('') + '</tr>';
+  // Split into lines for block-level parsing
+  var lines = text.split('\n');
+  var html = '';
+  var i = 0;
+  while (i < lines.length) {
+    var line = lines[i];
+    var trimmed = line.trim();
+    // Empty line
+    if (!trimmed) { i++; continue; }
+    // Table
+    if (trimmed.startsWith('|') && trimmed.endsWith('|')) {
+      var tableLines = [];
+      while (i < lines.length && lines[i].trim().startsWith('|') && lines[i].trim().endsWith('|')) {
+        tableLines.push(lines[i].trim());
+        i++;
       }
-    } else {
-      if (inTable) { tableHtml += '</tbody></table>'; out.push(tableHtml); inTable = false; tableHtml = ''; }
-      out.push(lines[i]);
+      var rows = tableLines.map(function(l) {
+        return l.split('|').slice(1, -1).map(function(c) { return c.trim(); });
+      });
+      // Skip separator row
+      rows = rows.filter(function(r) { return !r.every(function(c) { return /^[-:]+$/.test(c); }); });
+      html += '<table style="border-collapse:collapse;width:100%;font-size:12px;margin:8px 0">';
+      rows.forEach(function(row, ri) {
+        html += '<tr>';
+        row.forEach(function(cell) {
+          cell = cell.replace(/\*\*(.+?)\*\*/g, '<strong>$1</strong>');
+          if (ri === 0) {
+            html += '<th style="border:1px solid #d0cdc6;padding:5px 8px;background:#f5f3ef;text-align:left;font-size:11px">' + cell + '</th>';
+          } else {
+            html += '<td style="border:1px solid #e0ddd6;padding:5px 8px;font-size:12px">' + cell + '</td>';
+          }
+        });
+        html += '</tr>';
+      });
+      html += '</table>';
+      continue;
     }
+    // Headings
+    if (/^###\s+/.test(trimmed)) { html += '<h4 style="margin:12px 0 6px;font-size:14px">' + trimmed.replace(/^###\s+/, '') + '</h4>'; i++; continue; }
+    if (/^##\s+/.test(trimmed)) { html += '<h3 style="margin:14px 0 8px;font-size:15px">' + trimmed.replace(/^##\s+/, '') + '</h3>'; i++; continue; }
+    if (/^#\s+/.test(trimmed)) { html += '<h2 style="margin:16px 0 10px;font-size:16px">' + trimmed.replace(/^#\s+/, '') + '</h2>'; i++; continue; }
+    // Horizontal rule
+    if (/^---+$/.test(trimmed) || /^\*\*\*$/.test(trimmed)) { html += '<hr style="border:none;border-top:1px solid #e0ddd6;margin:12px 0">'; i++; continue; }
+    // Block quote
+    if (/^&gt;\s+/.test(trimmed) || /^>\s+/.test(trimmed)) { html += '<blockquote style="border-left:3px solid var(--pu);padding-left:10px;margin:6px 0;color:#666">' + trimmed.replace(/^&gt;\s+/, '').replace(/^>\s+/, '') + '</blockquote>'; i++; continue; }
+    // Lists - collect consecutive list items
+    if (/^(\d+[\.、])\s+/.test(trimmed) || /^[-•·]\s+/.test(trimmed)) {
+      var listItems = [];
+      while (i < lines.length) {
+        var tl = lines[i].trim();
+        if (/^(\d+[\.、])\s+/.test(tl) || /^[-•·]\s+/.test(tl)) {
+          listItems.push(tl);
+          i++;
+        } else if (tl === '') { i++; break; }
+        else break;
+      }
+      html += '<ul style="margin:4px 0;padding-left:18px;list-style:none">';
+      listItems.forEach(function(item) {
+        var content = item.replace(/^(\d+[\.、])\s+/, '').replace(/^[-•·]\s+/, '');
+        content = content.replace(/\*\*(.+?)\*\*/g, '<strong>$1</strong>');
+        var prefix = item.match(/^(\d+[\.、])/);
+        html += '<li style="margin:3px 0;font-size:13px;line-height:1.7">' + (prefix ? '<strong>' + prefix[1] + '</strong> ' : '· ') + content + '</li>';
+      });
+      html += '</ul>';
+      continue;
+    }
+    // Regular paragraph
+    var para = trimmed;
+    para = para.replace(/\*\*(.+?)\*\*/g, '<strong>$1</strong>');
+    para = para.replace(/\*(.+?)\*/g, '<em>$1</em>');
+    para = para.replace(/`(.+?)`/g, '<code style="background:#e8e8e8;padding:2px 4px;border-radius:3px;font-size:12px">$1</code>');
+    html += '<p style="margin:4px 0;font-size:13px;line-height:1.7">' + para + '</p>';
+    i++;
   }
-  if (inTable) { tableHtml += '</tbody></table>'; out.push(tableHtml); }
-  h = out.join('\n');
-  // Bold **text**
-  h = h.replace(/\*\*(.+?)\*\*/g, '<strong>$1</strong>');
-  // Italic *text*
-  h = h.replace(/\*(.+?)\*/g, '<em>$1</em>');
-  // Inline code
-  h = h.replace(/`(.+?)`/g, '<code style="background:#e8e8e8;padding:2px 6px;border-radius:4px;font-size:12px">$1</code>');
-  // Headings
-  h = h.replace(/^### (.+)$/gm, '<h4 style="margin:12px 0 6px">$1</h4>');
-  h = h.replace(/^## (.+)$/gm, '<h3 style="margin:14px 0 8px">$1</h3>');
-  h = h.replace(/^# (.+)$/gm, '<h2 style="margin:16px 0 10px">$1</h2>');
-  // Numbered/bullet lists
-  h = h.replace(/^(\d+[\.、])\s+(.+)/gm, '<div style="margin:2px 0;padding-left:16px"><strong>$1</strong> $2</div>');
-  h = h.replace(/^[-•·]\s+(.+)/gm, '<div style="margin:2px 0;padding-left:16px">· $1</div>');
-  // Block quotes
-  h = h.replace(/^&gt; (.+)$/gm, '<blockquote style="border-left:3px solid var(--pu);padding-left:12px;margin:6px 0;color:#666">$1</blockquote>');
-  // Line breaks
-  h = h.replace(/\n\n/g, '<br><br>');
-  h = h.replace(/\n/g, '<br>');
-  return h;
+  return html;
 }
 
 function showMacro() {
