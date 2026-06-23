@@ -202,6 +202,16 @@ body{font-family:-apple-system,BlinkMacSystemFont,"Segoe UI","PingFang SC","Micr
   .dash-chart-card canvas{max-height:180px}
   .dash-metric{padding:14px}
   .dash-metric .value{font-size:20px}
+  .prof-card{margin-bottom:18px}
+  .prof-body{padding:14px 18px 18px}
+  .prof-row{padding:10px 12px;margin-bottom:8px;font-size:13px}
+  .prof-tags{padding-top:10px;margin-top:8px}
+  .macro-section-header{margin:22px 0 12px}
+  .macro-section-header h3{font-size:16px}
+  .know-pred-hdr{padding:14px 18px}
+  .know-pred-body{padding:14px 18px}
+  .hot-topic-hdr{padding:12px 16px}
+  .hot-topic-body{padding:12px 16px}
 }
 @media(max-width:480px){
   .sidebar{position:fixed;left:-260px;top:0;bottom:0;width:260px;z-index:1000;transition:left .25s;box-shadow:2px 0 16px rgba(0,0,0,.15)}
@@ -235,6 +245,28 @@ body{font-family:-apple-system,BlinkMacSystemFont,"Segoe UI","PingFang SC","Micr
   .dash-charts{grid-template-columns:1fr;gap:10px}
   .dash-chart-card{padding:12px}.dash-chart-card h4{font-size:12px}.dash-chart-card .subtitle{font-size:10px}
   .dash-chart-card canvas{max-height:200px}
+  .prof-card{border-left-width:3px;margin-bottom:16px;border-radius:10px}
+  .prof-hdr{padding:14px 16px}.prof-hdr h3{font-size:15px}
+  .prof-body{padding:12px 14px 16px}
+  .prof-row{padding:9px 10px;margin-bottom:8px;font-size:12px;line-height:1.7;border-radius:6px}
+  .prof-tags{padding-top:10px;margin-top:8px;gap:4px}
+  .prof-tag{padding:3px 8px;font-size:10px}
+  .macro-section-header{margin:18px 0 10px;padding-bottom:8px;flex-wrap:wrap}
+  .macro-section-header h3{font-size:15px}
+  .macro-section-header .badge{font-size:10px;padding:2px 10px}
+  .know-pred-hdr{padding:12px 14px}.know-pred-hdr h4{font-size:14px}
+  .know-pred-body{padding:12px 14px}
+  .know-pred-body .brief{padding:10px 12px;font-size:12px}
+  .know-pred-dir{padding:10px 12px;font-size:12px}
+  .know-pred-q .pq{padding:8px 12px;font-size:12px}
+  .know-pred-section h5{font-size:12px}
+  .know-pred-ref{padding:3px 8px;font-size:10px}
+  .hot-topic-hdr{padding:10px 14px}.hot-topic-hdr h4{font-size:14px}
+  .hot-topic-body{padding:10px 14px}.hot-topic-body p{font-size:12px}
+  .hot-topic-hint{padding:8px 12px;font-size:11px}
+  .hot-topic-kn .kn-tag{padding:3px 8px;font-size:10px}
+  .hot-topic-tag{padding:2px 8px;font-size:10px}
+  .ai-btn-row button{width:100%;padding:10px 14px!important;font-size:13px!important}
 }
 .mobile-menu-btn{display:none;position:fixed;top:12px;left:12px;z-index:1001;background:var(--card);border:1px solid var(--bdr);border-radius:10px;padding:10px 12px;font-size:20px;cursor:pointer;box-shadow:0 2px 12px rgba(0,0,0,.12);min-width:44px;min-height:44px;text-align:center
 @media(max-width:480px){.mobile-menu-btn{display:block}}
@@ -346,15 +378,17 @@ body{font-family:-apple-system,BlinkMacSystemFont,"Segoe UI","PingFang SC","Micr
 .hot-topic-hint{padding:10px 14px;background:#fef9ee;border-radius:8px;font-size:12px;color:#92400e;border:1px solid #fcd34d;line-height:1.7}
 
 /* Professor Cards */
-.prof-card{background:var(--card);border-radius:12px;box-shadow:var(--sh);margin-bottom:14px;overflow:hidden;border:1px solid var(--bdr);border-left:3px solid var(--bl)}
-.prof-hdr{padding:14px 20px;border-bottom:1px solid #f0ede8}
+.prof-card{background:var(--card);border-radius:12px;box-shadow:var(--sh);margin-bottom:20px;overflow:hidden;border:1px solid var(--bdr);border-left:3px solid var(--bl)}
+.prof-hdr{padding:16px 22px;border-bottom:1px solid #e5e2db;background:linear-gradient(to right,#fafaf8,var(--card))}
 .prof-hdr h3{font-size:16px;font-weight:700;margin-bottom:4px}
 .prof-hdr .title{font-size:12px;color:var(--ts)}
-.prof-body{padding:14px 20px}
-.prof-row{font-size:13px;margin-bottom:6px;line-height:1.7}
+.prof-body{padding:16px 22px 20px}
+.prof-row{font-size:13px;margin-bottom:10px;line-height:1.8;padding:10px 14px;border-radius:8px;background:#fafaf8}
 .prof-row strong{color:var(--r)}
-.prof-tags{display:flex;gap:5px;flex-wrap:wrap;margin-top:8px}
-.prof-tag{padding:3px 10px;border-radius:10px;font-size:11px;background:#eff6ff;color:#1d4ed8}
+.prof-row+.prof-row{margin-top:4px}
+.prof-tags{display:flex;gap:5px;flex-wrap:wrap;margin-top:12px;padding-top:12px;border-top:1px solid #efede9}
+.prof-tag{padding:4px 12px;border-radius:10px;font-size:11px;background:#eff6ff;color:#1d4ed8}
+.prof-card .ai-btn-row{margin-top:14px;padding-top:12px;border-top:1px dashed #e5e2db}
 
 
 /* ===== LEARNING PATH ===== */
@@ -1564,8 +1598,8 @@ function showProfessors() {
     var profId = 'profAI_' + name.replace(/[^\u4e00-\u9fa5a-zA-Z0-9]/g, '_');
     var researchStr = p.research.join('、').replace(/'/g,"\\'");
     var recentStr = p.recent.replace(/'/g,"\\'");
-    h += '<div style="margin-top:10px"><button onclick="aiProfessorPredict(\'' + name.replace(/'/g,"\\'") + '\',[\'' + researchStr + '\'],\'' + recentStr + '\')" style="padding:6px 14px;background:linear-gradient(135deg,var(--pu),#9333ea);color:#fff;border:none;border-radius:6px;font-size:12px;cursor:pointer">🤖 AI推测出题方向</button></div>';
-    h += '<div id="' + profId + '" style="margin-top:10px;font-size:13px;line-height:1.7"></div>';
+    h += '<div class="ai-btn-row"><button onclick="aiProfessorPredict(\'' + name.replace(/'/g,"\\'") + '\',[\'' + researchStr + '\'],\'' + recentStr + '\')" style="padding:6px 14px;background:linear-gradient(135deg,var(--pu),#9333ea);color:#fff;border:none;border-radius:6px;font-size:12px;cursor:pointer">🤖 AI推测出题方向</button></div>';
+    h += '<div id="' + profId + '" style="margin-top:12px;padding:12px 14px;font-size:13px;line-height:1.7;background:#faf8ff;border-radius:8px;border:1px solid #ede9fe;min-height:20px"></div>';
     h += '<div class="prof-tags">';
     p.research.forEach(function(r) { h += '<span class="prof-tag">' + r + '</span>'; });
     h += '</div></div></div>';
