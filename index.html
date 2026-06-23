@@ -1943,22 +1943,42 @@ function startQuiz() {
       ids.forEach(function(id) { DATA.forEach(function(q) { if (q.id == id) pool.push(q); }); });
     }
   }
-  // Adaptive scoring: prioritize questions from unviewed/undone knowledge
-  pool = pool.slice().sort(function(a, b) {
-    var scoreA = 0, scoreB = 0;
-    var ka = a.knowledge || [], kb = b.knowledge || [];
-    // Prefer questions with unviewed knowledge
-    ka.forEach(function(k) { if (!knowledgeViews[k]) scoreA += 3; });
-    kb.forEach(function(k) { if (!knowledgeViews[k]) scoreB += 3; });
-    // Penalize already-done questions
-    if (marks[a.id] && marks[a.id].done) scoreA -= 5;
-    if (marks[b.id] && marks[b.id].done) scoreB -= 5;
-    // Random factor
-    scoreA += Math.random() * 2;
-    scoreB += Math.random() * 2;
-    return scoreB - scoreA;
+  // Fisher-Yates shuffle for true randomness
+  pool = pool.slice();
+  for (var i = pool.length - 1; i > 0; i--) {
+    var j = Math.floor(Math.random() * (i + 1));
+    var tmp = pool[i]; pool[i] = pool[j]; pool[j] = tmp;
+  }
+  // Mild weighting: move undone/unviewed questions slightly earlier, done questions slightly later
+  var undone = [], viewed = [], done = [];
+  pool.forEach(function(q) {
+    if (marks[q.id] && marks[q.id].done) { done.push(q); }
+    else {
+      var hasNew = (q.knowledge || []).some(function(k) { return !knowledgeViews[k]; });
+      if (hasNew) undone.push(q); else viewed.push(q);
+    }
   });
-  quizQs = pool.slice(0, Math.min(15, pool.length));
+  // Interleave: undone first (60%), viewed (30%), done (10%)
+  var selected = [];
+  var target = Math.min(15, pool.length);
+  var nUndone = Math.min(Math.ceil(target * 0.6), undone.length);
+  var nViewed = Math.min(Math.ceil(target * 0.3), viewed.length);
+  var nDone = Math.min(target - nUndone - nViewed, done.length);
+  if (nUndone + nViewed + nDone < target) {
+    // Fill remaining from other pools
+    var remain = target - nUndone - nViewed - nDone;
+    var extraUndone = Math.min(remain, undone.length - nUndone);
+    nUndone += extraUndone; remain -= extraUndone;
+    var extraViewed = Math.min(remain, viewed.length - nViewed);
+    nViewed += extraViewed;
+  }
+  selected = selected.concat(undone.slice(0, nUndone), viewed.slice(0, nViewed), done.slice(0, nDone));
+  // Shuffle selected again to mix the groups
+  for (var i = selected.length - 1; i > 0; i--) {
+    var j = Math.floor(Math.random() * (i + 1));
+    var tmp = selected[i]; selected[i] = selected[j]; selected[j] = tmp;
+  }
+  quizQs = selected.slice(0, target);
   quizIdx = 0;
   renderQuiz();
 }
