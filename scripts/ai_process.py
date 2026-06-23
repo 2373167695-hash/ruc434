@@ -15,22 +15,44 @@ from pathlib import Path
 import requests
 
 DATA_DIR = Path(__file__).resolve().parent.parent / "data"
+ROOT_DIR = Path(__file__).resolve().parent.parent
 
 MIMO_URL = "https://api.xiaomimimo.com/v1/chat/completions"
-MIMO_KEY = os.environ.get("MIMO_API_KEY", "")
 MIMO_MODEL = "mimo-v2.5"
 
-HEADERS = {
-    "Authorization": f"Bearer {MIMO_KEY}",
-    "Content-Type": "application/json",
-}
+def get_api_key():
+    """获取 MiMo API Key，优先环境变量，其次从index.html提取"""
+    key = os.environ.get("MIMO_API_KEY", "")
+    if key:
+        return key
+    
+    # 尝试从 index.html 的 getAPIKey() 函数中提取
+    html_path = ROOT_DIR / "index.html"
+    if html_path.exists():
+        import re
+        with open(html_path, "r") as f:
+            html = f.read()
+        m = re.search(r'function getAPIKey\(\)\{return\s*"([^"]+)"', html)
+        if m:
+            return m.group(1)
+    
+    return ""
 
+HEADERS = None  # Will be set when key is available
 
 def call_mimo(system_prompt, user_prompt, max_tokens=2000):
     """调用 MiMo API"""
-    if not MIMO_KEY:
-        print("  [WARN] MIMO_API_KEY 未设置，跳过 AI 加工")
+    key = get_api_key()
+    if not key:
+        print("  [WARN] API Key 未找到，跳过 AI 加工")
         return None
+    
+    global HEADERS
+    if HEADERS is None:
+        HEADERS = {
+            "Authorization": f"Bearer {key}",
+            "Content-Type": "application/json",
+        }
     
     try:
         resp = requests.post(
@@ -306,10 +328,10 @@ def process_hotspots_batch():
 
 
 def main():
-    if not MIMO_KEY:
+    key = get_api_key()
+    if not key:
         print("=" * 60)
-        print("MIMO_API_KEY 环境变量未设置")
-        print("请在 GitHub Secrets 中设置 MIMO_API_KEY")
+        print("API Key 未找到（环境变量或index.html中均未设置）")
         print("=" * 60)
         return 1
     
