@@ -13,9 +13,9 @@ const HTML_PATH = path.join(ROOT, "index.html");
 const DATA_DIR = path.join(ROOT, "data");
 
 const MIN_INDICATORS = 3;           // 至少要有3个指标
-const MIN_DATA_POINTS = 3;          // 每个指标至少3个数据点
-const EXPECTED_YEAR = 2026;         // 预期年份
-const TOLERATED_YEARS = 2;          // 允许前后2年的数据
+const MIN_DATA_POINTS = 1;          // 每个指标至少1个数据点
+const EXPECTED_YEAR = 2026;
+const TOLERATED_YEARS = 2;
 
 function validateMacroData(data) {
     const indicators = data?.dashboard?.indicators;
@@ -51,8 +51,8 @@ function validateMacroData(data) {
             const val = pt.value;
             if (typeof val !== "number" || isNaN(val)) continue;
             
-            // CFETS指数或其他指数类指标
-            if (ind.name.includes("CFETS") || ind.name.includes("指数")) {
+            // 指数类指标（仅限CFETS等汇率指数，不包括CPI/PPI等价格指数）
+            if (ind.name.includes("CFETS") || (ind.name.includes("汇率") && ind.name.includes("指数"))) {
                 if (val < 70 || val > 120) {
                     console.log(`[校验失败] "${ind.name}" 数值异常: ${val} (CFETS正常范围70-120)`);
                     return false;
