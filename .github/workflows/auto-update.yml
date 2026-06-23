@@ -1,0 +1,58 @@
+name: 自动更新热点与宏观数据
+
+on:
+  schedule:
+    - cron: '0 0 * * 1'      # 每周一 UTC 0:00 = 北京时间 8:00
+    - cron: '0 0 1 * *'      # 每月1号 UTC 0:00
+  workflow_dispatch:          # 支持手动触发
+
+jobs:
+  update:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write          # 允许 git push
+
+    steps:
+      - name: 检出代码
+        uses: actions/checkout@v4
+
+      - name: 设置 Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+
+      - name: 设置 Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+
+      - name: 安装 Python 依赖
+        run: pip install akshare requests beautifulsoup4
+
+      - name: 采集宏观数据
+        run: python scripts/fetch_macro.py
+
+      - name: 采集热点数据
+        run: python scripts/fetch_hotspots.py
+        continue-on-error: true
+
+      - name: AI 智能加工
+        env:
+          MIMO_API_KEY: ${{ secrets.MIMO_API_KEY }}
+        run: python scripts/ai_process.py
+
+      - name: 重新构建 HTML
+        run: node scripts/rebuild.js
+
+      - name: 提交变更并推送
+        run: |
+          git config user.name "r434-bot"
+          git config user.email "bot@r434.pages.dev"
+          git add data/ index.html
+          if git diff --staged --quiet; then
+            echo "没有数据变更，跳过提交"
+          else
+            git commit -m "auto: 更新热点与宏观数据 [$(date +%Y-%m-%d)]"
+            git push
+            echo "已提交并推送最新数据"
+          fi
