@@ -2662,7 +2662,7 @@ function showHotCategory(idx) {
   var cat = HOT_TOPICS.categories[idx];
   if (!cat) return;
   
-  document.getElementById('bc').innerHTML = '<span>🔥 热点素材 / ' + cat.category + '</span>';
+  document.getElementById('bc').innerHTML = '<span style="cursor:pointer;color:var(--pu);text-decoration:underline" onclick="showHotTopic()">🔥 热点素材</span> <span style="color:var(--ts)">/</span> ' + cat.category;
   var h = '<div class="hero"><h1>' + cat.icon + ' ' + cat.category + '</h1><div class="desc">共 ' + cat.cards.length + ' 个备考专题</div></div>';
   
   (cat.cards || []).forEach(function(issue) {
