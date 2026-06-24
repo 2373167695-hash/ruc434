@@ -1,0 +1,24 @@
+<!DOCTYPE html>
+<html><head><meta charset="utf-8"></head><body>
+<h2>Test</h2><button id="b" onclick="t()">TEST</button>
+<pre id="r"></pre>
+<script>
+async function t(){
+  document.getElementById('b').textContent='Wait...';
+  document.getElementById('b').disabled=true;
+  var out=document.getElementById('r');
+  out.textContent='';
+  try{
+    var resp=await fetch('https://api.ruc434s.cloud',{
+      method:'POST',
+      headers:{'Content-Type':'application/json'},
+      body:JSON.stringify({messages:[{role:'user',content:'说一个字：通'}]})
+    });
+    var data=await resp.json();
+    out.textContent='OK! Content: '+(data.content||'[empty]');
+  }catch(e){
+    out.textContent='FAIL: '+e.message;
+  }
+}
+</script>
+</body></html>
