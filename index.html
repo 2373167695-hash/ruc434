@@ -700,7 +700,7 @@ function navigate(p, topicName) {
   else if (p === 'stats') { showStats(); }
   else if (p === 'cards') { showCards(); } else if (p === 'hot') { showHotTopic(); }
   else if (p === 'graph') { showGraph(); }
-  else if (p === 'aichat') { openAIPanel(); }
+  else if (p === 'aichat') { showAI(); }
   else if (p === 'allquestions') { showAllQuestions(); }
   else if (p === 'wrongbook') { showWrongBook(); }
   else if (p.indexOf('kn:') === 0) { showKnContent(p.substring(3), topicName || ''); }
@@ -992,6 +992,182 @@ function renderMarkdown(text) {
     i++;
   }
   return html;
+}
+
+function showAI() {
+  document.getElementById("bc").innerHTML = '<span>💬 AI助手</span>';
+  
+  var h = '';
+  
+  // Hero section
+  h += '<div class="hero"><h1>💬 AI 备考助手</h1>' +
+    '<div class="desc">基于人大434历年真题和标准答案，提供智能问答、知识点讲解、模拟出题等服务。</div>' +
+    '<div class="sts">' +
+    '<div class="st">🤖 模型: <strong>MiMo v2.5</strong></div>' +
+    '<div class="st">📚 知识库: <strong>' + DATA.length + '道真题 + ' + Object.keys(KNOWLEDGE).length + '个知识点</strong></div>' +
+    '<div class="st">💡 上下文: <strong>1M tokens</strong></div>' +
+    '</div></div>';
+  
+  // Quick question buttons
+  h += '<div style="margin-bottom:16px;display:flex;flex-wrap:wrap;gap:8px">';
+  var quickQuestions = [
+    '比较优势理论和H-O理论的区别',
+    'OLI范式的三个条件是什么',
+    '汇率变动对国际贸易的影响',
+    '跨国公司进入国际市场的模式',
+    '人民币国际化的现状与挑战',
+    '全球价值链重构对中国的影响'
+  ];
+  quickQuestions.forEach(function(q) {
+    h += '<button onclick="askAI(\'' + q.replace(/'/g, "\\'") + '\')" style="padding:6px 12px;background:var(--card);border:1px solid var(--bdr);border-radius:16px;font-size:12px;cursor:pointer;color:var(--t);white-space:nowrap">' + q + '</button>';
+  });
+  h += '</div>';
+  
+  // Chat container
+  h += '<div id="ai-chat-container" style="background:var(--card);border:1px solid var(--bdr);border-radius:12px;overflow:hidden">';
+  
+  // Chat messages area
+  h += '<div id="ai-chat-body" style="height:500px;overflow-y:auto;padding:20px;display:flex;flex-direction:column;gap:12px">';
+  
+  // Welcome message
+  h += '<div style="background:#f5f3ef;padding:16px 20px;border-radius:12px;font-size:14px;line-height:1.8">';
+  h += '<strong>👋 你好！我是人大434备考AI助手。</strong><br><br>';
+  h += '我可以帮你：<br>';
+  h += '• 解答国际贸易、国际金融、国际商务管理等问题<br>';
+  h += '• 讲解知识点，对比相似理论<br>';
+  h += '• 生成模拟题和参考答案<br>';
+  h += '• 分析宏观经济热点与考试关联<br><br>';
+  h += '试试点击上方的快捷问题，或者直接输入你的问题。</div>';
+  
+  // Load chat history
+  if (chatHistory.length > 0) {
+    chatHistory.forEach(function(msg) {
+      if (msg.role === 'assistant') {
+        h += '<div style="background:#f5f3ef;padding:16px 20px;border-radius:12px;font-size:14px;line-height:1.8">' + renderMarkdown(msg.content) + '</div>';
+      } else {
+        h += '<div style="background:var(--pu);color:#fff;padding:16px 20px;border-radius:12px;font-size:14px;line-height:1.8;align-self:flex-end;max-width:80%">' + msg.content + '</div>';
+      }
+    });
+  }
+  
+  h += '</div>';
+  
+  // Input area
+  h += '<div style="padding:16px 20px;border-top:1px solid var(--bdr);display:flex;gap:12px">';
+  h += '<textarea id="ai-chat-input" placeholder="输入你的问题... (Enter发送，Shift+Enter换行)" rows="2" style="flex:1;padding:12px 16px;border:1px solid var(--bdr);border-radius:10px;font-size:14px;outline:none;background:var(--bg);resize:none;font-family:inherit" onkeydown="if(event.key===\'Enter\' && !event.shiftKey){event.preventDefault();sendAIMessage()}"></textarea>';
+  h += '<div style="display:flex;flex-direction:column;gap:8px">';
+  h += '<button onclick="sendAIMessage()" style="padding:12px 24px;background:var(--pu);color:#fff;border:none;border-radius:10px;font-size:14px;font-weight:600;cursor:pointer;white-space:nowrap">发送</button>';
+  h += '<button onclick="clearAIChat()" style="padding:8px 16px;background:var(--card);border:1px solid var(--bdr);border-radius:10px;font-size:12px;cursor:pointer;color:var(--ts)">清空</button>';
+  h += '</div>';
+  h += '</div>';
+  
+  h += '</div>';
+  
+  document.getElementById("ct").innerHTML = h;
+  
+  // Scroll to bottom
+  var chatBody = document.getElementById('ai-chat-body');
+  if (chatBody) chatBody.scrollTop = chatBody.scrollHeight;
+}
+
+function askAI(question) {
+  var input = document.getElementById('ai-chat-input');
+  if (input) {
+    input.value = question;
+    sendAIMessage();
+  }
+}
+
+function sendAIMessage() {
+  var input = document.getElementById('ai-chat-input');
+  if (!input) return;
+  var q = input.value.trim();
+  if (!q) return;
+  input.value = '';
+  
+  var chatBody = document.getElementById('ai-chat-body');
+  if (!chatBody) return;
+  
+  // Add user message
+  chatBody.innerHTML += '<div style="background:var(--pu);color:#fff;padding:16px 20px;border-radius:12px;font-size:14px;line-height:1.8;align-self:flex-end;max-width:80%">' + q + '</div>';
+  
+  // Add loading indicator
+  var loadingId = 'ai-loading-' + Date.now();
+  chatBody.innerHTML += '<div id="' + loadingId + '" style="background:#f5f3ef;padding:16px 20px;border-radius:12px;font-size:14px;color:var(--ts)"><span class="chat-dot"></span><span class="chat-dot"></span><span class="chat-dot"></span> 思考中...</div>';
+  chatBody.scrollTop = chatBody.scrollHeight;
+  
+  // Add to history
+  chatHistory.push({role: 'user', content: q});
+  
+  // Build context
+  var ctx = buildAIContext(q);
+  var sys = RUC434_STYLE + "\n你是人大434国际商务考研AI助手。你的数据库中已包含完整的历年真题和标准答案，你随时可以引用任何一道真题。请严格遵循以上写作风格，参考数据库中的真题答案、知识点和热点素材回答问题。公式请用$...$包裹。\n" + ctx + "\n\n要求：必须参考数据库中的真实真题和答案来回答；贴合人大434风格、结构化、分点作答、术语中英文对照、结尾有考点提示。";
+  
+  var msgs = [{role: 'system', content: sys}];
+  chatHistory.slice(-10).forEach(function(h) {
+    msgs.push({role: h.role, content: h.content});
+  });
+  
+  // Call API
+  fetch(DS_URL, {
+    method: 'POST',
+    headers: {Authorization: 'Bearer ' + getAPIKey(), 'Content-Type': 'application/json'},
+    body: JSON.stringify({model: 'mimo-v2.5', messages: msgs, stream: true, temperature: 0.3})
+  }).then(function(r) {
+    if (!r.ok) throw Error('HTTP ' + r.status);
+    return r.body.getReader();
+  }).then(function(rd) {
+    var b = '', t = '', d = new TextDecoder();
+    var responseId = 'ai-response-' + Date.now();
+    var loadingEl = document.getElementById(loadingId);
+    if (loadingEl) loadingEl.id = responseId;
+    
+    function n() {
+      rd.read().then(function(r) {
+        if (r.done) {
+          var respEl = document.getElementById(responseId);
+          if (respEl) respEl.innerHTML = renderMarkdown(t);
+          chatHistory.push({role: 'assistant', content: t});
+          saveState();
+          chatBody.scrollTop = chatBody.scrollHeight;
+          return;
+        }
+        b += d.decode(r.value, {stream: true});
+        var ls = b.split('\n');
+        b = ls.pop() || '';
+        ls.forEach(function(l) {
+          if (l.startsWith('data: ')) {
+            var dd = l.substring(6);
+            if (dd == '[DONE]') return;
+            try {
+              var p = JSON.parse(dd);
+              if (p.choices && p.choices[0].delta) {
+                var x = p.choices[0].delta.content || '';
+                if (x) {
+                  t += x;
+                  var respEl = document.getElementById(responseId);
+                  if (respEl) respEl.innerHTML = renderMarkdown(t);
+                  chatBody.scrollTop = chatBody.scrollHeight;
+                }
+              }
+            } catch(e) {}
+          }
+        });
+        n();
+      });
+    }
+    n();
+  }).catch(function(err) {
+    var loadingEl = document.getElementById(loadingId);
+    if (loadingEl) loadingEl.innerHTML = '<span style="color:var(--r)">请求失败：' + err.message + '</span>';
+  });
+}
+
+function clearAIChat() {
+  if (!confirm('确定清空所有对话历史吗？')) return;
+  chatHistory = [];
+  try { localStorage.removeItem('r434_chat'); } catch(e) {}
+  showAI(); // Re-render
 }
 
 function showMacro() {
