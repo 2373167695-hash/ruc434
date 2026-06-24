@@ -458,7 +458,7 @@ var EXAM_PATTERN = {"total_questions":124,"year_range":"2011-2023","type_distrib
 var macroCount = MACRO_DATA && MACRO_DATA.dashboard ? MACRO_DATA.dashboard.indicators.length : 0;
 document.getElementById("sidebarInfo").textContent = "2011-2023 · " + DATA.length + "题 · " + macroCount + "项指标";
 
-var DS_URL = "https://ruc434-d4g5fxo6o7fde3402-1445684079.ap-shanghai.app.tcloudbase.com/proxyAI";
+var DS_URL = "https://api.ruc434s.cloud";
 function getAPIKey(){return "CLOUDBASE_PROXY_NEEDED";}
 var _tfidf={docs:[],df:{},totalDocs:0};
 function tokenize(s){return s.toLowerCase().replace(/[^\u4e00-\u9fa5a-z0-9]/g," ").split(/\s+/).filter(function(t){return t.length>1||/[\u4e00-\u9fa5]/.test(t);});}
@@ -586,7 +586,7 @@ var knowledgeViews = {};
 try { knowledgeViews = JSON.parse(localStorage.getItem("r434_kv") || "{}"); } catch(e) {}
 var curPath = localStorage.getItem("r434_path") || "", quizIdx = 0, quizQs = [], quizTimer = null, quizSeconds = 0, quizWrong = [];
 
-var DS_URL = "https://ruc434-d4g5fxo6o7fde3402-1445684079.ap-shanghai.app.tcloudbase.com/proxyAI";
+var DS_URL = "https://api.ruc434s.cloud";
 function getAPIKey(){return "CLOUDBASE_PROXY_NEEDED";}
 var chatHistory = [];
 try { chatHistory = JSON.parse(localStorage.getItem("r434_chat") || "[]"); } catch(e) {}
@@ -1100,25 +1100,37 @@ function sendAIMessage() {
   // Call API — CloudBase proxy mode: non-streaming; Direct mode: SSE streaming
   var apiKey = getAPIKey();
   if (apiKey === 'CLOUDBASE_PROXY_NEEDED') {
-    // CloudBase non-streaming mode
-    fetch(DS_URL, {
-      method: 'POST',
-      headers: {'Content-Type': 'application/json'},
-      body: JSON.stringify({messages: msgs, temperature: 0.3})
-    }).then(function(r) { return r.json(); }).then(function(data) {
-      var t = data.content || (data.error ? '错误：'+data.error : '无响应');
-      var loadingEl = document.getElementById(loadingId);
-      if (loadingEl) {
-        loadingEl.innerHTML = renderMarkdown(t);
-        loadingEl.id = 'ai-response-' + Date.now();
-      }
-      chatHistory.push({role: 'assistant', content: t});
-      saveState();
-      chatBody.scrollTop = chatBody.scrollHeight;
-    }).catch(function(err) {
-      var loadingEl = document.getElementById(loadingId);
-      if (loadingEl) loadingEl.innerHTML = '<span style="color:var(--r)">请求失败：' + err.message + '</span>';
-    });
+    var att2 = 0;
+    function doChatReq() {
+      fetch(DS_URL, {
+        method: 'POST',
+        headers: {'Content-Type': 'application/json'},
+        body: JSON.stringify({messages: msgs, temperature: 0.3})
+      }).then(function(r) { return r.json(); }).then(function(data) {
+        if (data.content) {
+          var loadingEl = document.getElementById(loadingId);
+          if (loadingEl) {
+            loadingEl.innerHTML = renderMarkdown(data.content);
+            loadingEl.id = 'ai-response-' + Date.now();
+          }
+          chatHistory.push({role: 'assistant', content: data.content});
+          saveState();
+          chatBody.scrollTop = chatBody.scrollHeight;
+        } else if (!data.error && att2 < 1) {
+          att2++; doChatReq();
+        } else {
+          var loadingEl = document.getElementById(loadingId);
+          if (loadingEl) loadingEl.innerHTML = renderMarkdown(data.error || data.message || '无响应，请重试');
+        }
+      }).catch(function(err) {
+        if (att2 < 1) { att2++; doChatReq(); }
+        else {
+          var loadingEl = document.getElementById(loadingId);
+          if (loadingEl) loadingEl.innerHTML = '<span style="color:var(--r)">请求失败：' + err.message + '</span>';
+        }
+      });
+    }
+    doChatReq();
   } else {
     // Direct SSE streaming mode
     fetch(DS_URL, {
@@ -2089,7 +2101,7 @@ function aiGradeQuestion(qid, qid2) {
   sys += '\n\n【RAG检索：相关真题范例与语料】' + ragCtx;
   sys += '\n\n【学生作答】\n' + answer;
   sys += '\n\n请按以下结构输出（用markdown）：\n## 一、评分\n总分XX/10分。各维度打分：知识点覆盖(X/4)、逻辑结构(X/3)、术语准确(X/2)、实际联系(X/1)\n\n## 二、遗漏知识点\n用表格列出：| 遗漏要点 | 应该这样写 |\n\n## 三、优化重写（85分水平）\n保留学生原有思路，但补全结构、术语和遗漏点，重写一份85分水平的答案。\n\n## 四、对照分析\n| 你的版本 | 优化版本 | 差异说明 |\n\n要求：客观、具体、可操作。';
-  fetch('https://ruc434-d4g5fxo6o7fde3402-1445684079.ap-shanghai.app.tcloudbase.com/proxyAI', {
+  fetch('https://api.ruc434s.cloud', {
     method: 'POST',
     headers: { 'Authorization': 'Bearer ' + getAPIKey(), 'Content-Type': 'application/json' },
     body: JSON.stringify({ model: 'mimo-v2.5', messages: [{ role: 'user', content: sys }], stream: true, temperature: 0.3, max_tokens: 4096 })
@@ -2360,6 +2372,17 @@ function showExamYear(year) {
 
 
 // === AI Deep Integration Functions ===
+function addFollow(cid, el, msg) {
+  var fid = el.id || cid;
+  if (fid && !document.getElementById('follow_'+fid)) {
+    var fDiv = document.createElement('div');
+    fDiv.id = 'follow_'+fid;
+    fDiv.style.cssText = 'margin-top:12px;display:flex;gap:6px';
+    fDiv.innerHTML = '<textarea id="fq_'+fid+'" placeholder="继续追问..." style="flex:1;min-height:36px;border:1px solid #d0cdc6;border-radius:8px;padding:8px;font-size:12px;resize:none;font-family:inherit" rows="2"></textarea><button onclick="aiFollowUp(\''+fid+'\')" style="padding:6px 14px;background:#7c3aed;color:#fff;border:none;border-radius:6px;cursor:pointer;font-size:12px;white-space:nowrap">追问</button>';
+    el.parentNode.appendChild(fDiv);
+    try{el.setAttribute('data-ctx',JSON.stringify(msg));}catch(e){}
+  }
+}
 function callDS(msg, cid) { callDSFast(msg, cid); }
 
 function callDSFast(msg, cid) {
@@ -2373,23 +2396,28 @@ function callDSFast(msg, cid) {
   if (styled.length > 0 && styled[0].role === 'system') {
     styled[0] = {role: 'system', content: RUC434_STYLE + '\n' + styled[0].content};
   }
-  // CloudBase proxy mode: non-streaming
+  // CloudBase proxy mode: non-streaming, with retry for cold start
   if (key === 'CLOUDBASE_PROXY_NEEDED') {
-    fetch(DS_URL, {method:'POST', headers:{'Content-Type':'application/json'},
-      body: JSON.stringify({messages:styled, temperature:0.3})
-    }).then(function(r){return r.json();}).then(function(data){
-      var t = data.content || (data.error ? '错误：'+data.error : '无响应');
-      el.innerHTML = renderMarkdown(t);
-      var fid = el.id || cid;
-      if (fid && !document.getElementById('follow_'+fid)) {
-        var fDiv = document.createElement('div');
-        fDiv.id = 'follow_'+fid;
-        fDiv.style.cssText = 'margin-top:12px;display:flex;gap:6px';
-        fDiv.innerHTML = '<textarea id="fq_'+fid+'" placeholder="继续追问..." style="flex:1;min-height:36px;border:1px solid #d0cdc6;border-radius:8px;padding:8px;font-size:12px;resize:none;font-family:inherit" rows="2"></textarea><button onclick="aiFollowUp(\''+fid+'\')" style="padding:6px 14px;background:#7c3aed;color:#fff;border:none;border-radius:6px;cursor:pointer;font-size:12px;white-space:nowrap">追问</button>';
-        el.parentNode.appendChild(fDiv);
-        try{el.setAttribute('data-ctx',JSON.stringify(msg));}catch(e){}
-      }
-    }).catch(function(err){el.innerHTML='<span style="color:var(--r)">请求失败：'+err.message+'</span>';});
+    var attempt = 0, maxRetry = 1;
+    function doRequest() {
+      fetch(DS_URL, {method:'POST', headers:{'Content-Type':'application/json'},
+        body: JSON.stringify({messages:styled, temperature:0.3})
+      }).then(function(r){return r.json();}).then(function(data){
+        if (data.content) {
+          el.innerHTML = renderMarkdown(data.content);
+          addFollow(cid, el, msg);
+        } else if (!data.error && attempt < maxRetry) {
+          attempt++;
+          doRequest();
+        } else {
+          el.innerHTML = renderMarkdown(data.error || data.message || '无响应，请重试');
+        }
+      }).catch(function(err){
+        if (attempt < maxRetry) { attempt++; doRequest(); }
+        else { el.innerHTML='<span style="color:var(--r)">请求失败：'+err.message+'</span>'; }
+      });
+    }
+    doRequest();
     return;
   }
   // Direct mode: SSE streaming
