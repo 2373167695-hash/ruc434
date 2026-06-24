@@ -459,7 +459,11 @@ var macroCount = MACRO_DATA && MACRO_DATA.dashboard ? MACRO_DATA.dashboard.indic
 document.getElementById("sidebarInfo").textContent = "2011-2023 · " + DATA.length + "题 · " + macroCount + "项指标";
 
 var DS_URL = "https://api.xiaomimimo.com/v1/chat/completions";
+var PROXY_URL = "/api/proxy";
 function getAPIKey(){return "sk-chns1a5ojdfxi52s706a8emohcqdmsa6vpquutjiaxwjmjhm";}
+// Use proxy when on Vercel (key is server-side), direct API when on GitHub Pages
+var _useProxy = null;
+function useProxy(){if(_useProxy===null){_useProxy=window.location.hostname.includes("vercel.app");}return _useProxy;}
 var _tfidf={docs:[],df:{},totalDocs:0};
 function tokenize(s){return s.toLowerCase().replace(/[^\u4e00-\u9fa5a-z0-9]/g," ").split(/\s+/).filter(function(t){return t.length>1||/[\u4e00-\u9fa5]/.test(t);});}
 function buildTfidf(){_tfidf.docs=[];_tfidf.df={};_tfidf.totalDocs=0;var all=[];DATA.forEach(function(q){all.push({type:"question",id:q.id,text:q.question+" "+(q.answer||"").substring(0,300)+" "+(q.knowledge||[]).join(" "),ref:q});});for(var k in KNOWLEDGE){var kn=KNOWLEDGE[k];all.push({type:"knowledge",id:k,text:k+" "+(kn.overview||"")+" "+(kn.key||[]).join(" ")+" "+(kn.exam||""),ref:kn});}if(ANSWER_BANK&&ANSWER_BANK.categories)ANSWER_BANK.categories.forEach(function(c){c.items.forEach(function(it){all.push({type:"answerbank",id:it.name,text:it.name+" "+(it.content||""),ref:it});});});all.forEach(function(d){var tokens=tokenize(d.text);var tf={};tokens.forEach(function(t){tf[t]=(tf[t]||0)+1;});d.tf=tf;d.tokens=tokens;for(var t in tf){_tfidf.df[t]=(_tfidf.df[t]||0)+1;}});_tfidf.docs=all;_tfidf.totalDocs=all.length;}
@@ -2349,6 +2353,28 @@ function callDSFast(msg, cid) {
   if (styled.length > 0 && styled[0].role === 'system') {
     styled[0] = {role: 'system', content: RUC434_STYLE + '\n' + styled[0].content};
   }
+  
+  // Use proxy on Vercel (hides API key), direct stream on GitHub Pages
+  if (useProxy()) {
+    fetch(PROXY_URL, {method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify({messages:styled})})
+    .then(function(r){if(!r.ok)throw Error('HTTP '+r.status);return r.json();})
+    .then(function(data){
+      var content = (data.choices && data.choices[0] && data.choices[0].message && data.choices[0].message.content) || '';
+      el.innerHTML = renderMarkdown(content);
+      var fid = el.id || cid;
+      if (fid && !document.getElementById('follow_' + fid)) {
+        var fDiv = document.createElement('div');
+        fDiv.id = 'follow_' + fid;
+        fDiv.style.cssText = 'margin-top:12px;display:flex;gap:6px';
+        fDiv.innerHTML = '<textarea id="fq_' + fid + '" placeholder="继续追问..." style="flex:1;min-height:36px;border:1px solid #d0cdc6;border-radius:8px;padding:8px;font-size:12px;resize:none;font-family:inherit" rows="2"></textarea><button onclick="aiFollowUp(\'' + fid + '\')" style="padding:6px 14px;background:#7c3aed;color:#fff;border:none;border-radius:6px;cursor:pointer;font-size:12px;white-space:nowrap">追问</button>';
+        el.parentNode.appendChild(fDiv);
+        try { el.setAttribute('data-ctx', JSON.stringify(msg)); } catch (e) {}
+      }
+    }).catch(function(err){el.innerHTML='<span style="color:var(--r)">请求失败：'+err.message+'</span>';});
+    return;
+  }
+  
+  // Direct streaming mode
   fetch(DS_URL, {method:'POST', headers:{Authorization:'Bearer '+key, 'Content-Type':'application/json'},
     body: JSON.stringify({model:'mimo-v2.5', messages:styled, stream:true, temperature:0.3})
   }).then(function(r){if(!r.ok)throw Error('HTTP '+r.status);return r.body.getReader();})
