@@ -1061,12 +1061,13 @@ function showMacro() {
   h += '</div>';
   
   // ===== LAYER 2: 宏观经济热点问题 =====
-  h += '<div class="macro-section-header"><h3>🔥 宏观经济热点问题</h3>' +
-    '<span class="badge">关联知识点</span></div>';
-  h += '<p style="font-size:13px;color:var(--ts);margin-bottom:16px;line-height:1.7">以下热点均与434考纲知识点深度关联，点击知识点标签可直接跳转学习。</p>';
-  
   var topics = MACRO_DATA.hot_topics || [];
-  topics.forEach(function(t, i) {
+  if (topics.length > 0) {
+    h += '<div class="macro-section-header"><h3>🔥 宏观经济热点问题</h3>' +
+      '<span class="badge">关联知识点</span></div>';
+    h += '<p style="font-size:13px;color:var(--ts);margin-bottom:16px;line-height:1.7">以下热点均与434考纲知识点深度关联，点击知识点标签可直接跳转学习。</p>';
+    
+    topics.forEach(function(t, i) {
     h += '<div class="hot-topic-card"><div class="hot-topic-hdr">' +
       '<div class="num">' + (i + 1) + '</div>' +
       '<div class="info"><h4>' + t.title + '</h4></div></div>' +
@@ -1098,14 +1099,17 @@ function showMacro() {
     h += '<div style="margin-top:10px"><button onclick="event.stopPropagation();aiMacroInterpret(\'' + t.title.replace(/'/g,"\\'") + '\')" style="padding:6px 14px;background:linear-gradient(135deg,#059669,#10b981);color:#fff;border:none;border-radius:6px;font-size:12px;cursor:pointer">🤖 AI考点解读</button></div>';
     h += '</div></div>';
   });
+  } // end hot_topics check
   
   // ===== LAYER 3: 知识点概览 + 出题预测 =====
-  h += '<div class="macro-section-header"><h3>📖 知识点概览 & 出题预测</h3>' +
-    '<span class="badge">预测 2027</span></div>';
-  h += '<p style="font-size:13px;color:var(--ts);margin-bottom:16px;line-height:1.7">' + 
-    (MACRO_DATA.knowledge_overview.description || '根据当前宏观经济热点，预测可能出题方向。') + '</p>';
-  
-  var kpSections = MACRO_DATA.knowledge_overview.sections || [];
+  var knowledgeOverview = MACRO_DATA.knowledge_overview;
+  if (knowledgeOverview && knowledgeOverview.sections) {
+    h += '<div class="macro-section-header"><h3>📖 知识点概览 & 出题预测</h3>' +
+      '<span class="badge">预测 2027</span></div>';
+    h += '<p style="font-size:13px;color:var(--ts);margin-bottom:16px;line-height:1.7">' + 
+      (knowledgeOverview.description || '根据当前宏观经济热点，预测可能出题方向。') + '</p>';
+    
+    var kpSections = knowledgeOverview.sections || [];
   kpSections.forEach(function(sec) {
     h += '<div class="know-pred-card"><div class="know-pred-hdr">' +
       '<span class="icon">📘</span><h4>' + sec.knowledge + '</h4>';
@@ -1151,6 +1155,7 @@ function showMacro() {
     
     h += '</div></div>';
   });
+  } // end knowledge_overview check
   
   // ===== ALSO keep daily reports at the bottom =====
   var reports = MACRO_DAILY && MACRO_DAILY.reports ? MACRO_DAILY.reports : [];
