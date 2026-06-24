@@ -1320,16 +1320,7 @@ function showMacro() {
   });
   } // end knowledge_overview check
   
-  // ===== ALSO keep daily reports at the bottom =====
-  var reports = MACRO_DAILY && MACRO_DAILY.reports ? MACRO_DAILY.reports : [];
-  if (reports.length > 0) {
-    h += '<div class="macro-section-header" style="border-color:#94a3b8"><h3>📰 宏观经济日报</h3>' +
-      '<span class="badge" style="background:#94a3b8">共' + reports.length + '期</span></div>';
-    reports.forEach(function(report) {
-      h += renderDailyReport(report);
-    });
-  }
-  
+  // ===== Daily reports removed (data embedded in MACRO_DATA instead) =====
   h += '<div id="macroAIResult" style="display:none;margin-top:16px"><div class="pcard"><div class="pcard-hdr"><h3>🤖 AI考点解读</h3></div><div class="pcard-body" id="macroAIContent"></div></div></div>';
   document.getElementById("ct").innerHTML = h;
   
