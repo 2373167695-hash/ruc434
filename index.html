@@ -553,7 +553,7 @@ function sendChat(){
   var md=document.getElementById("c-resp");
   if(!md){md=document.createElement("div");md.className="chat-msg assistant";md.id="c-resp";body.appendChild(md);}
   var key=getAPIKey();
-  fetch(DS_URL,{method:"POST",headers:{Authorization:"Bearer "+key,"Content-Type":"application/json"},body:JSON.stringify({model:"mimo-v2.5",messages:msgs,stream:true,temperature:0.3})})
+  fetch(DS_URL,{method:"POST",headers:{Authorization:"Bearer "+key,"Content-Type":"application/json"},body:JSON.stringify({model:"mimo-v2.5-pro",max_tokens:2048,messages:msgs,stream:true,temperature:0.3})})
   .then(function(r){if(!r.ok)throw Error("HTTP "+r.status);return r.body.getReader();})
   .then(function(rd){var b="",t="",d=new TextDecoder();function n(){rd.read().then(function(r){
     if(r.done){var lx=document.getElementById("c-load");if(lx)lx.remove();md.style.display="";md.innerHTML=renderMarkdown(t);
@@ -2364,7 +2364,7 @@ function callDSFast(msg, cid) {
   if (!key) { el.innerHTML = '<span style="color:var(--r)">未设置API Key</span>'; return; }
   el.style.whiteSpace = 'pre-wrap'; el.style.wordBreak = 'break-word'; el.style.overflowWrap = 'break-word'; el.style.maxHeight = '600px'; el.style.overflowY = 'auto'; el.innerHTML = '<span style="color:var(--ts)">思考中...</span>';
   fetch(DS_URL, {method:'POST', headers:{Authorization:'Bearer '+key, 'Content-Type':'application/json'},
-    body: JSON.stringify({model:'mimo-v2.5', messages:msg, stream:true, temperature:0.3})
+    body: JSON.stringify({model:'mimo-v2.5-pro',max_tokens:2048, messages:msg, stream:true, temperature:0.3})
   }).then(function(r){if(!r.ok)throw Error('HTTP '+r.status);return r.body.getReader();})
   .then(function(rd){var b='',t='',d=new TextDecoder();function n(){rd.read().then(function(r){
     if(r.done){el.innerHTML=renderMarkdown(t);return;}
@@ -2752,7 +2752,7 @@ function aiFollowUp(cid) {
     return;
   }
   // Direct mode: SSE streaming
-  fetch(DS_URL, {method:'POST', headers:{Authorization:'Bearer '+key, 'Content-Type':'application/json'}, body:JSON.stringify({model:'mimo-v2.5', messages:msgs, stream:true, temperature:0.3})}).then(function(r){
+  fetch(DS_URL, {method:'POST', headers:{Authorization:'Bearer '+key, 'Content-Type':'application/json'}, body:JSON.stringify({model:'mimo-v2.5-pro',max_tokens:2048, messages:msgs, stream:true, temperature:0.3})}).then(function(r){
     if(!r.ok) throw Error('HTTP '+r.status);
     return r.body.getReader();
   }).then(function(rd){
@@ -2953,7 +2953,7 @@ function aiExplainFollowup() {
     return;
   }
   // Direct mode: SSE streaming
-  fetch(DS_URL,{method:'POST',headers:{Authorization:'Bearer '+apiKey2,'Content-Type':'application/json'},body:JSON.stringify({model:'mimo-v2.5',messages:msgs,stream:true,temperature:0.3})}).then(function(r){if(!r.ok)throw Error('HTTP '+r.status);return r.body.getReader();}).then(function(rd){var b='',t='',d=new TextDecoder();function n(){rd.read().then(function(r){if(r.done){respEl.innerHTML=renderMarkdown(t);aiExplainHistory.push({role:'assistant',content:t});return;}b+=d.decode(r.value,{stream:true});var ls=b.split('\n');b=ls.pop()||'';ls.forEach(function(l){if(l.startsWith('data: ')){var dd=l.substring(6);if(dd=='[DONE]')return;try{var p=JSON.parse(dd);if(p.choices&&p.choices[0].delta){var x=p.choices[0].delta.content||'';if(x){t+=x;respEl.innerHTML=renderMarkdown(t);}}}catch(e){}}});n();})}n();}).catch(function(err){respEl.innerHTML='<span style=color:red>请求失败：'+err.message+'</span>';});
+  fetch(DS_URL,{method:'POST',headers:{Authorization:'Bearer '+apiKey2,'Content-Type':'application/json'},body:JSON.stringify({model:'mimo-v2.5-pro',max_tokens:2048,messages:msgs,stream:true,temperature:0.3})}).then(function(r){if(!r.ok)throw Error('HTTP '+r.status);return r.body.getReader();}).then(function(rd){var b='',t='',d=new TextDecoder();function n(){rd.read().then(function(r){if(r.done){respEl.innerHTML=renderMarkdown(t);aiExplainHistory.push({role:'assistant',content:t});return;}b+=d.decode(r.value,{stream:true});var ls=b.split('\n');b=ls.pop()||'';ls.forEach(function(l){if(l.startsWith('data: ')){var dd=l.substring(6);if(dd=='[DONE]')return;try{var p=JSON.parse(dd);if(p.choices&&p.choices[0].delta){var x=p.choices[0].delta.content||'';if(x){t+=x;respEl.innerHTML=renderMarkdown(t);}}}catch(e){}}});n();})}n();}).catch(function(err){respEl.innerHTML='<span style=color:red>请求失败：'+err.message+'</span>';});
 }
 function getPageContext() {
   var ctx = {type:'home',label:'首页'};
