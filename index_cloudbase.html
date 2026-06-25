@@ -567,8 +567,7 @@ function sendChat(){
   ld.innerHTML='<span class="chat-dot"></span><span class="chat-dot"></span><span class="chat-dot"></span>';
   body.appendChild(ld);body.scrollTop=body.scrollHeight;
   chatHistory.push({role:"user",content:q});
-  var ctx=buildAIContext(q);
-  var sys=RUC434_STYLE+"\n你是人大434国际商务考研AI助手。你的数据库中已包含完整的历年真题和标准答案，你随时可以引用任何一道真题。请严格遵循以上写作风格，参考数据库中的真题答案、知识点和热点素材回答问题。公式请用$...$包裹。\n"+ctx;
+  var sys=RUC434_STYLE+"\n你是人大434国际商务考研AI助手。严格遵循以上写作风格。";
   var msgs=[{role:"system",content:sys}];
   chatHistory.slice(-10).forEach(function(h){msgs.push({role:h.role,content:h.content});});
   var md=document.getElementById("c-resp");
@@ -1098,9 +1097,8 @@ function sendAIMessage() {
   // Add to history
   chatHistory.push({role: 'user', content: q});
   
-  // Build context
-  var ctx = buildAIContext(q);
-  var sys = RUC434_STYLE + "\n你是人大434国际商务考研AI助手。你的数据库中已包含完整的历年真题和标准答案，你随时可以引用任何一道真题。请严格遵循以上写作风格，参考数据库中的真题答案、知识点和热点素材回答问题。公式请用$...$包裹。\n" + ctx + "\n\n要求：必须参考数据库中的真实真题和答案来回答；贴合人大434风格、结构化、分点作答、术语中英文对照、结尾有考点提示。";
+  // Build context (style only, keep payload small)
+  var sys = RUC434_STYLE + "\n你是人大434国际商务考研AI助手。严格遵循以上写作风格。";
   
   var msgs = [{role: 'system', content: sys}];
   chatHistory.slice(-10).forEach(function(h) {
