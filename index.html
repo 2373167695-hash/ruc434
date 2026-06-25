@@ -567,20 +567,26 @@ function sendChat(){
   ld.innerHTML='<span class="chat-dot"></span><span class="chat-dot"></span><span class="chat-dot"></span>';
   body.appendChild(ld);body.scrollTop=body.scrollHeight;
   chatHistory.push({role:"user",content:q});
-  var msgs=[{role:"system",content:RUC434_STYLE+"\n你是人大434国际商务考研AI助手。"}];
+  var ctx=buildAIContext(q);
+  var sys=RUC434_STYLE+"\n你是人大434国际商务考研AI助手。你的数据库中已包含完整的历年真题和标准答案，你随时可以引用任何一道真题。请严格遵循以上写作风格，参考数据库中的真题答案、知识点和热点素材回答问题。公式请用$...$包裹。\n"+ctx;
+  var msgs=[{role:"system",content:sys}];
   chatHistory.slice(-10).forEach(function(h){msgs.push({role:h.role,content:h.content});});
+  var md=document.getElementById("c-resp");
+  if(!md){md=document.createElement("div");md.className="chat-msg assistant";md.id="c-resp";body.appendChild(md);}
   var key=getAPIKey();
-  fetch(DS_URL,{method:"POST",headers:{Authorization:"Bearer "+key,"Content-Type":"application/json"},body:JSON.stringify({model:"mimo-v2.5",messages:msgs,stream:true,temperature:0.3})})
-  .then(function(r){if(!r.ok)throw Error("HTTP "+r.status);return r.body.getReader();})
-  .then(function(rd){var b="",t="",d=new TextDecoder();function n(){rd.read().then(function(r){
-    if(r.done){var lx=document.getElementById("c-load");if(lx)lx.remove();var md=document.getElementById("c-resp");if(md){md.style.display="";md.innerHTML=renderMarkdown(t);}
-      chatHistory.push({role:"assistant",content:t});saveState();return;}
-    b+=d.decode(r.value,{stream:true});var ls=b.split("\n");b=ls.pop()||"";
-    ls.forEach(function(l){if(l.startsWith("data: ")){var dd=l.substring(6);if(dd=="[DONE]")return;
-      try{var p=JSON.parse(dd);if(p.choices&&p.choices[0].delta){var x=p.choices[0].delta.content||"";if(x){t+=x;
-        var lx=document.getElementById("c-load");if(lx)lx.remove();
-        var md=document.getElementById("c-resp");if(md){md.style.display="";md.innerHTML=renderMarkdown(t);}}}}catch(e){}}});n();})}n();})
-  .catch(function(err){var lx=document.getElementById("c-load");if(lx)lx.remove();var md=document.getElementById("c-resp");if(md){md.style.display="";md.innerHTML="<span style=color:red>请求失败："+err.message+"</span>";}});
+  if(key==="CLOUDBASE_PROXY_NEEDED"){
+    fetch(DS_URL,{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({messages:msgs,temperature:0.3})})
+    .then(function(r){return r.json();})
+    .then(function(data){
+      var lx=document.getElementById("c-load");if(lx)lx.remove();
+      md.style.display="";md.innerHTML=renderMarkdown(data.content||data.error||"无响应");
+      chatHistory.push({role:"assistant",content:data.content||""});saveState();
+    })
+    .catch(function(err){
+      var lx=document.getElementById("c-load");if(lx)lx.remove();
+      md.style.display="";md.innerHTML="<span style=color:red>AI请求失败："+err.message+"</span>";
+    });
+  }
 }
 
 // ===== STATE =====
@@ -1094,31 +1100,105 @@ function sendAIMessage() {
   
   // Build context
   var ctx = buildAIContext(q);
-  var sys = RUC434_STYLE + "\n你是人大434国际商务考研AI助手。严格遵循以上写作风格。\n" + ctx;
+  var sys = RUC434_STYLE + "\n你是人大434国际商务考研AI助手。你的数据库中已包含完整的历年真题和标准答案，你随时可以引用任何一道真题。请严格遵循以上写作风格，参考数据库中的真题答案、知识点和热点素材回答问题。公式请用$...$包裹。\n" + ctx + "\n\n要求：必须参考数据库中的真实真题和答案来回答；贴合人大434风格、结构化、分点作答、术语中英文对照、结尾有考点提示。";
   
   var msgs = [{role: 'system', content: sys}];
   chatHistory.slice(-10).forEach(function(h) {
     msgs.push({role: h.role, content: h.content});
   });
   
-  var key = getAPIKey();
-  fetch(DS_URL, {method:'POST', headers:{Authorization:'Bearer '+key, 'Content-Type':'application/json'},
-    body: JSON.stringify({model:'mimo-v2.5', messages:msgs, stream:true, temperature:0.3})
-  }).then(function(r){if(!r.ok)throw Error('HTTP '+r.status);return r.body.getReader();})
-  .then(function(rd){var b='',t='',d=new TextDecoder();function n(){rd.read().then(function(r){
-    if(r.done){
-      var loadingEl=document.getElementById(loadingId);
-      if(loadingEl){loadingEl.innerHTML=renderMarkdown(t);loadingEl.id='ai-response-'+Date.now();}
-      chatHistory.push({role:'assistant',content:t});saveState();return;}
-    b+=d.decode(r.value,{stream:true});var ls=b.split('\n');b=ls.pop()||'';
-    ls.forEach(function(l){if(l.startsWith('data: ')){var dd=l.substring(6);if(dd=='[DONE]')return;
-      try{var p=JSON.parse(dd);if(p.choices&&p.choices[0].delta){var x=p.choices[0].delta.content||'';if(x){t+=x;
-        var loadingEl=document.getElementById(loadingId);
-        if(loadingEl){loadingEl.innerHTML=renderMarkdown(t);chatBody.scrollTop=chatBody.scrollHeight;}}}}catch(e){}}});n();})}n();
-  }).catch(function(err){
-    var loadingEl=document.getElementById(loadingId);
-    if(loadingEl)loadingEl.innerHTML='<span style="color:var(--r)">请求失败：'+err.message+'</span>';
-  });function clearAIChat() {
+  // Call API — CloudBase proxy mode: non-streaming; Direct mode: SSE streaming
+  var apiKey = getAPIKey();
+  if (apiKey === 'CLOUDBASE_PROXY_NEEDED') {
+    var att2 = 0;
+    function doChatReq() {
+      fetch(DS_URL, {
+        method: 'POST',
+        headers: {'Content-Type': 'application/json'},
+        body: JSON.stringify({messages: msgs, temperature: 0.3})
+      }).then(function(r) { return r.json(); }).then(function(data) {
+        if (data.content) {
+          var loadingEl = document.getElementById(loadingId);
+          if (loadingEl) {
+            loadingEl.innerHTML = renderMarkdown(data.content);
+            loadingEl.id = 'ai-response-' + Date.now();
+          }
+          chatHistory.push({role: 'assistant', content: data.content});
+          saveState();
+          chatBody.scrollTop = chatBody.scrollHeight;
+        } else if (!data.error && att2 < 1) {
+          att2++; doChatReq();
+        } else {
+          var loadingEl = document.getElementById(loadingId);
+          if (loadingEl) loadingEl.innerHTML = renderMarkdown(data.error || data.message || '无响应，请重试');
+        }
+      }).catch(function(err) {
+        if (att2 < 1) { att2++; doChatReq(); }
+        else {
+          var loadingEl = document.getElementById(loadingId);
+          if (loadingEl) loadingEl.innerHTML = '<span style="color:var(--r)">请求失败：' + err.message + '</span>';
+        }
+      });
+    }
+    doChatReq();
+  } else {
+    // Direct SSE streaming mode
+    fetch(DS_URL, {
+      method: 'POST',
+      headers: {Authorization: 'Bearer ' + apiKey, 'Content-Type': 'application/json'},
+      body: JSON.stringify({model: 'mimo-v2.5', messages: msgs, stream: true, temperature: 0.3})
+    }).then(function(r) {
+      if (!r.ok) throw Error('HTTP ' + r.status);
+      return r.body.getReader();
+    }).then(function(rd) {
+      var b = '', t = '', d = new TextDecoder();
+      var responseId = 'ai-response-' + Date.now();
+      var loadingEl = document.getElementById(loadingId);
+      if (loadingEl) loadingEl.id = responseId;
+      
+      function n() {
+        rd.read().then(function(r) {
+          if (r.done) {
+            var respEl = document.getElementById(responseId);
+            if (respEl) respEl.innerHTML = renderMarkdown(t);
+            chatHistory.push({role: 'assistant', content: t});
+            saveState();
+            chatBody.scrollTop = chatBody.scrollHeight;
+            return;
+          }
+          b += d.decode(r.value, {stream: true});
+          var ls = b.split('\n');
+          b = ls.pop() || '';
+          ls.forEach(function(l) {
+            if (l.startsWith('data: ')) {
+              var dd = l.substring(6);
+              if (dd == '[DONE]') return;
+              try {
+                var p = JSON.parse(dd);
+                if (p.choices && p.choices[0].delta) {
+                  var x = p.choices[0].delta.content || '';
+                  if (x) {
+                    t += x;
+                    var respEl = document.getElementById(responseId);
+                    if (respEl) respEl.innerHTML = renderMarkdown(t);
+                    chatBody.scrollTop = chatBody.scrollHeight;
+                  }
+                }
+              } catch(e) {}
+            }
+          });
+          n();
+        });
+      }
+      n();
+    }).catch(function(err) {
+      var loadingEl = document.getElementById(loadingId);
+      if (loadingEl) loadingEl.innerHTML = '<span style="color:var(--r)">请求失败：' + err.message + '</span>';
+    });
+  }
+}
+
+function clearAIChat() {
   if (!confirm('确定清空所有对话历史吗？')) return;
   chatHistory = [];
   try { localStorage.removeItem('r434_chat'); } catch(e) {}
@@ -2320,6 +2400,13 @@ function callDSFast(msg, cid) {
   if (!el) return;
   var key = getAPIKey();
   if (!key) { el.innerHTML = '<span style="color:var(--r)">未设置API Key</span>'; return; }
+  el.style.whiteSpace = 'pre-wrap'; el.style.wordBreak = 'break-word'; el.style.overflowWrap = 'break-word'; el.style.maxHeight = '600px'; el.style.overflowY = 'auto'; var ld = aiLoading('思考中'); el.innerHTML = ''; el.appendChild(ld);
+  // Auto-inject 人大434写作风格指南 to first system message
+  var styled = msg.slice();
+  if (styled.length > 0 && styled[0].role === 'system') {
+    styled[0] = {role: 'system', content: RUC434_STYLE + '\n' + styled[0].content};
+  }
+  // CloudBase proxy mode: non-streaming, with retry for cold start
   el.style.whiteSpace = 'pre-wrap'; el.style.wordBreak = 'break-word'; el.style.overflowWrap = 'break-word'; el.style.maxHeight = '600px'; el.style.overflowY = 'auto'; el.innerHTML = '<span style="color:var(--ts)">思考中...</span>';
   fetch(DS_URL, {method:'POST', headers:{Authorization:'Bearer '+key, 'Content-Type':'application/json'},
     body: JSON.stringify({model:'mimo-v2.5', messages:msg, stream:true, temperature:0.3})
