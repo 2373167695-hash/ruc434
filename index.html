@@ -668,6 +668,15 @@ function goBack() {
   else { var sb = document.querySelector('.sidebar'); if (sb) sb.classList.remove('open'); }
 }
 function navigate(p, topicName) {
+  // Clean up AI fullpage if navigating away from it
+  if (p !== 'aichat') {
+    var aip = document.getElementById('ai-fullpage');
+    if (aip) { aip.remove(); }
+    var ct = document.getElementById('ct');
+    if (ct) ct.style.display = '';
+    var bc = document.getElementById('bc');
+    if (bc) bc.style.display = '';
+  }
   var bb = document.getElementById('backBtn');
   if (bb) { if (p && p !== '') bb.classList.add('show'); else bb.classList.remove('show'); }
   curPath = p; saveState();
@@ -1261,7 +1270,8 @@ function showMacro() {
       h += '<div class="hot-topic-hint">💡 <strong>考试提示：</strong>' + t.exam_hint + '</div>';
     }
     
-    h += '<div style="margin-top:10px"><button onclick="event.stopPropagation();aiMacroInterpret(\'' + t.title.replace(/'/g,"\\'") + '\')" style="padding:6px 14px;background:linear-gradient(135deg,#059669,#10b981);color:#fff;border:none;border-radius:6px;font-size:12px;cursor:pointer">🤖 AI考点解读</button></div>';
+    h += '<div style="margin-top:10px"><button onclick="event.stopPropagation();aiMacroInterpret(\'' + t.title.replace(/'/g,"\\'") + '\',\'macroAI_'+i+'\')" style="padding:6px 14px;background:linear-gradient(135deg,#059669,#10b981);color:#fff;border:none;border-radius:6px;font-size:12px;cursor:pointer">🤖 AI考点解读</button></div>';
+    h += '<div id="macroAI_' + i + '" style="margin-top:12px"></div>';
     h += '</div></div>';
   });
   } // end hot_topics check
@@ -1331,7 +1341,6 @@ function showMacro() {
     });
   }
   
-  h += '<div id="macroAIResult" style="display:none;margin-top:16px"><div class="pcard"><div class="pcard-hdr"><h3>🤖 AI考点解读</h3></div><div class="pcard-body" id="macroAIContent"></div></div></div>';
   document.getElementById("ct").innerHTML = h;
   
   // Initialize charts after DOM is ready
@@ -2402,16 +2411,14 @@ function aiQuestionExplain(qid) {
 }
 
 // 5. 宏观数据AI解读
-function aiMacroInterpret(topic) {
-  var container = document.getElementById('macroAIResult');
+function aiMacroInterpret(topic, cid) {
+  var container = document.getElementById(cid);
   if (!container) return;
-  container.style.display = 'block';
-  var body = document.getElementById('macroAIContent');
-  if (body) body.innerHTML = '<div id="macroAIInner" style="font-size:13px;line-height:1.7"></div>';
+  container.innerHTML = '<div class="pcard" style="margin:0;font-size:13px;line-height:1.7" id="macroAIInner_'+cid+'"><div class="pcard-body" style="color:var(--ts)">AI分析中...</div></div>';
   container.scrollIntoView({behavior:'smooth'});
   var ctx = (typeof buildAIContext === 'function') ? buildAIContext(topic) : '';
   var sys = '你是人大434考研辅导老师，擅长分析宏观经济与考试的关联。请分析这个宏观热点，要求：\n1.这个事件的核心要点\n2.可能考什么知识点（列出2-3个）\n3.可能怎么出题（简答/论述/案例）\n4.建议怎么答（答题框架）\n5.中文，300字内\n\n相关真题与知识库：' + ctx;
-  callDSFast([{role:'system', content:sys}, {role:'user', content:'请分析宏观热点：' + topic}], 'macroAIInner');
+  callDSFast([{role:'system', content:sys}, {role:'user', content:'请分析宏观热点：' + topic}], 'macroAIInner_'+cid);
 }
 
 // 6. 图谱AI关系推理
