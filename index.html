@@ -2385,9 +2385,9 @@ function aiProfessorPredict(name, research, recent) {
   var rid = 'profAI_' + name.replace(/[^\u4e00-\u9fa5a-zA-Z0-9]/g, '_');
   var el = document.getElementById(rid);
   if (!el) return;
-  var ctx = (typeof buildAIContext === 'function') ? buildAIContext(name + ' ' + research.join(' ')) : '';
-  var sys = '你是人大434考研辅导老师。请基于导师的研究方向推测可能的出题方向，要求：\n1.该导师研究方向与434考试的关联\n2.推测2-3个可能的出题角度\n3.每个角度的答题框架\n4.需要重点复习的知识点\n5.中文，300字内\n\n相关真题与知识库：' + ctx;
-  callDSFast([{role:'system', content:sys}, {role:'user', content:'导师：'+name+'\n研究方向：'+research.join('、')+'\n最新成果：'+recent}], rid);
+  el.innerHTML = '<span style="color:var(--ts)">思考中...</span>';
+  var sys = '你是人大434考研辅导老师。请基于导师的研究方向推测可能的出题方向。中文，300字内。';
+  callDSFast([{role:'system', content:sys}, {role:'user', content:'导师：'+name+'\n研究方向：'+(research||[]).join('、')+'\n最新成果：'+recent}], rid);
 }
 
 // === All Questions Page ===
