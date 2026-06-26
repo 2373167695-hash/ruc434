@@ -717,14 +717,7 @@ function showHome() {var bb=document.getElementById('backBtn');if(bb)bb.classLis
   var s = DATA.filter(function(q) { return marks[q.id] && marks[q.id].star; }).length;
   var d = DATA.filter(function(q) { return marks[q.id] && marks[q.id].done; }).length;
   var h = '<div class="banner" style="margin-bottom:16px"><div class="ico">📅</div><div class="txt"><strong>距离初试约 180 天</strong>已完成 ' + d + '/' + n + ' 道真题，掌握度最高的模块是跨国公司 & 国际化。</div><button class="btn" onclick="navigate(\'allquestions\')" style="background:var(--or);color:#fff;border:none">开始刷题 →</button></div>' +
-    '<div class="hero"><h1>📖 人大434国际商务 · 备考系统</h1>' +
-    '<div class="desc">基于2011-2023年13年真题 + 两院最新学术动态，构建"学术预测→知识点→真题"三位一体的备考体系。</div>' +
-    '<div class="sts"><div class="st">📝 <strong>' + n + '</strong>道真题</div>' +
-    '<div class="st">📚 <strong>' + kn + '</strong>个知识模块</div>' +
-    '<div class="st">👨‍🏫 <strong>' + pn + '</strong>位重点导师</div>' +
-    '<div class="st">🎯 <strong>' + prn + '</strong>个预测方向</div>' +
-    '<div class="st">⭐ 重点 <strong>' + s + '</strong></div>' +
-    '<div class="st">✅ 已掌握 <strong>' + d + '</strong></div></div></div>';
+;
   h += '<div class="today" style="margin-bottom:16px"><h3>📋 今日推荐</h3><div class="sub">已完成 ' + d + '/' + n + ' 题 · 重点 ' + s + ' 题 · 本周学习 3.5h</div>' +
     '<div class="tasks">' +
     '<div class="task" onclick="navigate(\'allquestions\')"><div class="num" style="background:#f5f3ff;color:#7c3aed">1</div><div class="info"><h4>刷题练习</h4><p>' + (n-d) + ' 道真题待完成</p></div></div>' +
