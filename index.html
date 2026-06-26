@@ -351,43 +351,53 @@ body{font-family:-apple-system,BlinkMacSystemFont,"PingFang SC","Microsoft YaHei
     <div class="sync-status" id="syncStatus"></div>
     <div style="font-size:10px;color:#ccc;margin-top:8px">v2.0 · KV</div>
     <script>
+    var _api = 'https://api.ruc434s.cloud';
+    function _loginReg(path, u, p, e) {
+      var ac = new AbortController();
+      var to = setTimeout(function(){ ac.abort(); e.textContent = '请求超时，请重试'; }, 15000);
+      fetch(_api + path, {
+        method: 'POST',
+        headers: {'Content-Type': 'application/json'},
+        body: JSON.stringify({username: u, password: p}),
+        signal: ac.signal
+      }).then(function(r){ clearTimeout(to); return r.json(); }).then(function(d){
+        if (d.token) {
+          localStorage.setItem('r434_token', d.token);
+          localStorage.setItem('r434_user', d.username || u);
+          document.getElementById('loginOverlay').style.display = 'none';
+          // load cloud data
+          var t = d.token;
+          fetch(_api + '/data', {headers:{'Authorization':'Bearer '+t}}).then(function(r){return r.json()}).then(function(dd){
+            if (!dd.error) {
+              if (dd.marks) try{localStorage.setItem('r434',JSON.stringify(dd.marks))}catch(e){}
+              if (dd.kv) try{localStorage.setItem('r434_kv',JSON.stringify(dd.kv))}catch(e){}
+              if (dd.chat) try{localStorage.setItem('r434_chat',JSON.stringify(dd.chat))}catch(e){}
+            }
+          }).catch(function(){});
+        } else { e.textContent = d.error || '操作失败'; }
+      }).catch(function(x){
+        clearTimeout(to);
+        if (x.name === 'AbortError') return; // timeout already handled
+        e.textContent = '网络错误: ' + (x.message || '请检查网络');
+      });
+    }
     document.getElementById('btnLogin').addEventListener('click', function() {
       var u = document.getElementById('loginUser').value.trim();
       var p = document.getElementById('loginPwd').value.trim();
       var e = document.getElementById('loginErr');
       if (!u || !p) { e.textContent = '请输入用户名和密码'; return; }
       e.textContent = '验证中...';
-      fetch(SYNC_URL + '/login', {
-        method: 'POST',
-        headers: {'Content-Type': 'application/json'},
-        body: JSON.stringify({username: u, password: p})
-      }).then(function(r){return r.json()}).then(function(d){
-        if (d.token) {
-          localStorage.setItem('r434_token', d.token);
-          localStorage.setItem('r434_user', d.username || u);
-          document.getElementById('loginOverlay').style.display = 'none';
-          loadCloudData(d.token);
-        } else { e.textContent = d.error || '登录失败'; }
-      }).catch(function(x){ e.textContent = '网络错误: ' + x.message; });
+      _loginReg('/login', u, p, e);
     });
     document.getElementById('btnRegister').addEventListener('click', function() {
       var u = document.getElementById('loginUser').value.trim();
       var p = document.getElementById('loginPwd').value.trim();
       var e = document.getElementById('loginErr');
       if (!u || !p) { e.textContent = '请输入用户名和密码'; return; }
+      if (u.length < 2) { e.textContent = '用户名需2个字符以上'; return; }
+      if (p.length < 4) { e.textContent = '密码需4位以上'; return; }
       e.textContent = '注册中...';
-      fetch(SYNC_URL + '/register', {
-        method: 'POST',
-        headers: {'Content-Type': 'application/json'},
-        body: JSON.stringify({username: u, password: p})
-      }).then(function(r){return r.json()}).then(function(d){
-        if (d.token) {
-          localStorage.setItem('r434_token', d.token);
-          localStorage.setItem('r434_user', d.username || u);
-          document.getElementById('loginOverlay').style.display = 'none';
-          loadCloudData(d.token);
-        } else { e.textContent = d.error || '注册失败'; }
-      }).catch(function(x){ e.textContent = '网络错误: ' + x.message; });
+      _loginReg('/register', u, p, e);
     });
     </script>
   </div>
