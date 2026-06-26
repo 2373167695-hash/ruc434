@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<!-- deploy: 2026-06-23T21:30 deepseek-v4-pro -->
+<!-- deploy: 2026-06-26T16:33 multi-user-login -->
 <html lang="zh-CN">
 <head>
 <meta charset="UTF-8">
@@ -345,10 +345,11 @@ body{font-family:-apple-system,BlinkMacSystemFont,"PingFang SC","Microsoft YaHei
     <p>登录或注册账号</p>
     <input type="text" id="loginUser" class="user" placeholder="用户名" autofocus>
     <input type="password" id="loginPwd" placeholder="密码" onkeydown="if(event.key==='Enter')doLogin()">
-    <button onclick="doLogin()">登录</button>
-    <button onclick="doRegister()" style="background:#f0fdf4;color:#059669;border:1px solid #a7f3d0;margin-top:8px">注册新账号</button>
+    <button type="button" onclick="doLogin()">登录</button>
+    <button type="button" onclick="doRegister()" style="background:#f0fdf4;color:#059669;border:1px solid #a7f3d0;margin-top:8px">注册新账号</button>
     <div class="err" id="loginErr"></div>
     <div class="sync-status" id="syncStatus"></div>
+    <div style="font-size:10px;color:#ccc;margin-top:8px">v2.0 · KV</div>
   </div>
 </div>
 
