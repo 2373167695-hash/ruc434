@@ -582,6 +582,15 @@ function getToken() {
   return localStorage.getItem('r434_token') || '';
 }
 
+// Fallback: attach click handlers if inline onclick fails
+document.addEventListener('DOMContentLoaded', function() {
+  var lb = document.querySelector('#loginOverlay button');
+  var btns = document.querySelectorAll('#loginOverlay button');
+  if (btns.length >= 1) btns[0].addEventListener('click', doLogin);
+  if (btns.length >= 2) btns[1].addEventListener('click', doRegister);
+});
+
+
 function loadCloudData(token) {
   if (!token) return;
   fetch(SYNC_URL + '/data', {
