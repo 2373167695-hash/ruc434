@@ -226,6 +226,54 @@ body{font-family:-apple-system,BlinkMacSystemFont,"PingFang SC","Microsoft YaHei
 /* ===== CHART ===== */
 .chart-container{position:relative;width:100%}
 .dash-charts canvas{max-height:250px}
+
+/* ===== ACCORDION ===== */
+.kn-accordion{margin:0 28px 6px;border:1px solid var(--bdr);border-radius:10px;overflow:hidden;background:var(--card)}
+.kn-accordion.open .kn-acc-body{display:block}
+.kn-acc-hdr{padding:14px 18px;cursor:pointer;font-size:14px;font-weight:600;color:var(--t);display:flex;align-items:center;gap:8px;user-select:none;transition:background .15s}
+.kn-acc-hdr:hover{background:#fafaf7}
+.kn-acc-arrow{transition:transform .2s;display:inline-block;color:var(--ts);font-size:11px}
+.kn-accordion.open .kn-acc-arrow{transform:rotate(90deg)}
+.kn-acc-body{display:none;padding:0 18px 14px;font-size:13px;line-height:1.8;color:#444}
+.kn-acc-body ul{padding-left:18px;margin:0;list-style:none}
+.kn-acc-body li{padding:4px 0 4px 20px;position:relative;border-bottom:1px solid var(--panel-bg)}
+.kn-acc-body li:before{content:"";position:absolute;left:0;top:12px;width:7px;height:7px;border-radius:50%;background:var(--pu);opacity:.35}
+.kn-acc-body ol{padding-left:18px;margin:0}
+.kn-acc-body ol li{padding:4px 0;list-style-type:decimal;font-size:13px;border-bottom:1px solid var(--panel-bg)}
+
+/* ===== PREDICTIONS & HOT TOPICS ===== */
+.know-pred-card{background:var(--card);border-radius:12px;box-shadow:var(--sh);margin-bottom:18px;overflow:hidden;border:1px solid var(--bdr);transition:box-shadow .2s}
+.know-pred-card:hover{box-shadow:0 4px 16px rgba(0,0,0,.1)}
+.know-pred-hdr{padding:18px 24px;border-bottom:1px solid var(--bdr);display:flex;align-items:flex-start;gap:12px}
+.know-pred-hdr h4{font-size:15px;font-weight:700}
+.know-pred-body{padding:18px 24px}
+.know-pred-section{margin-bottom:16px}
+.know-pred-section h5{font-size:13px;font-weight:700;margin-bottom:8px}
+.know-pred-brief{padding:12px 16px;background:var(--amber-bg);border-radius:8px;font-size:13px;line-height:1.7;border:1px solid var(--amber-border);color:var(--amber-text)}
+.know-pred-dir{padding:14px 16px;background:var(--panel-bg);border-radius:8px;font-size:13px;line-height:1.7}
+.know-pred-q .pq{padding:10px 14px;background:var(--panel-bg);border-radius:8px;font-size:13px;line-height:1.7;margin-bottom:6px}
+.know-pred-ref{display:inline-block;padding:4px 10px;border-radius:12px;background:var(--panel-bg);font-size:11px;cursor:pointer;transition:.15s;color:var(--ts);margin:3px}
+.know-pred-ref:hover{background:var(--pu);color:#fff}
+
+.hot-topic-card{background:var(--card);border-radius:12px;box-shadow:var(--sh);margin-bottom:16px;overflow:hidden;border:1px solid var(--bdr);transition:box-shadow .2s}
+.hot-topic-card:hover{box-shadow:0 4px 16px rgba(0,0,0,.1)}
+.hot-topic-hdr{padding:16px 20px;border-bottom:1px solid var(--bdr);display:flex;align-items:center;gap:10px}
+.hot-topic-hdr h4{font-size:15px;font-weight:700}
+.hot-topic-body{padding:16px 20px}
+.hot-topic-body p{font-size:13px;line-height:1.8;color:var(--ts)}
+.hot-topic-hint{padding:12px 16px;background:var(--amber-bg);border-radius:8px;font-size:12px;line-height:1.7;color:var(--amber-text);border:1px solid var(--amber-border)}
+.hot-topic-kn{display:flex;gap:6px;flex-wrap:wrap;margin-top:8px}
+.hot-topic-tags{display:flex;gap:6px;flex-wrap:wrap;margin-top:8px}
+.hot-topic-tag{padding:3px 10px;border-radius:12px;font-size:11px;font-weight:500;background:var(--panel-bg);color:var(--ts)}
+
+/* ===== AI ANIMATIONS ===== */
+.ai-loading-msg{display:flex;align-items:center;gap:8px;padding:10px 16px;color:var(--pu);font-size:13px}
+.ai-dot{display:inline-block;width:8px;height:8px;border-radius:50%;background:var(--pu);margin:0 2px;animation:aiBounce 1.4s infinite ease-in-out}
+.ai-dot:nth-child(1){animation-delay:0s}.ai-dot:nth-child(2){animation-delay:.2s}.ai-dot:nth-child(3){animation-delay:.4s}
+@keyframes aiBounce{0%,80%,100%{transform:scale(0);opacity:.3}40%{transform:scale(1);opacity:1}}
+.ai-sand{display:inline-block;animation:aiFlip 2s infinite ease-in-out;font-size:16px}
+@keyframes aiFlip{0%,100%{transform:rotate(0deg)}50%{transform:rotate(180deg)}}
+
 /* ===== LOGIN ===== */
 .login-overlay{position:fixed;inset:0;z-index:9999;background:var(--bg);display:flex;align-items:center;justify-content:center;flex-direction:column}
 .login-card{background:var(--card);border-radius:16px;padding:40px 36px;box-shadow:0 4px 24px rgba(0,0,0,.08);border:1px solid var(--bdr);text-align:center;max-width:380px;width:90%}
