@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<!-- v2.1 · 2026-06-27 13:39 · modular -->
+<!-- v2.1 · 2026-06-27 14:09 · modular -->
 <html lang="zh-CN">
 <head>
 <meta charset="UTF-8">
@@ -726,6 +726,45 @@ var curPath = localStorage.getItem("r434_path") || "", quizIdx = 0, quizQs = [],
 var chatHistory = [];
 try { chatHistory = JSON.parse(localStorage.getItem("r434_chat") || "[]"); } catch(e) {}
 
+// ===== WRONG QUESTION SM-2 =====
+var wrongReview = {};
+try { wrongReview = JSON.parse(localStorage.getItem("r434_wrong_review") || "{}"); } catch(e) {}
+
+function sm2NextInterval(prev, quality) {
+  var n = prev.n || 0, ef = prev.ef || 2.5, interval = prev.interval || 1;
+  if (quality < 1) { interval = 1; n = 0; }
+  else if (n === 0) interval = 1;
+  else if (n === 1) interval = 3;
+  else interval = Math.round(interval * ef);
+  ef = Math.max(1.3, ef + (0.1 - (3-quality) * (0.08 + (3-quality) * 0.02)));
+  return {n: n+1, ef: ef, interval: interval, date: new Date().toISOString().slice(0,10)};
+}
+function getDueWrongCount() {
+  var now = new Date(); var c = 0;
+  for (var id in wrongReview) {
+    var r = wrongReview[id]; if (!r.date) { c++; continue; }
+    if ((now - new Date(r.date)) > r.interval * 86400000) c++;
+  }
+  return c;
+}
+
+// ===== MASTERY TREND =====
+var masteryTrend = {};
+try { masteryTrend = JSON.parse(localStorage.getItem("r434_trend") || "{}"); } catch(e) {}
+function recordTrend() {
+  var today = new Date().toISOString().slice(0,10);
+  if (masteryTrend[today]) return;
+  var entry = {};
+  SIDEBAR.forEach(function(c) {
+    var catQids = {}, catTotal = 0, catDone = 0;
+    c.subs.forEach(function(s) { s.topics.forEach(function(t) { var ids = TQM[t.path]; if (ids) (Array.isArray(ids) ? ids : ids.split(',')).forEach(function(id) { if (!catQids[id]) { catQids[id] = true; catTotal++; } }); }); });
+    for (var qid in catQids) { if (marks[qid] && marks[qid].done) catDone++; }
+    entry[c.name] = catTotal > 0 ? Math.round(catDone / catTotal * 100) : 0;
+  });
+  masteryTrend[today] = entry;
+  try { localStorage.setItem("r434_trend", JSON.stringify(masteryTrend)); } catch(e) {}
+}
+
 var SYNC_URL = "https://api.ruc434s.cloud";
 var _syncTimer = null;
 
@@ -857,6 +896,7 @@ function buildNav() {
   knh += '<div class="ni lv0" data-p="graph">🕸️ 知识图谱</div>';
   knh += '<div class="ni lv0" data-p="aichat">💬 AI助手</div>';
   knh += '<div class="sidebar-section-label">备考工具</div>';
+  knh += '<div class="ni lv0" data-p="mockexam">🎯 AI模考</div>';
   knh += '<div class="ni lv0" data-p="macro">📊 宏观数据</div>';
   knh += '<div class="ni lv0" data-p="predictions">🎯 学术预测</div>';
   knh += '<div class="ni lv0" data-p="professors">👨‍🏫 导师研究</div>';
@@ -983,6 +1023,7 @@ function navigate(p, topicName, skipHistory) {
     else if (p === 'cards') { showCards(); } else if (p === 'hot') { showHotTopic(); }
     else if (p === 'graph') { showGraph(); }
     else if (p === 'aichat') { showAI(); }
+    else if (p === 'mockexam') { showMockExam(); }
     else if (p === 'allquestions') { showAllQuestions(); }
     else if (p === 'wrongbook') { showWrongBook(); }
     else if (p.indexOf('kn:') === 0) { showKnContent(p.substring(3), topicName || ''); }
@@ -1005,7 +1046,7 @@ function navigate(p, topicName, skipHistory) {
 }
 
 // ===== PAGES =====
-function showHome() {var bb=document.getElementById('backBtn');if(bb)bb.style.display='none';
+function showHome() {recordTrend();var bb=document.getElementById('backBtn');if(bb)bb.style.display='none';
   document.getElementById("bc").innerHTML = "首页";
   var n = DATA.length, kn = Object.keys(KNOWLEDGE).length, pn = Object.keys(PROFESSORS).length, prn = PREDICTIONS.length;
   var s = DATA.filter(function(q) { return marks[q.id] && marks[q.id].star; }).length;
@@ -1033,9 +1074,11 @@ function showHome() {var bb=document.getElementById('backBtn');if(bb)bb.style.di
     '<div class="st">✅ <strong>' + d + '</strong> 已做</div></div></div>';
 
   // Today tasks row
+  var dueW = getDueWrongCount();
   h += '<div class="today" style="margin-bottom:16px"><div class="tasks">' +
     '<div class="task" onclick="navigate(\'allquestions\')"><div class="num" style="background:rgba(94,92,230,.08);color:var(--pu)">1</div><div class="info"><h4>刷题练习</h4><p>' + (n-d) + ' 道真题待完成</p></div></div>' +
     '<div class="task" onclick="navigate(\'cards\')"><div class="num" style="background:rgba(48,209,88,.08);color:var(--gn)">2</div><div class="info"><h4>记忆卡片</h4><p>SM-2 间隔复习 · ' + Object.keys(KNOWLEDGE).length + ' 张卡片</p></div></div>' +
+    (dueW > 0 ? '<div class="task" onclick="navigate(\'wrongbook\')"><div class="num" style="background:rgba(255,69,58,.08);color:var(--r)">!</div><div class="info"><h4>错题复习</h4><p>' + dueW + ' 道错题待重做 · SM-2 间隔调度</p></div></div>' : '') +
     '<div class="task" onclick="navigate(\'aichat\')"><div class="num" style="background:rgba(255,159,10,.08);color:var(--or)">3</div><div class="info"><h4>AI 备考助手</h4><p>问考点分析、出题预测、答题技巧</p></div></div></div></div>';
 
   // Knowledge modules grid
@@ -2400,10 +2443,15 @@ function renderQuiz() {
   if (quizIdx >= quizQs.length) {
     if (quizTimer) clearInterval(quizTimer);
     var elapsed = Math.floor(quizSeconds/60) + '分' + (quizSeconds%60) + '秒';
-    // Save wrong answers
+    // Save wrong answers + SM-2 scheduling
     var wlog = JSON.parse(localStorage.getItem('r434_wrong')||'{}');
     quizWrong.forEach(function(id){ wlog[id] = (wlog[id]||0) + 1; });
     localStorage.setItem('r434_wrong', JSON.stringify(wlog));
+    // Schedule wrong questions for SM-2 review
+    quizWrong.forEach(function(id) {
+      if (!wrongReview[id]) wrongReview[id] = {n:0, ef:2.5, interval:1};
+    });
+    try { localStorage.setItem('r434_wrong_review', JSON.stringify(wrongReview)); } catch(e) {}
     var wrongCount = quizWrong.length;
     document.getElementById("ct").innerHTML = '<div class="quiz-box" style="margin:40px auto;text-align:center">' +
       '<h3>🎉 完成！</h3><p>共 ' + quizQs.length + ' 题 | 用时 ' + elapsed + '</p>' +
@@ -2491,7 +2539,7 @@ function showStats() {
   // AI Diagnosis button
   h += '<div style="margin:20px 0;text-align:center"><button onclick="aiDiagnose()" style="background:var(--pu);color:#fff;border:none;padding:12px 28px;border-radius:8px;font-size:14px;cursor:pointer">🤖 AI学习诊断</button></div><div id="aiDiagnosis" style="display:none"><div class="pcard"><div class="pcard-hdr"><h3>🤖 AI诊断报告</h3></div><div class="pcard-body"><div id="aiDiagnosisContent" style="line-height:1.8"></div></div></div></div>';
   
-  // Progress bars per module
+  // Module progress bars
   h += '<div class="pcard" style="margin-top:16px"><div class="pcard-hdr"><h3>📚 各模块学习进度</h3></div><div class="pcard-body">';
   var modOrder = ['国际贸易', '国际投资与跨国公司', '国际金融', '新兴议题'];
   modOrder.forEach(function(mod) {
@@ -2502,10 +2550,14 @@ function showStats() {
     h += '<div style="margin:12px 0"><div style="display:flex;justify-content:space-between;margin-bottom:4px"><span style="font-size:13px"><strong>' + mod + '</strong> (' + s.viewed + '/' + s.total + ')</span><span style="font-size:13px;color:' + color + '">' + pct + '%</span></div>';
     h += '<div style="background:#e8e8e8;border-radius:4px;height:8px"><div style="background:' + color + ';height:8px;border-radius:4px;width:' + pct + '%"></div></div></div>';
   });
-  
-  // Chart: module progress bar chart
   h += '<div style="margin-top:16px"><canvas id="chartModule" style="max-height:240px"></canvas></div>';
   h += '</div></div>';
+  
+  // Mastery trend chart
+  var trendKeys = Object.keys(masteryTrend).sort();
+  if (trendKeys.length >= 2) {
+    h += '<div class="pcard" style="margin-top:16px"><div class="pcard-hdr"><h3>📈 知识点掌握趋势</h3></div><div class="pcard-body"><div style="position:relative;height:260px"><canvas id="chartTrend"></canvas></div></div></div>';
+  }
   
   // Weekly activity heatmap
   h += '<div class="pcard" style="margin-top:16px"><div class="pcard-hdr"><h3>📅 过去7天学习活跃度</h3></div><div class="pcard-body">';
@@ -2557,6 +2609,16 @@ function showStats() {
         var intensity = count === 0 ? '#eeece8' : count < 3 ? '#c4b5fd' : count < 7 ? '#8b5cf6' : '#6d28d9';
         hm.innerHTML += '<div style="text-align:center"><div style="width:32px;height:32px;border-radius:6px;background:'+intensity+';margin-bottom:2px" title="'+key+': '+count+'次"></div><span style="font-size:10px;color:#999">'+days[dt.getDay()]+'</span></div>';
       }
+    }
+    // Trend chart
+    var tctx = document.getElementById('chartTrend');
+    if (tctx && typeof Chart !== 'undefined') {
+      var tKeys = Object.keys(masteryTrend).sort();
+      var colors = ['#5e5ce6','#007aff','#30d158','#ff9f0a'];
+      var datasets = modOrder.map(function(mod, mi) {
+        return {label: mod, data: tKeys.map(function(d) {return (masteryTrend[d]||{})[mod]||0;}), borderColor: colors[mi], backgroundColor: colors[mi]+'22', tension: 0.4, fill: false, pointRadius: 2};
+      });
+      new Chart(tctx, {type:'line', data:{labels:tKeys, datasets:datasets}, options:{responsive:true, maintainAspectRatio:false, plugins:{legend:{position:'bottom',labels:{boxWidth:12,font:{size:10}}}}, scales:{y:{min:0,max:100,ticks:{callback:function(v){return v+'%'}}}}}});
     }
   }, 100);
   var dk = new Date().toISOString().slice(0,10);
@@ -2716,21 +2778,23 @@ function filterAllQuestions() {
 
 // === Wrong Answer Book ===
 function showWrongBook() {
+  // Use SM-2 review page if there are scheduled wrong questions
+  if (Object.keys(wrongReview).length > 0) { showWrongReview(); return; }
   document.getElementById('bc').innerHTML = '<span>📋 错题本</span>';
   var wlog = JSON.parse(localStorage.getItem('r434_wrong')||'{}');
   var ids = Object.keys(wlog).sort(function(a,b){return wlog[b]-wlog[a];});
   var qs = [];
   ids.forEach(function(id){ DATA.forEach(function(q){ if(q.id==id) qs.push(q); }); });
-  var h = '<div class="hero"><h1>📋 错题本</h1><div class="desc">测验中答错的题目自动收录，按错误次数排序。共 ' + qs.length + ' 道。</div></div>';
+  var h = '<div class="hero"><h1>📋 错题本</h1><div class="desc">测验中答错的题目自动收录。共 ' + qs.length + ' 道。</div></div>';
   if (!qs.length) {
     h += '<div style="padding:60px;text-align:center;color:var(--ts)"><p style="font-size:16px;margin-bottom:8px">🎉 暂无错题</p><p>去「测验模式」做几道题试试</p></div>';
   } else {
-    qs.forEach(function(q){
-      var count = wlog[q.id] || 0;
+    qs.forEach(function(q){ var count = wlog[q.id] || 0;
       h += '<div style="margin-bottom:4px;padding:4px 12px;font-size:11px;color:#f44336">错误 ' + count + ' 次</div>';
       h += qCard(q);
     });
   }
+  h += '<div style="text-align:center;margin-top:16px"><button class="btn btn-gen" onclick="startQuiz();transformToReview()">🔄 开始错题测验</button></div>';
   document.getElementById('ct').innerHTML = h;
 }
 
@@ -3262,6 +3326,124 @@ function updateTopbarUser() {
     if (tu) tu.ondblclick = null;
   }
 }
+
+// ===== WRONG QUESTION SM-2 REVIEW PAGE =====
+function reviewWrongCard(id, quality) {
+  if (!wrongReview[id]) wrongReview[id] = {n:0, ef:2.5, interval:1};
+  var r = sm2NextInterval(wrongReview[id], quality);
+  wrongReview[id] = r;
+  try { localStorage.setItem('r434_wrong_review', JSON.stringify(wrongReview)); } catch(e) {}
+  if (!marks[id]) marks[id] = {};
+  marks[id].done = true;
+  marks[id].date = new Date().toISOString().slice(0,10);
+  saveState();
+  showWrongReview();
+}
+
+function showWrongReview() {
+  var ids = Object.keys(wrongReview);
+  if (!ids.length) { document.getElementById('ct').innerHTML = '<div class="hero" style="text-align:center"><h2>🎉 没有待复习的错题</h2><p style="color:var(--ts)">做完测验后，答错的题目会自动加入复习队列</p></div>'; return; }
+  var now = new Date();
+  var dueIds = [], laterIds = [];
+  ids.forEach(function(id) {
+    var r = wrongReview[id];
+    if (!r.date || (now - new Date(r.date)) > r.interval * 86400000) dueIds.push(id);
+    else laterIds.push(id);
+  });
+  document.getElementById('bc').innerHTML = '<span>📋 错题复习</span>';
+  var h = '<div class="hero"><h1>📋 错题·间隔复习</h1><div class="desc">SM-2 算法调度 · 待复习 <strong>' + dueIds.length + '</strong> 道 | 已安排 ' + laterIds.length + ' 道</div></div>';
+  dueIds.forEach(function(id) {
+    var q = DATA.find(function(x){return x.id===id;});
+    if (!q) return;
+    var r = wrongReview[id] || {}, nextDays = r.n > 0 ? (r.interval || 1) + '天' : '首次';
+    h += '<div class="pcard" style="margin-bottom:12px"><div class="pcard-body">' +
+      '<div style="display:flex;justify-content:space-between;align-items:flex-start;gap:12px"><div style="flex:1"><div style="font-size:14px;line-height:1.8;margin-bottom:8px">' + q.question + '</div>' +
+      '<div class="qa" style="max-height:300px">' + (q.answer || '暂无答案') + '</div></div>' +
+      '<div style="text-align:center;min-width:60px"><div style="font-size:11px;color:var(--ts);margin-bottom:4px">下次：' + nextDays + '</div></div></div>' +
+      '<div style="display:flex;gap:6px;justify-content:center;margin-top:12px">' +
+      '<button onclick="reviewWrongCard(\'' + id + '\',0)" class="btn" style="background:#f44336;color:#fff;font-size:12px;padding:6px 14px">不认识</button>' +
+      '<button onclick="reviewWrongCard(\'' + id + '\',1)" class="btn" style="background:#FF9800;color:#fff;font-size:12px;padding:6px 14px">模糊</button>' +
+      '<button onclick="reviewWrongCard(\'' + id + '\',3)" class="btn" style="background:#4CAF50;color:#fff;font-size:12px;padding:6px 14px">掌握</button></div></div></div>';
+  });
+  if (!dueIds.length) h += '<p style="text-align:center;color:var(--ts);padding:40px">✅ 所有错题都在复习计划中，暂无到期题目</p>';
+  document.getElementById('ct').innerHTML = h;
+}
+
+// ===== AI MOCK EXAM =====
+var mockState = {questions:[], answers:[], startTime:0, timerId:null, phase:'ready'};
+
+function showMockExam() {
+  var bb = document.getElementById('backBtn'); if (bb) bb.style.display = 'block';
+  document.getElementById('bc').innerHTML = '<span>🎯 AI模拟考试</span>';
+  mockState = {questions:[], answers:[], startTime:0, timerId:null, phase:'ready'};
+  var h = '<div class="hero"><h1>🎯 AI 模拟考试</h1><div class="desc">AI 根据真题风格和历年考点，生成 10 道模拟题（4 简答 + 3 论述 + 3 案例）。限时 150 分钟，提交后 AI 逐题批改。</div>' +
+    '<div style="margin-top:16px"><button class="btn btn-gen" onclick="startMockExam()" style="font-size:15px;padding:14px 28px">🤖 开始 AI 组卷</button></div></div>';
+  document.getElementById('ct').innerHTML = h;
+}
+
+function startMockExam() {
+  document.getElementById('ct').innerHTML = '<div style="text-align:center;padding:80px 20px"><div class="spinner"></div><p style="margin-top:16px;color:var(--ts)">AI 正在生成模拟试卷...</p></div>';
+  var ctx = buildAIContext('模拟考试');
+  var sys = RUC434_STYLE + '\n你是人大434国际商务考研命题老师。请严格按照以下要求生成模拟试卷。\n' + ctx + '\n\n【生成要求】\n1. 共10道题：简答4道(每题10分)、论述3道(每题20分)、案例3道(每题20分)\n2. 题目风格必须100%贴合人大434真题\n3. 至少2道涉及中国现实经济案例\n4. JSON输出：{\"questions\":[{\"type\":\"简答\",\"question\":\"...\",\"score\":10},...]}\n5. 只输出JSON，不要其他文字';
+  fetch(DS_URL, {method:'POST', headers:{Authorization:'Bearer '+getAPIKey(),'Content-Type':'application/json'},
+    body:JSON.stringify({model:'mimo-v2.5', messages:[{role:'system',content:sys},{role:'user',content:'生成一套人大434国际商务考研模拟试卷'}], stream:false, temperature:0.5})
+  }).then(function(r){return r.json();}).then(function(d){
+    var c = d.choices[0].message.content, m = c.match(/\{[\s\S]*\}/);
+    if (!m) throw Error('AI格式错误');
+    var data = JSON.parse(m[0]); mockState.questions = data.questions || [];
+    mockState.answers = new Array(mockState.questions.length).fill('');
+    mockState.startTime = Date.now(); mockState.phase = 'exam'; renderMockExam();
+  }).catch(function(){
+    var pool = DATA.slice(); shuffleArray(pool); mockState.questions = [];
+    [{t:'简答',n:4},{t:'论述',n:3},{t:'案例',n:3}].forEach(function(tt) {
+      var picked = pool.filter(function(q){return q.type===tt.t}).slice(0,tt.n);
+      picked.forEach(function(q){mockState.questions.push({type:q.type,question:q.question,score:q.type==='简答'?10:20,refId:q.id});});
+    });
+    mockState.answers = new Array(mockState.questions.length).fill('');
+    mockState.startTime = Date.now(); mockState.phase = 'exam'; renderMockExam();
+  });
+}
+
+function renderMockExam() {
+  var qs = mockState.questions, m = Math.floor((Date.now()-mockState.startTime)/60000);
+  var h = '<div style="position:sticky;top:16px;z-index:10;background:rgba(255,255,255,.85);backdrop-filter:blur(20px);border-radius:16px;padding:12px 20px;margin-bottom:20px;display:flex;justify-content:space-between;align-items:center;border:.5px solid rgba(255,255,255,.4)">' +
+    '<div><strong>⏱ <span id="mockTimer">' + m + '分钟</span></strong> | ' + qs.length + '题 | 总分100</div>' +
+    '<button class="btn btn-r" onclick="submitMockExam()" style="padding:8px 20px;font-size:13px">提交批改</button></div>';
+  h += '<div id="mockBody">';
+  qs.forEach(function(q,i){h += '<div class="pcard"><div class="pcard-hdr"><h3>'+(i+1)+'. '+q.type+'（'+q.score+'分）</h3></div>' +
+    '<div class="pcard-body"><div style="font-size:14px;line-height:1.8;margin-bottom:12px">'+q.question+'</div>' +
+    '<textarea id="ma_'+i+'" placeholder="输入你的答案..." style="width:100%;min-height:80px;padding:12px;border:.5px solid rgba(0,0,0,.1);border-radius:10px;font-size:14px;font-family:inherit;resize:vertical;line-height:1.8" oninput="mockState.answers['+i+']=this.value"></textarea></div></div>';});
+  h += '</div>'; document.getElementById('ct').innerHTML = h;
+  if (mockState.timerId) clearInterval(mockState.timerId);
+  mockState.timerId = setInterval(function(){var el=document.getElementById('mockTimer');if(el){var m2=Math.floor((Date.now()-mockState.startTime)/60000);el.textContent=m2+'分钟';if(m2>150)el.style.color='#f44336';}},30000);
+}
+
+function submitMockExam() {
+  if (mockState.timerId) clearInterval(mockState.timerId); mockState.phase = 'done';
+  document.getElementById('ct').innerHTML = '<div style="text-align:center;padding:80px 20px"><div class="spinner"></div><p style="margin-top:16px;color:var(--ts)">AI 正在批改试卷...</p></div>';
+  var g = '你是人大434考研阅卷老师。请逐题批改以下试卷，每题给出得分和简短评语。\n\n';
+  mockState.questions.forEach(function(q,i){g += '第'+(i+1)+'题['+q.type+'('+q.score+'分)]：'+q.question+'\n学生答案：'+(mockState.answers[i]||'(未作答)')+'\n\n';});
+  g += '\nJSON输出：{"results":[{"score":8,"max":10,"comment":"评语"},...],"total":85,"summary":"总体评价(100字内)"}';
+  fetch(DS_URL, {method:'POST',headers:{Authorization:'Bearer '+getAPIKey(),'Content-Type':'application/json'},
+    body:JSON.stringify({model:'mimo-v2.5',messages:[{role:'system',content:RUC434_STYLE},{role:'user',content:g}],stream:false,temperature:0.3})
+  }).then(function(r){return r.json();}).then(function(d){
+    var c=d.choices[0].message.content,m2=c.match(/\{[\s\S]*\}/);
+    renderMockResult(m2?JSON.parse(m2[0]):{results:[],total:0,summary:'批改完成'});
+  }).catch(function(e){renderMockResult({results:[],total:0,summary:'批改出错：'+e.message});});
+}
+
+function renderMockResult(rr) {
+  var tm = Math.floor((Date.now()-mockState.startTime)/60000);
+  var h = '<div class="hero"><h1>📝 考试结果</h1><div class="desc">用时'+tm+'分钟 | AI评分 <strong>'+(rr.total||0)+'分</strong> | '+(rr.summary||'')+'</div></div>';
+  mockState.questions.forEach(function(q,i){var r=(rr.results||[])[i]||{},p=q.score>0?Math.round((r.score||0)/q.score*100):0,cl=p>=80?'var(--gn)':p>=50?'var(--or)':'var(--r)';
+    h += '<div class="pcard"><div class="pcard-hdr"><h3>'+(i+1)+'. '+q.type+'（'+q.score+'分）</h3><span style="color:'+cl+';font-weight:700">'+(r.score||0)+'/'+q.score+'</span></div>' +
+    '<div class="pcard-body"><div style="font-size:14px;line-height:1.8;margin-bottom:8px">'+q.question+'</div>' +
+    '<div style="background:rgba(0,0,0,.02);padding:12px;border-radius:10px;font-size:13px;margin-bottom:8px"><strong>你的答案：</strong>'+(mockState.answers[i]||'(未作答)')+'</div>' +
+    '<div style="color:var(--ts);font-size:13px">'+(r.comment||'')+'</div></div></div>';});
+  h += '<div style="text-align:center;margin-top:20px"><button class="btn btn-gen" onclick="showMockExam()">重新模考</button></div>';
+  document.getElementById('ct').innerHTML = h;
+}
+
 
 var token = getToken();
 if (token) {
