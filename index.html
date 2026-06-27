@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<!-- v2.1 · 2026-06-27 01:49 · modular -->
+<!-- v2.1 · 2026-06-27 01:51 · modular -->
 <html lang="zh-CN">
 <head>
 <meta charset="UTF-8">
@@ -840,7 +840,7 @@ function showHome() {var bb=document.getElementById('backBtn');if(bb)bb.classLis
   var bestMod = '', bestPct = 0;
   SIDEBAR.forEach(function(c) {
     var catQids = {};
-    c.subs.forEach(function(s) { s.topics.forEach(function(t) { var ids = TQM[t.path]; if (ids) ids.split(',').forEach(function(id) { catQids[id] = true; }); }); });
+    c.subs.forEach(function(s) { s.topics.forEach(function(t) { var ids = TQM[t.path]; if (ids) (Array.isArray(ids) ? ids : ids.split(',')).forEach(function(id) { catQids[id] = true; }); }); });
     var total = Object.keys(catQids).length, done = 0;
     for (var qid in catQids) { if (marks[qid] && marks[qid].done) done++; }
     var pct = total > 0 ? Math.round(done / total * 100) : 0;
@@ -872,7 +872,7 @@ function showHome() {var bb=document.getElementById('backBtn');if(bb)bb.classLis
       s.topics.forEach(function(t) {
         var ids = TQM[t.path];
         if (ids) {
-          ids.split(',').forEach(function(id) {
+          (Array.isArray(ids) ? ids : ids.split(',')).forEach(function(id) {
             if (!catQids[id]) { catQids[id] = true; catTotal++; }
           });
         }
