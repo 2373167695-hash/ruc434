@@ -1,13 +1,18 @@
 <!DOCTYPE html>
-<!-- v2.1 · 2026-06-27 15:01 · modular -->
+<!-- v2.1 · 2026-06-27 15:07 · modular -->
 <html lang="zh-CN">
 <head>
 <meta charset="UTF-8">
 <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
 <meta http-equiv="Pragma" content="no-cache">
 <meta http-equiv="Expires" content="0">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="default">
+<meta name="apple-mobile-web-app-title" content="434备考">
+<meta name="theme-color" content="#5e5ce6">
 <title>人大434备考系统</title>
+<link rel="manifest" href="manifest.json">
 <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.7/dist/chart.umd.min.js"></script>
 <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/katex.min.css">
 <script src="https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/katex.min.js"></script>
@@ -3527,6 +3532,11 @@ setTimeout(function() {
   });
 }, 150);
 // ===== INIT DONE =====
+</script>
+<script>
+if ('serviceWorker' in navigator) {
+  navigator.serviceWorker.register('sw.js').then(function() { console.log('PWA ready'); }).catch(function(){});
+}
 </script>
 </body>
 </html>
