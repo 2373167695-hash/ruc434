@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<!-- v2.1 · 2026-06-27 15:07 · modular -->
+<!-- v2.1 · 2026-06-27 15:08 · modular -->
 <html lang="zh-CN">
 <head>
 <meta charset="UTF-8">
@@ -3532,11 +3532,8 @@ setTimeout(function() {
   });
 }, 150);
 // ===== INIT DONE =====
-</script>
-<script>
-if ('serviceWorker' in navigator) {
-  navigator.serviceWorker.register('sw.js').then(function() { console.log('PWA ready'); }).catch(function(){});
-}
+// Register service worker for PWA
+if ('serviceWorker' in navigator) { navigator.serviceWorker.register('sw.js'); }
 </script>
 </body>
 </html>
