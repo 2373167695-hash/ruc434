@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<!-- v2.1 · 2026-06-27 13:06 · modular -->
+<!-- v2.1 · 2026-06-27 13:08 · modular -->
 <html lang="zh-CN">
 <head>
 <meta charset="UTF-8">
@@ -1003,22 +1003,25 @@ function navigate(p, topicName, skipHistory) {
     console.error('Page render error:', err);
   }
   ct.scrollTop = 0;
-  // Double rAF: ensure browser paints new content at opacity:0 before fading in
-  requestAnimationFrame(function() {
-    requestAnimationFrame(function() {
-      ct.style.transition = 'opacity .5s ease-out';
-      ct.style.opacity = '1';
-      setTimeout(function() { ct.style.transition = ''; ct.style.opacity = ''; }, 550);
-    });
-  });
-  // Stagger homepage items after fade-in
+  // Force commit opacity:0 to layout, then animate manually
+  getComputedStyle(ct).opacity;
+  var _start = performance.now();
+  function _tick(now) {
+    var p = Math.min((now - _start) / 500, 1);
+    // ease-out quad: 1 - (1-t)^2
+    ct.style.opacity = 1 - Math.pow(1 - p, 2);
+    if (p < 1) { requestAnimationFrame(_tick); }
+    else { ct.style.opacity = ''; }
+  }
+  requestAnimationFrame(_tick);
+  // Stagger homepage items
   if (p === '' || p === 'home') {
     setTimeout(function() {
       var cards = document.querySelectorAll('#ct .gc, #ct .st, #ct .task');
       cards.forEach(function(el, i) {
         el.style.animation = 'staggerFade .5s ease-out ' + (i * 0.04) + 's both';
       });
-    }, 350);
+    }, 300);
   }
 }
 
