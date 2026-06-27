@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<!-- v2.1 · 2026-06-27 12:19 · modular -->
+<!-- v2.1 · 2026-06-27 12:27 · modular -->
 <html lang="zh-CN">
 <head>
 <meta charset="UTF-8">
@@ -254,7 +254,7 @@ body.sb-collapsed .sidebar.open ~ .sidebar-backdrop{display:block}
   radial-gradient(ellipse 400px 400px at 90% 25%,rgba(180,210,250,.35) 0%,transparent 65%),
   radial-gradient(ellipse 450px 450px at 55% 115%,rgba(180,235,200,.35) 0%,transparent 65%)
 }
-.ai-chat-hdr{position:relative;z-index:1;padding:14px 24px;display:flex;justify-content:space-between;align-items:center;
+.ai-chat-hdr{flex-shrink:0;position:relative;z-index:1;padding:14px 24px;display:flex;justify-content:space-between;align-items:center;
   background:rgba(255,255,255,.35);backdrop-filter:blur(40px) saturate(1.4);-webkit-backdrop-filter:blur(40px) saturate(1.4);
   border-bottom:.5px solid rgba(255,255,255,.3)}
 .ai-chat-hdr h3{font-size:17px;font-weight:700;color:var(--t)}
@@ -263,14 +263,14 @@ body.sb-collapsed .sidebar.open ~ .sidebar-backdrop{display:block}
 .ai-chat-hdr-btn{padding:6px 14px;background:rgba(255,255,255,.4);backdrop-filter:blur(16px);-webkit-backdrop-filter:blur(16px);
   border:.5px solid rgba(255,255,255,.4);border-radius:12px;font-size:12px;cursor:pointer;color:var(--ts);font-family:inherit;transition:var(--transition)}
 .ai-chat-hdr-btn:hover{background:rgba(255,255,255,.6);color:var(--t)}
-.ai-chat-body{flex:1;overflow-y:auto;min-height:0;padding:24px 24px 8px;display:flex;flex-direction:column;gap:14px;position:relative;z-index:1}
-.ai-chat-body::-webkit-scrollbar{width:5px}.ai-chat-body::-webkit-scrollbar-thumb{background:rgba(0,0,0,.08);border-radius:3px}
+.ai-chat-body{flex:1 1 0;overflow-y:auto;min-height:0;padding:24px 24px 8px;display:flex;flex-direction:column;gap:14px;position:relative;z-index:1}
+.ai-chat-body::-webkit-scrollbar{width:6px}.ai-chat-body::-webkit-scrollbar-track{background:transparent}.ai-chat-body::-webkit-scrollbar-thumb{background:rgba(94,92,230,.15);border-radius:3px}.ai-chat-body::-webkit-scrollbar-thumb:hover{background:rgba(94,92,230,.3)}
 .ai-welcome{background:rgba(255,255,255,.45);backdrop-filter:blur(24px);-webkit-backdrop-filter:blur(24px);
   padding:20px 24px;border-radius:18px;font-size:14px;line-height:1.8;max-width:78%;align-self:flex-start;
   border:.5px solid rgba(255,255,255,.4);position:relative;overflow:hidden}
 .ai-welcome::before{content:'';position:absolute;top:0;left:0;right:0;height:1px;background:var(--glass-highlight);pointer-events:none}
 .ai-welcome strong{font-size:15px;display:block;margin-bottom:6px}
-.ai-msg{max-width:78%;font-size:14px;line-height:1.8;word-break:break-word;position:relative;overflow:hidden}
+.ai-msg{max-width:78%;min-width:0;font-size:14px;line-height:1.8;word-break:break-word;overflow-wrap:break-word;position:relative;overflow:hidden;flex-shrink:0}
 .ai-msg-user{align-self:flex-end;background:linear-gradient(135deg,#5e5ce6,#007aff);color:#fff;
   padding:14px 20px;border-radius:18px 18px 4px 18px;margin-left:auto;box-shadow:0 2px 12px rgba(94,92,230,.15)}
 .ai-msg-user::before{content:'';position:absolute;top:0;left:0;right:0;height:1px;background:linear-gradient(90deg,transparent,rgba(255,255,255,.25),transparent);pointer-events:none}
@@ -291,7 +291,7 @@ body.sb-collapsed .sidebar.open ~ .sidebar-backdrop{display:block}
   border:.5px solid rgba(255,255,255,.3);font-size:13px;color:var(--ts);align-self:flex-start;max-width:200px}
 .ai-loading .ai-dot{width:7px;height:7px;border-radius:50%;background:var(--pu);display:inline-block;margin:0 2px;animation:aiBounce 1.4s infinite ease-in-out}
 .ai-loading .ai-dot:nth-child(1){animation-delay:0s}.ai-loading .ai-dot:nth-child(2){animation-delay:.2s}.ai-loading .ai-dot:nth-child(3){animation-delay:.4s}
-.ai-chat-input-bar{position:relative;z-index:1;padding:16px 24px 20px;display:flex;gap:12px;align-items:flex-end;
+.ai-chat-input-bar{flex-shrink:0;position:relative;z-index:1;padding:16px 24px 20px;display:flex;gap:12px;align-items:flex-end;
   background:rgba(255,255,255,.3);backdrop-filter:blur(40px) saturate(1.4);-webkit-backdrop-filter:blur(40px) saturate(1.4);
   border-top:.5px solid rgba(255,255,255,.3)}
 .ai-chat-textarea{flex:1;padding:12px 18px;border:.5px solid rgba(255,255,255,.35);border-radius:16px;
