@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<!-- v2.1 · 2026-06-27 14:21 · modular -->
+<!-- v2.1 · 2026-06-27 14:25 · modular -->
 <html lang="zh-CN">
 <head>
 <meta charset="UTF-8">
@@ -897,7 +897,6 @@ function buildNav() {
   knh += '<div class="ni lv0" data-p="aichat">💬 AI助手</div>';
   knh += '<div class="sidebar-section-label">备考工具</div>';
   knh += '<div class="ni lv0" data-p="mockexam">🎯 AI模考</div>';
-  knh += '<div class="ni lv0" data-p="freq">📊 考点频率</div>';
   knh += '<div class="ni lv0" data-p="macro">📊 宏观数据</div>';
   knh += '<div class="ni lv0" data-p="predictions">🎯 学术预测</div>';
   knh += '<div class="ni lv0" data-p="professors">👨‍🏫 导师研究</div>';
@@ -1025,7 +1024,6 @@ function navigate(p, topicName, skipHistory) {
     else if (p === 'graph') { showGraph(); }
     else if (p === 'aichat') { showAI(); }
     else if (p === 'mockexam') { showMockExam(); }
-    else if (p === 'freq') { showFreq(); }
     else if (p === 'allquestions') { showAllQuestions(); }
     else if (p === 'wrongbook') { showWrongBook(); }
     else if (p.indexOf('kn:') === 0) { showKnContent(p.substring(3), topicName || ''); }
@@ -1162,6 +1160,41 @@ function showHome() {recordTrend();var bb=document.getElementById('backBtn');if(
     '<span><span style="display:inline-block;width:12px;height:12px;border-radius:3px;background:'+heatColor(5)+';vertical-align:middle;margin-right:3px"></span>频繁</span>'+
     '<span><span style="display:inline-block;width:12px;height:12px;border-radius:3px;background:'+heatColor(8)+';vertical-align:middle;margin-right:3px"></span>密集</span></div>';
   h += '</div></div>';
+  
+  // ===== FREQUENCY TABLE (below heatmap) =====
+  var freqRows = [];
+  SIDEBAR.forEach(function(cat) {
+    cat.subs.forEach(function(sub) {
+      sub.topics.forEach(function(t) {
+        var ids = TQM[t.path]; if (!ids) return;
+        var idList = Array.isArray(ids) ? ids : ids.split(',');
+        var years = {}, types = {};
+        idList.forEach(function(id) {
+          var q = DATA.find(function(x){return x.id===id;});
+          if (q) { years[q.year] = true; types[q.type] = (types[q.type]||0)+1; }
+        });
+        freqRows.push({name:t.name, module:cat.name, count:idList.length, years:Object.keys(years).sort(), types:types});
+      });
+    });
+  });
+  freqRows.sort(function(a,b){return b.count-a.count;});
+  var maxC = freqRows[0] ? freqRows[0].count : 1;
+  h += '<div class="pcard" style="margin-top:16px"><div class="pcard-hdr"><h3>📊 考点频次 · 题型分布</h3></div><div class="pcard-body" style="overflow-x:auto;padding:0">';
+  h += '<table style="width:100%;border-collapse:collapse;font-size:11px">';
+  h += '<tr style="background:rgba(0,0,0,.02);border-bottom:2px solid var(--bdr)"><th style="padding:6px 10px;text-align:left">知识点</th><th style="padding:6px 10px;text-align:left">模块</th><th style="padding:6px 10px;text-align:center">频次</th><th style="padding:6px 10px;text-align:left">年份</th><th style="padding:6px 10px;text-align:left">题型</th></tr>';
+  freqRows.forEach(function(r) {
+    var fc = r.count>=10?'#ff453a':r.count>=5?'#ff9f0a':r.count>=2?'#5e5ce6':'var(--ts)';
+    var fbg = r.count>=10?'rgba(255,69,58,.06)':r.count>=5?'rgba(255,159,10,.06)':r.count>=2?'rgba(94,92,230,.04)':'transparent';
+    var tc = []; for (var tp in r.types) tc.push(tp+'×'+r.types[tp]);
+    h += '<tr style="border-bottom:1px solid rgba(0,0,0,.03);cursor:pointer" onclick="navigateByKnowledge(\''+r.name.replace(/'/g,"\\'")+'\')">'+
+      '<td style="padding:5px 10px;font-weight:600">'+r.name+'</td>'+
+      '<td style="padding:5px 10px;color:var(--ts);font-size:10px">'+r.module+'</td>'+
+      '<td style="padding:5px 10px;text-align:center"><span style="display:inline-block;padding:2px 7px;border-radius:8px;background:'+fbg+';color:'+fc+';font-weight:700">'+r.count+'</span><div style="height:2px;background:rgba(0,0,0,.04);margin-top:2px;border-radius:1px"><div style="height:2px;background:'+fc+';border-radius:1px;opacity:.3;width:'+Math.round(r.count/maxC*100)+'%"></div></div></td>'+
+      '<td style="padding:5px 10px;color:var(--ts);font-size:10px">'+r.years.join(', ')+'</td>'+
+      '<td style="padding:5px 10px;color:var(--ts);font-size:10px">'+tc.join(' ')+'</td></tr>';
+  });
+  h += '</table></div></div>';
+  
   document.getElementById("ct").innerHTML = h;
 }
 
@@ -3369,90 +3402,6 @@ function showWrongReview() {
   });
   if (!dueIds.length) h += '<p style="text-align:center;color:var(--ts);padding:40px">✅ 所有错题都在复习计划中，暂无到期题目</p>';
   document.getElementById('ct').innerHTML = h;
-}
-
-// ===== EXAM FREQUENCY ANALYSIS =====
-function showFreq() {
-  document.getElementById('bc').innerHTML = '<span>📊 考点频率</span>';
-  var bb = document.getElementById('backBtn'); if (bb) bb.style.display = 'block';
-  // Build frequency data from sidebar + TQM + DATA
-  var rows = [];
-  SIDEBAR.forEach(function(cat) {
-    cat.subs.forEach(function(sub) {
-      sub.topics.forEach(function(t) {
-        var ids = TQM[t.path];
-        if (!ids) return;
-        var idList = Array.isArray(ids) ? ids : ids.split(',');
-        var years = {};
-        var types = {};
-        idList.forEach(function(id) {
-          var q = DATA.find(function(x){return x.id===id;});
-          if (q) { years[q.year] = true; types[q.type] = (types[q.type]||0)+1; }
-        });
-        var yrList = Object.keys(years).sort();
-        rows.push({name:t.name, module:cat.name, sub:sub.name, count:idList.length, years:yrList, types:types, yrStr:yrList.join(', ')});
-      });
-    });
-  });
-  rows.sort(function(a,b){return b.count-a.count;});
-  var maxCount = rows[0] ? rows[0].count : 1;
-  // Build table
-  var h = '<div class="hero"><h1>📊 考点频率分析</h1><div class="desc">基于 2011-2023 年真题统计，知识点出现频率与题型分布。共 ' + rows.length + ' 个考点。</div>' +
-    '<div class="sts"><div class="st">🔥 高频(≥10次): <strong>' + rows.filter(function(r){return r.count>=10}).length + '</strong></div>' +
-    '<div class="st">📌 中频(4-9次): <strong>' + rows.filter(function(r){return r.count>=4&&r.count<10}).length + '</strong></div>' +
-    '<div class="st">❄️ 低频(≤3次): <strong>' + rows.filter(function(r){return r.count<=3}).length + '</strong></div></div></div>';
-  h += '<div class="pcard"><div class="pcard-hdr" style="display:flex;justify-content:space-between;align-items:center"><h3>📋 详细统计</h3>' +
-    '<div style="font-size:12px;color:var(--ts)">点击表头排序</div></div><div class="pcard-body" style="overflow-x:auto;padding:0">';
-  h += '<table style="width:100%;border-collapse:collapse;font-size:13px">';
-  h += '<thead><tr style="background:rgba(0,0,0,.02);border-bottom:2px solid var(--bdr)">' +
-    '<th style="padding:8px 12px;text-align:left;cursor:pointer" onclick="sortFreq(\'name\')">知识点</th>' +
-    '<th style="padding:8px 12px;text-align:left;cursor:pointer" onclick="sortFreq(\'module\')">模块</th>' +
-    '<th style="padding:8px 12px;text-align:center;cursor:pointer" onclick="sortFreq(\'count\')">频次</th>' +
-    '<th style="padding:8px 12px;text-align:left;cursor:pointer" onclick="sortFreq(\'years\')">出现年份</th>' +
-    '<th style="padding:8px 12px;text-align:left">题型分布</th></tr></thead><tbody id="freqBody">';
-  rows.forEach(function(r, i) {
-    var freqColor = r.count >= 10 ? 'var(--r)' : r.count >= 5 ? 'var(--or)' : r.count >= 2 ? 'var(--pu)' : 'var(--ts)';
-    var freqBg = r.count >= 10 ? 'rgba(255,69,58,.08)' : r.count >= 5 ? 'rgba(255,159,10,.08)' : r.count >= 2 ? 'rgba(94,92,230,.06)' : 'transparent';
-    var tc = [];
-    for (var tp in r.types) tc.push(tp + '×' + r.types[tp]);
-    var barPct = Math.round(r.count / maxCount * 100);
-    h += '<tr style="border-bottom:1px solid rgba(0,0,0,.04);cursor:pointer" onclick="navigateByKnowledge(\'' + r.name.replace(/'/g,"\\'") + '\')" title="点击查看知识点">' +
-      '<td style="padding:8px 12px;font-weight:600">' + r.name + '</td>' +
-      '<td style="padding:8px 12px;font-size:12px;color:var(--ts)">' + r.module + '</td>' +
-      '<td style="padding:8px 12px;text-align:center"><span style="display:inline-block;min-width:28px;padding:2px 8px;border-radius:10px;background:' + freqBg + ';color:' + freqColor + ';font-weight:700;font-size:14px">' + r.count + '</span><div style="margin-top:4px;background:rgba(0,0,0,.04);border-radius:2px;height:3px;width:' + barPct + '%"></div></td>' +
-      '<td style="padding:8px 12px;font-size:11px;color:var(--ts)">' + r.yrStr + '</td>' +
-      '<td style="padding:8px 12px;font-size:11px;color:var(--ts)">' + tc.join(' ') + '</td></tr>';
-  });
-  h += '</tbody></table></div></div>';
-  document.getElementById('ct').innerHTML = h;
-  // Store rows globally for sorting
-  window._freqRows = rows;
-}
-
-function sortFreq(col) {
-  var rows = window._freqRows; if (!rows) return;
-  rows.sort(function(a,b) {
-    if (col==='count') return b.count-a.count;
-    if (col==='name') return a.name.localeCompare(b.name);
-    if (col==='module') return (a.module+a.sub).localeCompare(b.module+b.sub);
-    if (col==='years') return b.years[0]-a.years[0];
-    return 0;
-  });
-  var h = '';
-  var maxCount = rows[0] ? rows[0].count : 1;
-  rows.forEach(function(r) {
-    var freqColor = r.count >= 10 ? 'var(--r)' : r.count >= 5 ? 'var(--or)' : r.count >= 2 ? 'var(--pu)' : 'var(--ts)';
-    var freqBg = r.count >= 10 ? 'rgba(255,69,58,.08)' : r.count >= 5 ? 'rgba(255,159,10,.08)' : r.count >= 2 ? 'rgba(94,92,230,.06)' : 'transparent';
-    var tc = []; for (var tp in r.types) tc.push(tp + '×' + r.types[tp]);
-    var barPct = Math.round(r.count / maxCount * 100);
-    h += '<tr style="border-bottom:1px solid rgba(0,0,0,.04);cursor:pointer" onclick="navigateByKnowledge(\'' + r.name.replace(/'/g,"\\'") + '\')">' +
-      '<td style="padding:8px 12px;font-weight:600">' + r.name + '</td>' +
-      '<td style="padding:8px 12px;font-size:12px;color:var(--ts)">' + r.module + '</td>' +
-      '<td style="padding:8px 12px;text-align:center"><span style="display:inline-block;min-width:28px;padding:2px 8px;border-radius:10px;background:' + freqBg + ';color:' + freqColor + ';font-weight:700;font-size:14px">' + r.count + '</span><div style="margin-top:4px;background:rgba(0,0,0,.04);border-radius:2px;height:3px;width:' + barPct + '%"></div></td>' +
-      '<td style="padding:8px 12px;font-size:11px;color:var(--ts)">' + r.yrStr + '</td>' +
-      '<td style="padding:8px 12px;font-size:11px;color:var(--ts)">' + tc.join(' ') + '</td></tr>';
-  });
-  document.getElementById('freqBody').innerHTML = h;
 }
 
 // ===== AI MOCK EXAM =====
