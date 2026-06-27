@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<!-- v2.1 · 2026-06-27 01:51 · modular -->
+<!-- v2.1 · 2026-06-27 08:38 · modular -->
 <html lang="zh-CN">
 <head>
 <meta charset="UTF-8">
@@ -565,7 +565,7 @@ function buildAIContext(query) {
   
   return ctx;
 }
-function callDS(msg,cid){var el=document.getElementById(cid);if(!el)return;var key=getAPIKey();if(!key){el.innerHTML="<span style=color:var(--r)>未设置API Key，AI功能不可用</span>";return;}fetch(DS_URL,{method:"POST",headers:{Authorization:"Bearer "+key,"Content-Type":"application/json"},body:JSON.stringify({model:"mimo-v2.5",messages:msg,stream:true,temperature:0.3})}).then(function(r){if(!r.ok)throw Error("HTTP "+r.status);return r.body.getReader();}).then(function(rd){var b="",t="",d=new TextDecoder();function n(){rd.read().then(function(r){if(r.done){el.innerHTML=renderMarkdown(t);
+function callDS(msg,cid){var el=document.getElementById(cid);if(!el)return;fetch(DS_URL,{method:"POST",headers:{Authorization:"Bearer "+getAPIKey(),"Content-Type":"application/json"},body:JSON.stringify({model:"mimo-v2.5",messages:msg,stream:true,temperature:0.3})}).then(function(r){if(!r.ok)throw Error("HTTP "+r.status);return r.body.getReader();}).then(function(rd){var b="",t="",d=new TextDecoder();function n(){rd.read().then(function(r){if(r.done){el.innerHTML=renderMarkdown(t);
   var fid=el.id||cid;
   if(fid&&!document.getElementById('follow_'+fid)){
     var fDiv=document.createElement('div');
@@ -2181,7 +2181,7 @@ function aiGradeQuestion(qid, qid2) {
   sys += '\n\n【RAG检索：相关真题范例与语料】' + ragCtx;
   sys += '\n\n【学生作答】\n' + answer;
   sys += '\n\n请按以下结构输出（用markdown）：\n## 一、评分\n总分XX/10分。各维度打分：知识点覆盖(X/4)、逻辑结构(X/3)、术语准确(X/2)、实际联系(X/1)\n\n## 二、遗漏知识点\n用表格列出：| 遗漏要点 | 应该这样写 |\n\n## 三、优化重写（85分水平）\n保留学生原有思路，但补全结构、术语和遗漏点，重写一份85分水平的答案。\n\n## 四、对照分析\n| 你的版本 | 优化版本 | 差异说明 |\n\n要求：客观、具体、可操作。';
-  fetch('https://api.xiaomimimo.com/v1/chat/completions', {
+  fetch(DS_URL, {
     method: 'POST',
     headers: { 'Authorization': 'Bearer ' + getAPIKey(), 'Content-Type': 'application/json' },
     body: JSON.stringify({ model: 'mimo-v2.5', messages: [{ role: 'user', content: sys }], stream: true, temperature: 0.3, max_tokens: 4096 })
@@ -2457,10 +2457,8 @@ function callDS(msg, cid) { callDSFast(msg, cid); }
 function callDSFast(msg, cid) {
   var el = document.getElementById(cid);
   if (!el) return;
-  var key = getAPIKey();
-  if (!key) { el.innerHTML = '<span style="color:var(--r)">未设置API Key</span>'; return; }
-  el.style.whiteSpace = 'pre-wrap'; el.style.wordBreak = 'break-word'; el.style.overflowWrap = 'break-word'; el.style.maxHeight = '600px'; el.style.overflowY = 'auto'; el.innerHTML = '<span style="color:var(--ts)">思考中...</span>';
-  fetch(DS_URL, {method:'POST', headers:{Authorization:'Bearer '+key, 'Content-Type':'application/json'},
+  el.style.whiteSpace = 'pre-wrap'; el.style.wordBreak = 'break-word'; el.style.overflowWrap = 'break-word'; el.style.maxHeight = '600px'; el.style.overflowY = 'auto';   el.innerHTML = '<span style="color:var(--ts)">思考中...</span>';
+  fetch(DS_URL, {method:'POST', headers:{Authorization:'Bearer '+getAPIKey(), 'Content-Type':'application/json'},
     body: JSON.stringify({model:'mimo-v2.5', messages:msg, stream:true, temperature:0.3})
   }).then(function(r){if(!r.ok)throw Error('HTTP '+r.status);return r.body.getReader();})
   .then(function(rd){var b='',t='',d=new TextDecoder();function n(){rd.read().then(function(r){
@@ -2865,8 +2863,7 @@ function aiFollowUp(cid) {
   // Build context from original message + history
   var msgs = JSON.parse(el.getAttribute('data-ctx') || '[]');
   msgs.push({role: 'user', content: q});
-  var key = getAPIKey();
-  fetch(DS_URL, {method:'POST', headers:{Authorization:'Bearer '+key, 'Content-Type':'application/json'}, body:JSON.stringify({model:'mimo-v2.5', messages:msgs, stream:true, temperature:0.3})}).then(function(r){
+  fetch(DS_URL, {method:'POST', headers:{Authorization:'Bearer '+getAPIKey(), 'Content-Type':'application/json'}, body:JSON.stringify({model:'mimo-v2.5', messages:msgs, stream:true, temperature:0.3})}).then(function(r){
     if(!r.ok) throw Error('HTTP '+r.status);
     return r.body.getReader();
   }).then(function(rd){
