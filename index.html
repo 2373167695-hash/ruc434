@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<!-- v2.1 · 2026-06-27 13:00 · modular -->
+<!-- v2.1 · 2026-06-27 13:04 · modular -->
 <html lang="zh-CN">
 <head>
 <meta charset="UTF-8">
@@ -976,9 +976,8 @@ function navigate(p, topicName, skipHistory) {
   var ct = document.getElementById('ct');
   if (!ct) return;
   // Fast content swap with entrance animation
-  ct.style.opacity = '0';
-  ct.style.transform = 'translateY(6px)';
   ct.style.transition = 'none';
+  ct.style.opacity = '0';
   // Render new content immediately
   try {
     if (p === '') { showHome(); }
@@ -1004,20 +1003,19 @@ function navigate(p, topicName, skipHistory) {
     console.error('Page render error:', err);
   }
   ct.scrollTop = 0;
-  // Entrance animation
+  // Gentle fade-in only — no movement, no flash
   requestAnimationFrame(function() {
-    ct.style.transition = 'opacity .35s cubic-bezier(.23,1,.32,1), transform .35s cubic-bezier(.23,1,.32,1)';
+    ct.style.transition = 'opacity .5s ease-out';
     ct.style.opacity = '1';
-    ct.style.transform = 'translateY(0)';
-    // Stagger grid items on homepage after entrance
+    setTimeout(function() { ct.style.transition = ''; ct.style.opacity = ''; }, 550);
+    // Stagger homepage items on enter
     if (p === '' || p === 'home') {
       setTimeout(function() {
         var cards = document.querySelectorAll('#ct .gc, #ct .st, #ct .task');
         cards.forEach(function(el, i) {
-          el.classList.add('stagger-in');
-          el.style.animationDelay = (i * 0.03) + 's';
+          el.style.animation = 'staggerFade .5s ease-out ' + (i * 0.04) + 's both';
         });
-      }, 200);
+      }, 250);
     }
   });
   // Remove inline transition after animation completes
