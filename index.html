@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<!-- v2.1 · 2026-06-27 14:25 · modular -->
+<!-- v2.1 · 2026-06-27 14:27 · modular -->
 <html lang="zh-CN">
 <head>
 <meta charset="UTF-8">
@@ -1133,32 +1133,53 @@ function showHome() {recordTrend();var bb=document.getElementById('backBtn');if(
       if(ymMap[q.year]&&ymMap[q.year][mod]!==undefined)ymMap[q.year][mod]++;
     });
   });
-  function heatColor(v){
-    if(v===0)return'#f0ede6';
-    if(v<=2)return'#c4b5fd';
-    if(v<=4)return'#8b5cf6';
-    if(v<=7)return'#6d28d9';
-    return'#4c1d95';
+  function hmColor(v){
+    if(v===0) return 'rgba(94,92,230,.04)';
+    if(v<=2) return 'rgba(94,92,230,.15)';
+    if(v<=4) return 'rgba(94,92,230,.35)';
+    if(v<=7) return 'rgba(94,92,230,.6)';
+    return 'rgba(94,92,230,.85)';
   }
-  function heatText(v){return v>2?'#fff':'#333';}
-  h += '<div class="pcard" style="margin-top:16px"><div class="pcard-hdr"><h3>📊 命题趋势热力图</h3></div><div class="pcard-body" style="overflow-x:auto">';
-  h += '<table style="border-collapse:collapse;width:100%;min-width:400px;table-layout:fixed"><tr><th style="padding:6px 4px;font-size:11px;color:var(--ts);width:48px">年份</th>';
-  ymodules.forEach(function(m){h+='<th style="padding:6px 4px;font-size:11px;color:var(--ts)">'+m.substring(0,4)+'</th>';});
-  h+='<th style="padding:6px 4px;font-size:10px;color:var(--ts);width:32px">计</th></tr>';
+  function hmText(v){return v>4?'#fff':'var(--pu)';}
+  function hmDot(v){return v===0?'':v<=2?'●':v<=4?'●●':v<=7?'●●●':'●●●●';}
+  
+  h += '<div class="pcard" style="margin-top:16px"><div class="pcard-hdr"><h3>📊 命题趋势热力图</h3><span style="font-size:11px;color:var(--ts)">2011—2023 · 年×模块</span></div><div class="pcard-body" style="overflow-x:auto">';
+  h += '<table style="border-collapse:separate;border-spacing:4px;width:100%;min-width:520px">';
+  // Header row
+  h += '<tr><td style="width:44px"></td>';
+  ymodules.forEach(function(m){h+='<td style="padding:4px 2px;text-align:center;font-size:10px;font-weight:600;color:var(--ts);letter-spacing:.3px">'+m.substring(0,2)+'<br>'+m.substring(2,4)+'</td>';});
+  h += '<td style="width:32px"></td></tr>';
+  
   years.forEach(function(y){
-    var total=0;
-    h+='<tr><td style="padding:6px 4px;font-size:13px;font-weight:700;text-align:center;color:var(--ts)">'+y+'</td>';
-    ymodules.forEach(function(m){var v=ymMap[y][m]||0;total+=v;h+='<td style="padding:3px;text-align:center"><span style="display:inline-block;width:36px;height:36px;line-height:36px;border-radius:6px;background:'+heatColor(v)+';font-size:12px;font-weight:700;color:'+heatText(v)+'">'+(v||'')+'</span></td>';});
-    h+='<td style="padding:6px 4px;font-size:12px;font-weight:700;text-align:center;color:var(--r)">'+total+'</td></tr>';
+    var total = 0;
+    h += '<tr><td style="padding:2px 8px 2px 0;text-align:right;font-size:12px;font-weight:700;color:var(--t)">'+y+'</td>';
+    ymodules.forEach(function(m){
+      var v = ymMap[y][m]||0; total += v;
+      h += '<td style="text-align:center;padding:2px">'+
+        '<div style="position:relative;display:inline-flex;align-items:center;justify-content:center;width:42px;height:42px;border-radius:12px;background:'+hmColor(v)+
+        ';transition:all .2s;cursor:default" onmouseover="this.style.transform=\'scale(1.12)\';this.style.boxShadow=\'0 4px 12px rgba(94,92,230,.25)\'" onmouseout="this.style.transform=\'\';this.style.boxShadow=\'\'"'+
+        ' title="'+y+'年 '+m+'：'+v+'题">'+
+        '<span style="font-size:15px;font-weight:800;color:'+hmText(v)+'">'+(v||hmDot(v))+'</span></div></td>';
+    });
+    h += '<td style="padding-left:6px;font-size:10px;font-weight:600;color:'+(total>5?'var(--r)':'var(--ts)')+'">'+total+'</td></tr>';
   });
+  
+  // Module totals
+  h += '<tr style="border-top:1px solid rgba(0,0,0,.04)"><td style="padding:4px 8px 0 0;text-align:right;font-size:10px;font-weight:600;color:var(--ts)">合计</td>';
+  ymodules.forEach(function(m){
+    var mt = 0; years.forEach(function(y){mt+=ymMap[y][m]||0;});
+    h += '<td style="text-align:center;padding:4px 2px 0"><span style="font-size:11px;font-weight:700;color:var(--pu)">'+mt+'</span></td>';
+  });
+  h += '<td></td></tr>';
   h += '</table>';
-  // Color legend
-  h += '<div style="display:flex;gap:16px;justify-content:center;margin-top:10px;font-size:10px;color:var(--ts)">'+
-    '<span><span style="display:inline-block;width:12px;height:12px;border-radius:3px;background:'+heatColor(0)+';vertical-align:middle;margin-right:3px"></span>未涉及</span>'+
-    '<span><span style="display:inline-block;width:12px;height:12px;border-radius:3px;background:'+heatColor(1)+';vertical-align:middle;margin-right:3px"></span>少量</span>'+
-    '<span><span style="display:inline-block;width:12px;height:12px;border-radius:3px;background:'+heatColor(3)+';vertical-align:middle;margin-right:3px"></span>中等</span>'+
-    '<span><span style="display:inline-block;width:12px;height:12px;border-radius:3px;background:'+heatColor(5)+';vertical-align:middle;margin-right:3px"></span>频繁</span>'+
-    '<span><span style="display:inline-block;width:12px;height:12px;border-radius:3px;background:'+heatColor(8)+';vertical-align:middle;margin-right:3px"></span>密集</span></div>';
+  
+  // Legend
+  h += '<div style="display:flex;gap:20px;justify-content:center;align-items:center;margin-top:14px;padding-top:10px;border-top:1px solid rgba(0,0,0,.04)">';
+  [{v:0,l:'未涉及'},{v:1,l:'偶尔'},{v:3,l:'适中'},{v:5,l:'频繁'},{v:8,l:'密集'}].forEach(function(x){
+    h += '<div style="display:flex;align-items:center;gap:5px;font-size:10px;color:var(--ts)">'+
+      '<span style="width:14px;height:14px;border-radius:5px;background:'+hmColor(x.v)+'"></span>'+x.l+'</div>';
+  });
+  h += '</div>';
   h += '</div></div>';
   
   // ===== FREQUENCY TABLE (below heatmap) =====
