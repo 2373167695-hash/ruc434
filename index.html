@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<!-- v2.1 · 2026-06-28 15:23 · modular -->
+<!-- v2.1 · 2026-06-28 15:27 · modular -->
 <html lang="zh-CN">
 <head>
 <meta charset="UTF-8">
@@ -66,13 +66,45 @@ body::after{content:'';position:fixed;inset:0;pointer-events:none;z-index:-1;bac
   backdrop-filter: url(#liquid-glass-filter) blur(0.5px) contrast(1.15) brightness(1.08) saturate(1.2);
   -webkit-backdrop-filter: url(#liquid-glass-filter) blur(0.5px) contrast(1.15) brightness(1.08) saturate(1.2);
 }
-/* Edge highlight for glass elements */
+/* Edge highlight — simulates light refraction at glass edges */
+.glass::before {
+  content: '';
+  position: absolute; inset: 0;
+  border-radius: inherit;
+  padding: 1px;
+  background: linear-gradient(
+    135deg,
+    rgba(255,255,255,0.25) 0%,
+    rgba(255,255,255,0.05) 40%,
+    rgba(255,255,255,0) 60%,
+    rgba(255,255,255,0.1) 100%
+  );
+  -webkit-mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
+  -webkit-mask-composite: xor;
+  mask-composite: exclude;
+  pointer-events: none;
+  z-index: 10;
+}
+/* Glossy reflection layer */
 .glass::after {
   content: '';
   position: absolute; inset: 0;
   border-radius: inherit;
-  background: linear-gradient(160deg, rgba(255,255,255,.08) 0%, transparent 50%);
+  background: linear-gradient(
+    160deg,
+    rgba(255,255,255,0.1) 0%,
+    rgba(255,255,255,0.03) 30%,
+    transparent 60%
+  );
   pointer-events: none;
+  z-index: 10;
+}
+/* Liquid hover animation */
+.glass {
+  transition: transform 0.3s ease, box-shadow 0.3s ease;
+}
+.glass:hover {
+  transform: translateY(-4px) scale(1.01);
 }
 
 /* ===== SIDEBAR ===== */
