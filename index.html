@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<!-- v2.1 · 2026-06-28 03:28 · modular -->
+<!-- v2.1 · 2026-06-28 03:38 · modular -->
 <html lang="zh-CN">
 <head>
 <meta charset="UTF-8">
@@ -22,7 +22,7 @@
 :root{
   --r:#ff453a;--bg:#f2f2f7;--card:rgba(255,255,255,.03);--t:#1d1d1f;--ts:#86868b;--bdr:rgba(255,255,255,.18);
   --bl:#007aff;--gn:#30d158;--or:#ff9f0a;--pu:#5e5ce6;
-  --sidebar-bg:transparent;--sidebar-hover:rgba(0,0,0,.03);
+  --sidebar-bg:rgba(255,255,255,.15);--sidebar-hover:rgba(0,0,0,.04);
   --sh:0 8px 28px rgba(31,38,135,.08),inset 0 1px 0 rgba(255,255,255,.9),inset 0 0 0 1px rgba(255,255,255,.2);--panel-bg:rgba(0,0,0,.03);
   --amber-bg:rgba(255,159,10,.08);--amber-border:rgba(255,159,10,.15);--amber-text:#78350f;
   --shadow-md:0 8px 32px rgba(31,38,135,.1),inset 0 1px 0 rgba(255,255,255,.6);--shadow-lg:0 16px 48px rgba(0,0,0,.1);
@@ -58,25 +58,25 @@ body.sb-collapsed .sidebar.open ~ .sidebar-backdrop{display:block}
 .sidebar-hdr{padding:28px 18px 18px;text-align:center;position:relative}
 .sidebar-hdr::before{content:'';position:absolute;top:0;left:0;right:0;height:1px;background:linear-gradient(90deg,transparent,rgba(255,255,255,.35),transparent);pointer-events:none}
 .sidebar-hdr h2{color:var(--t);font-size:16px;font-weight:700;margin-bottom:2px;letter-spacing:-.2px}
-.sidebar-hdr p{font-size:11px;color:var(--ts);margin-top:4px}
+.sidebar-hdr p{font-size:11px;color:rgba(60,60,67,.7);margin-top:4px}
 .sidebar-nav{padding:4px 0;flex:1;overflow-y:auto}
 .sidebar-nav::-webkit-scrollbar{width:0}
-.sidebar-section-label{padding:20px 18px 6px;font-size:10px;font-weight:700;color:var(--ts);letter-spacing:.6px;text-transform:uppercase}
+.sidebar-section-label{padding:20px 18px 6px;font-size:10px;font-weight:700;color:rgba(60,60,67,.55);letter-spacing:.6px;text-transform:uppercase}
 .sidebar-tabs{display:flex;padding:4px 12px;gap:2px;border-bottom:.5px solid var(--bdr)}
-.sidebar-tabs button{border:none;background:transparent;color:var(--ts);border-radius:10px;font-size:12px;cursor:pointer;padding:7px 12px;font-weight:600;font-family:inherit;transition:var(--transition)}
+.sidebar-tabs button{border:none;background:transparent;color:rgba(60,60,67,.7);border-radius:10px;font-size:12px;cursor:pointer;padding:7px 12px;font-weight:600;font-family:inherit;transition:var(--transition)}
 .sidebar-tabs button:hover{background:var(--sidebar-hover);color:var(--t)}
 .sidebar-tabs button.active{background:var(--pu);color:#fff}
 .kn-tree{display:none}.kn-tree.active{display:block}
 .qz-tree{display:none}.qz-tree.active{display:block}
-.ni{display:flex;align-items:center;gap:10px;padding:8px 16px;margin:1px 8px;cursor:pointer;font-size:13px;transition:var(--transition);border-radius:10px;color:var(--ts);font-weight:450}
+.ni{display:flex;align-items:center;gap:10px;padding:8px 16px;margin:1px 8px;cursor:pointer;font-size:13px;transition:var(--transition);border-radius:10px;color:rgba(29,29,31,.7);font-weight:450}
 .ni:hover{background:var(--sidebar-hover);color:var(--t)}
-.ni.lv0{font-weight:600;color:var(--ts);padding:9px 16px;font-size:13px;margin:2px 8px 0}
-.ni.lv1{padding-left:30px;font-size:12px;color:var(--ts);margin-left:8px}
-.ni.lv2{padding-left:46px;font-size:12px;color:var(--ts);margin-left:8px}
+.ni.lv0{font-weight:600;color:rgba(29,29,31,.75);padding:9px 16px;font-size:13px;margin:2px 8px 0}
+.ni.lv1{padding-left:30px;font-size:12px;color:rgba(29,29,31,.6);margin-left:8px}
+.ni.lv2{padding-left:46px;font-size:12px;color:rgba(29,29,31,.55);margin-left:8px}
 .ni.active{background:rgba(94,92,230,.1);font-weight:600;color:var(--pu);border-left:3px solid var(--pu);padding-left:13px}
 .ni .badge{margin-left:auto;background:rgba(0,0,0,.04);color:var(--ts);font-size:10px;padding:2px 8px;border-radius:10px;font-weight:600}
 .sidebar-btm{padding:14px 16px;border-top:.5px solid var(--bdr);display:flex;gap:4px}
-.sidebar-btm button{flex:1;padding:9px;border:none;background:rgba(0,0,0,.03);color:var(--ts);border-radius:10px;font-size:12px;cursor:pointer;transition:var(--transition);font-weight:600;font-family:inherit}
+.sidebar-btm button{flex:1;padding:9px;border:none;background:rgba(0,0,0,.04);color:rgba(60,60,67,.7);border-radius:10px;font-size:12px;cursor:pointer;transition:var(--transition);font-weight:600;font-family:inherit}
 .sidebar-btm button:hover{background:rgba(0,0,0,.06);color:var(--t)}
 .sidebar-btm button.active{background:var(--r);color:#fff}
 
