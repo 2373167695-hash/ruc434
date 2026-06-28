@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<!-- v2.1 · 2026-06-28 02:24 · modular -->
+<!-- v2.1 · 2026-06-28 02:27 · modular -->
 <html lang="zh-CN">
 <head>
 <meta charset="UTF-8">
@@ -1072,8 +1072,17 @@ function showHome() {recordTrend();var bb=document.getElementById('backBtn');if(
   var totalPct = n > 0 ? Math.round(d / n * 100) : 0;
   var ringColor = totalPct >= 80 ? 'var(--gn)' : totalPct >= 40 ? 'var(--pu)' : 'var(--or)';
   var circle = 104, stroke = 8, r = (circle-stroke)/2, circum = 2 * Math.PI * r, offset = circum * (1 - totalPct/100);
-  var ringSvg = '<svg width="'+circle+'" height="'+circle+'" style="display:block"><circle cx="'+circle/2+'" cy="'+circle/2+'" r="'+r+'" fill="none" stroke="rgba(0,0,0,.06)" stroke-width="'+stroke+'"/><circle cx="'+circle/2+'" cy="'+circle/2+'" r="'+r+'" fill="none" stroke="'+ringColor+'" stroke-width="'+stroke+'" stroke-linecap="round" stroke-dasharray="'+circum+'" stroke-dashoffset="'+offset+'" transform="rotate(-90 '+circle/2+' '+circle/2+')" style="transition:stroke-dashoffset .8s ease-out"/><text x="'+circle/2+'" y="'+circle/2+'" text-anchor="middle" dy=".35em" font-size="22" font-weight="800" fill="'+ringColor+'">'+totalPct+'%</text></svg>';
-  h += '<div class="hero" style="text-align:center"><div style="display:flex;align-items:center;justify-content:center;gap:24px;flex-wrap:wrap"><div>'+ringSvg+'</div><div style="text-align:left"><h1 style="margin-bottom:4px">📖 人大434国际商务</h1><div class="desc" style="margin-bottom:10px">2011-2023 · ' + kn + '个模块 · AI诊断</div><div style="display:flex;gap:12px;flex-wrap:wrap"><div style="font-size:11px;color:var(--ts)">📝 <strong style="color:var(--t)">'+n+'</strong> 真题</div><div style="font-size:11px;color:var(--ts)">✅ <strong style="color:var(--t)">'+d+'</strong> 已做</div><div style="font-size:11px;color:var(--ts)">⭐ <strong style="color:var(--t)">'+s+'</strong> 重点</div><div style="font-size:11px;color:var(--ts)">👨‍🏫 <strong style="color:var(--t)">'+pn+'</strong> 导师</div></div></div></div></div>';
+  var ringSvg = '<svg width="'+circle+'" height="'+circle+'" style="display:block;filter:drop-shadow(0 2px 8px rgba(94,92,230,.15))"><circle cx="'+circle/2+'" cy="'+circle/2+'" r="'+r+'" fill="none" stroke="rgba(94,92,230,.08)" stroke-width="'+stroke+'"/><circle cx="'+circle/2+'" cy="'+circle/2+'" r="'+r+'" fill="none" stroke="'+ringColor+'" stroke-width="'+stroke+'" stroke-linecap="round" stroke-dasharray="'+circum+'" stroke-dashoffset="'+offset+'" transform="rotate(-90 '+circle/2+' '+circle/2+')" style="transition:stroke-dashoffset .8s ease-out"/><text x="'+circle/2+'" y="'+circle/2+'" text-anchor="middle" dy=".35em" font-size="22" font-weight="800" fill="var(--t)">'+totalPct+'%</text></svg>';
+  h += '<div class="hero"><div style="display:flex;align-items:center;gap:28px;flex-wrap:wrap">'+
+    '<div>'+ringSvg+'</div><div style="flex:1;min-width:200px">'+
+    '<h1 style="margin-bottom:4px">📖 人大434国际商务</h1>'+
+    '<div class="desc" style="margin-bottom:12px">2011-2023 · ' + kn + '个知识模块 · AI诊断+模拟考试</div>'+
+    '<div class="sts">'+
+    '<div class="st">📝 <strong>'+n+'</strong> 道真题</div>'+
+    '<div class="st">✅ <strong>'+d+'</strong> 已做</div>'+
+    '<div class="st">⭐ <strong>'+s+'</strong> 重点题</div>'+
+    '<div class="st">👨‍🏫 <strong>'+pn+'</strong> 位导师</div>'+
+    '<div class="st">🎯 <strong>'+prn+'</strong> 预测</div></div></div></div></div>';
 
   // Today tasks row
   var dueW = getDueWrongCount();
