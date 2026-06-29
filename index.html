@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<!-- v2.1 · 2026-06-29 09:14 · modular -->
+<!-- v2.1 · 2026-06-29 09:21 · modular -->
 <html lang="zh-CN">
 <head>
 <meta charset="UTF-8">
@@ -57,9 +57,9 @@ body{font-family:-apple-system,BlinkMacSystemFont,"SF Pro Display","SF Pro Text"
 /* Background: V-a — 暗度 40% + 模糊 4px */
 body::before{content:'';position:fixed;inset:0;pointer-events:none;z-index:-1;
   background:url('bg.jpg') center/cover no-repeat;
-  filter:blur(4px);
+  filter:blur(4px) brightness(0.75);
 }
-body::after{content:'';position:fixed;inset:0;pointer-events:none;z-index:-1;background:rgba(0,0,0,.4)}
+body::after{content:'';position:fixed;inset:0;pointer-events:none;z-index:-1;background:rgba(0,0,0,.45)}
 ::selection{background:rgba(94,92,230,.15);color:var(--t)}
 
 /* Glass effect class — applies SVG displacement filter */
