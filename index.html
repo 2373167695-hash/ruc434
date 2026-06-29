@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<!-- v2.1 · 2026-06-29 00:43 · modular -->
+<!-- v2.1 · 2026-06-29 00:50 · modular -->
 <html lang="zh-CN">
 <head>
 <meta charset="UTF-8">
@@ -22,7 +22,7 @@
 :root{
   --r:#ff453a;--bg:#0a0a1a;--card:rgba(255,255,255,.06);--t:rgba(255,255,255,.9);--ts:rgba(255,255,255,.5);--bdr:rgba(255,255,255,.1);
   --bl:#007aff;--gn:#30d158;--or:#ff9f0a;--pu:#5e5ce6;
-  --sidebar-bg:rgba(255,255,255,.08);--sidebar-hover:rgba(255,255,255,.12);
+  --sidebar-bg:rgba(255,255,255,.03);--sidebar-hover:rgba(255,255,255,.06);
   --sh:0 8px 32px rgba(0,0,0,.3),inset 0 1px 0 rgba(255,255,255,.1);--panel-bg:rgba(255,255,255,.04);
   --amber-bg:rgba(255,159,10,.12);--amber-border:rgba(255,159,10,.2);--amber-text:#fbbf24;
   --shadow-md:0 12px 40px rgba(0,0,0,.35),inset 0 1px 0 rgba(255,255,255,.12);--shadow-lg:0 24px 64px rgba(0,0,0,.4);
@@ -33,15 +33,15 @@
   --glass-highlight:linear-gradient(180deg,rgba(255,255,255,.12),rgba(255,255,255,.02) 40%,transparent 70%);
   --glass-top-line:linear-gradient(90deg,transparent,rgba(255,255,255,.2),transparent);
   --glass-rim:inset 0 0 0 1px rgba(255,255,255,.08);
-  /* Glass tiers — brighter to distinguish from dark background */
-  --glass-hero-bg:rgba(255,255,255,.12);
-  --glass-hero-blur:blur(33px) saturate(180%);
+  /* Glass tiers — V1: bright + low blur */
+  --glass-hero-bg:rgba(255,255,255,.03);
+  --glass-hero-blur:blur(8px) saturate(180%);
   --glass-hero-border:rgba(255,255,255,.2);
-  --glass-mid-bg:rgba(255,255,255,.09);
-  --glass-mid-blur:blur(26px) saturate(180%);
+  --glass-mid-bg:rgba(255,255,255,.03);
+  --glass-mid-blur:blur(8px) saturate(180%);
   --glass-mid-border:rgba(255,255,255,.16);
-  --glass-sm-bg:rgba(255,255,255,.06);
-  --glass-sm-blur:blur(20px) saturate(180%);
+  --glass-sm-bg:rgba(255,255,255,.03);
+  --glass-sm-blur:blur(8px) saturate(180%);
   --glass-sm-border:rgba(255,255,255,.12);
   /* Chromatic edge glow */
   --chrome-hero:0 0 0 1px rgba(255,255,255,.1);
@@ -201,7 +201,7 @@ body.sb-collapsed .sidebar.open ~ .sidebar-backdrop{display:block}
 @keyframes shimmer{0%{background-position:200% 0}100%{background-position:-200% 0}}
 
 /* ===== BANNER ===== */
-.banner{background:rgba(255,255,255,.05);backdrop-filter:url(#liquid-glass-filter) blur(0.5px) saturate(1.2);-webkit-backdrop-filter:url(#liquid-glass-filter) blur(0.5px) saturate(1.2);border-radius:var(--radius-lg);padding:20px 26px;margin-bottom:20px;display:flex;align-items:center;gap:16px;border:1px solid rgba(255,255,255,.15);position:relative;overflow:hidden;box-shadow:0 12px 40px rgba(0,0,0,.35),inset 0 1px 0 rgba(255,255,255,.1)}
+.banner{background:rgba(255,255,255,.03);backdrop-filter:url(#liquid-glass-filter) blur(0.5px) saturate(1.2);-webkit-backdrop-filter:url(#liquid-glass-filter) blur(0.5px) saturate(1.2);border-radius:var(--radius-lg);padding:20px 26px;margin-bottom:20px;display:flex;align-items:center;gap:16px;border:1px solid rgba(255,255,255,.15);position:relative;overflow:hidden;box-shadow:0 12px 40px rgba(0,0,0,.35),inset 0 1px 0 rgba(255,255,255,.1)}
 .banner::before{content:'';position:absolute;top:0;left:0;right:0;height:1px;background:var(--glass-top-line);pointer-events:none}
 .banner .ico{font-size:28px;flex-shrink:0}
 .banner .txt{flex:1;font-size:13px;color:var(--ts);line-height:1.6}
@@ -210,7 +210,7 @@ body.sb-collapsed .sidebar.open ~ .sidebar-backdrop{display:block}
 .banner .btn:hover{background:#e68a00;transform:translateY(-1px)}
 
 /* ===== TODAY ===== */
-.today{background:rgba(255,255,255,.05);backdrop-filter:url(#liquid-glass-filter) blur(0.5px) saturate(1.2);-webkit-backdrop-filter:url(#liquid-glass-filter) blur(0.5px) saturate(1.2);border-radius:var(--radius-lg);border:1px solid rgba(255,255,255,.15);padding:26px 28px;margin-bottom:22px;box-shadow:0 12px 40px rgba(0,0,0,.35),inset 0 1px 0 rgba(255,255,255,.1);position:relative;overflow:hidden;transition:box-shadow .3s,transform .3s ease,border-color .3s}
+.today{background:rgba(255,255,255,.03);backdrop-filter:url(#liquid-glass-filter) blur(0.5px) saturate(1.2);-webkit-backdrop-filter:url(#liquid-glass-filter) blur(0.5px) saturate(1.2);border-radius:var(--radius-lg);border:1px solid rgba(255,255,255,.15);padding:26px 28px;margin-bottom:22px;box-shadow:0 12px 40px rgba(0,0,0,.35),inset 0 1px 0 rgba(255,255,255,.1);position:relative;overflow:hidden;transition:box-shadow .3s,transform .3s ease,border-color .3s}
 .today:hover{transform:translateY(-4px) scale(1.01);box-shadow:0 20px 56px rgba(0,0,0,.45),inset 0 1px 0 rgba(255,255,255,.15);border-color:rgba(255,255,255,.25)}
 .today::before{content:'';position:absolute;top:0;left:0;right:0;height:1px;background:var(--glass-top-line);pointer-events:none}
 .today h3{font-size:16px;font-weight:700;margin-bottom:4px;letter-spacing:-.2px}
@@ -240,9 +240,9 @@ body.sb-collapsed .sidebar.open ~ .sidebar-backdrop{display:block}
 .sec-hd a,.sec-hd span{font-size:12px;color:var(--pu);cursor:pointer;font-weight:500;text-decoration:none;transition:var(--transition)}
 .sec-hd a:hover{opacity:.7}
 .grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(280px,1fr));gap:10px;margin-top:0}
-.gc{background:rgba(255,255,255,.08);backdrop-filter:url(#liquid-glass-filter) blur(0.5px) saturate(1.2);-webkit-backdrop-filter:url(#liquid-glass-filter) blur(0.5px) saturate(1.2);border-radius:var(--radius);padding:20px 22px;box-shadow:0 16px 48px rgba(0,0,0,.35),inset 0 1px 0 rgba(255,255,255,.12);cursor:pointer;transition:all .35s cubic-bezier(.25,.1,.25,1);border:1px solid rgba(255,255,255,.15);display:flex;gap:14px;align-items:flex-start;position:relative;overflow:hidden}
+.gc{background:rgba(255,255,255,.03);backdrop-filter:url(#liquid-glass-filter) blur(0.5px) saturate(1.2);-webkit-backdrop-filter:url(#liquid-glass-filter) blur(0.5px) saturate(1.2);border-radius:var(--radius);padding:20px 22px;box-shadow:0 16px 48px rgba(0,0,0,.35),inset 0 1px 0 rgba(255,255,255,.12);cursor:pointer;transition:all .35s cubic-bezier(.25,.1,.25,1);border:1px solid rgba(255,255,255,.15);display:flex;gap:14px;align-items:flex-start;position:relative;overflow:hidden}
 .gc::before{content:'';position:absolute;top:0;left:0;right:0;height:1px;background:var(--glass-top-line);pointer-events:none;opacity:.5}
-.gc:hover{transform:translateY(-6px) scale(1.03);box-shadow:0 24px 64px rgba(0,0,0,.45),inset 0 1px 0 rgba(255,255,255,.18),0 0 0 2px rgba(94,92,230,.08);border-color:rgba(255,255,255,.25);background:rgba(255,255,255,.12)}
+.gc:hover{transform:translateY(-6px) scale(1.03);box-shadow:0 24px 64px rgba(0,0,0,.45),inset 0 1px 0 rgba(255,255,255,.18),0 0 0 2px rgba(94,92,230,.08);border-color:rgba(255,255,255,.25);background:rgba(255,255,255,.06)}
 .gc:active{transform:translateY(-2px) scale(1.01);transition:all .1s}
 .gc .ico{width:46px;height:46px;border-radius:18px;display:flex;align-items:center;justify-content:center;font-size:20px;flex-shrink:0;margin-top:2px}
 /* Module color-accented cards */
@@ -268,7 +268,7 @@ body.sb-collapsed .sidebar.open ~ .sidebar-backdrop{display:block}
 .rel{display:flex;gap:8px;flex-wrap:wrap;margin:18px 0}
 .rt{padding:6px 16px;border-radius:24px;background:rgba(255,255,255,.06);font-size:12px;cursor:pointer;transition:var(--transition);color:var(--ts);border:1px solid rgba(255,255,255,.08)}
 .rt:hover{background:var(--pu);color:#fff;border-color:transparent}
-.pcard{background:rgba(255,255,255,.05);backdrop-filter:url(#liquid-glass-filter) blur(0.5px) saturate(1.2);-webkit-backdrop-filter:url(#liquid-glass-filter) blur(0.5px) saturate(1.2);border-radius:var(--radius-lg);box-shadow:0 12px 40px rgba(0,0,0,.35),inset 0 1px 0 rgba(255,255,255,.1);margin-bottom:16px;overflow:hidden;border:1px solid rgba(255,255,255,.15);position:relative;transition:box-shadow .3s,transform .3s ease,border-color .3s}
+.pcard{background:rgba(255,255,255,.03);backdrop-filter:url(#liquid-glass-filter) blur(0.5px) saturate(1.2);-webkit-backdrop-filter:url(#liquid-glass-filter) blur(0.5px) saturate(1.2);border-radius:var(--radius-lg);box-shadow:0 12px 40px rgba(0,0,0,.35),inset 0 1px 0 rgba(255,255,255,.1);margin-bottom:16px;overflow:hidden;border:1px solid rgba(255,255,255,.15);position:relative;transition:box-shadow .3s,transform .3s ease,border-color .3s}
 .pcard:hover{transform:translateY(-4px) scale(1.01);box-shadow:0 20px 56px rgba(0,0,0,.45),inset 0 1px 0 rgba(255,255,255,.15),0 0 0 2px rgba(94,92,230,.06);border-color:rgba(255,255,255,.25)}
 .pcard::before{content:'';position:absolute;top:0;left:0;right:0;height:1px;background:var(--glass-top-line);pointer-events:none;z-index:1}
 .pcard-hdr{padding:18px 24px;border-bottom:.5px solid var(--bdr)}
