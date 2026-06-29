@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<!-- v2.1 · 2026-06-29 01:02 · modular -->
+<!-- v2.1 · 2026-06-29 01:04 · modular -->
 <html lang="zh-CN">
 <head>
 <meta charset="UTF-8">
@@ -2846,19 +2846,15 @@ function callDSFast(msg, cid) {
   var el = document.getElementById(cid);
   if (!el) return;
   el.style.whiteSpace = 'pre-wrap'; el.style.wordBreak = 'break-word'; el.style.overflowWrap = 'break-word'; el.style.maxHeight = '600px'; el.style.overflowY = 'auto';   el.innerHTML = '<span style="color:var(--ts)">思考中...</span>';
-  
-  function doFetch(key, retried) {
-    fetch(DS_URL, {method:'POST', headers:{Authorization:'Bearer '+key, 'Content-Type':'application/json'},
-      body: JSON.stringify({model:'mimo-v2.5', messages:msg, stream:true, temperature:0.3})
-    }).then(function(r){
-      if(r.status===401 && !retried){_apikey=null;_apikeyPromise=null;getAPIKey(function(nk){if(nk)doFetch(nk,true);else el.innerHTML='<span style="color:var(--r)">API密钥获取失败，请重新登录</span>';});return;}
-      if(!r.ok)throw Error('HTTP '+r.status);
-      return r.body.getReader();
-    }).then(function(rd){if(!rd)return;var b='',t='',d=new TextDecoder();function n(){rd.read().then(function(r){
+  fetch(DS_URL, {method:'POST', headers:{Authorization:'Bearer '+getAPIKey(), 'Content-Type':'application/json'},
+    body: JSON.stringify({model:'mimo-v2.5', messages:msg, stream:true, temperature:0.3})
+  }).then(function(r){if(!r.ok)throw Error('HTTP '+r.status);return r.body.getReader();})
+  .then(function(rd){var b='',t='',d=new TextDecoder();function n(){rd.read().then(function(r){
     if(r.done){el.innerHTML=renderMarkdown(t);
   var fid=el.id||cid;
   if(fid&&!document.getElementById('follow_'+fid)){
-    var fDiv=document.createElement('div');fDiv.id='follow_'+fid;
+    var fDiv=document.createElement('div');
+    fDiv.id='follow_'+fid;
     fDiv.style.cssText='margin-top:12px;display:flex;gap:6px';
     fDiv.innerHTML='<textarea id="fq_'+fid+'" placeholder="继续追问..." style="flex:1;min-height:36px;border:1px solid var(--bdr);border-radius:12px;padding:8px;font-size:12px;resize:none;font-family:inherit" rows="2"></textarea><button class="ai-btn ai-btn-sm" onclick="aiFollowUp(\''+fid+'\')">追问</button>';
     el.parentNode.appendChild(fDiv);
@@ -2869,18 +2865,14 @@ function callDSFast(msg, cid) {
       try{var p=JSON.parse(dd);if(p.choices&&p.choices[0].delta){var x=p.choices[0].delta.content||'';if(x){t+=x;el.innerHTML=renderMarkdown(t);
   var fid=el.id||cid;
   if(fid&&!document.getElementById('follow_'+fid)){
-    var fDiv=document.createElement('div');fDiv.id='follow_'+fid;
+    var fDiv=document.createElement('div');
+    fDiv.id='follow_'+fid;
     fDiv.style.cssText='margin-top:12px;display:flex;gap:6px';
     fDiv.innerHTML='<textarea id="fq_'+fid+'" placeholder="继续追问..." style="flex:1;min-height:36px;border:1px solid var(--bdr);border-radius:12px;padding:8px;font-size:12px;resize:none;font-family:inherit" rows="2"></textarea><button class="ai-btn ai-btn-sm" onclick="aiFollowUp(\''+fid+'\')">追问</button>';
     el.parentNode.appendChild(fDiv);
     try{el.setAttribute('data-ctx',JSON.stringify(msg));}catch(e){}
   }}}}catch(e){}}});n();})}n();
-    }).catch(function(err){el.innerHTML='<span style="color:var(--r)">请求失败：'+err.message+'</span>';});
-  }
-  
-  var key = getAPIKey();
-  if (key) { doFetch(key); }
-  else { getAPIKey(function(nk){ if(nk) doFetch(nk); else el.innerHTML='<span style="color:var(--r)">API密钥未加载，请重新登录</span>'; }); }
+  }).catch(function(err){el.innerHTML='<span style="color:var(--r)">请求失败：'+err.message+'</span>';});
 }
 
 // 2. 记忆卡AI讲解
