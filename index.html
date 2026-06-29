@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<!-- v2.1 · 2026-06-29 00:34 · modular -->
+<!-- v2.1 · 2026-06-29 00:38 · modular -->
 <html lang="zh-CN">
 <head>
 <meta charset="UTF-8">
@@ -1488,7 +1488,7 @@ function renderMarkdown(text) {
         row.forEach(function(cell) {
           cell = cell.replace(/\*\*(.+?)\*\*/g, '<strong>$1</strong>');
           if (ri === 0) {
-            html += '<th style="border:1px solid #d0cdc6;padding:5px 8px;background:#f5f3ef;text-align:left;font-size:11px">' + cell + '</th>';
+            html += '<th style="border:1px solid var(--bdr);padding:5px 8px;background:#f5f3ef;text-align:left;font-size:11px">' + cell + '</th>';
           } else {
             html += '<td style="border:1px solid #e0ddd6;padding:5px 8px;font-size:12px">' + cell + '</td>';
           }
@@ -1512,7 +1512,7 @@ function renderMarkdown(text) {
       }
     }
     // Horizontal rule
-    if (/^---+$/.test(trimmed) || /^\*\*\*$/.test(trimmed)) { html += '<hr style="border:none;border-top:1px solid #e0ddd6;margin:12px 0">'; i++; continue; }
+    if (/^---+$/.test(trimmed) || /^\*\*\*$/.test(trimmed)) { html += '<hr style="border:none;border-top:1px solid var(--bdr);margin:12px 0">'; i++; continue; }
     // Block quote
     if (/^&gt;\s+/.test(trimmed) || /^>\s+/.test(trimmed)) { html += '<blockquote style="border-left:3px solid var(--pu);padding-left:10px;margin:6px 0;color:#666">' + trimmed.replace(/^&gt;\s+/, '').replace(/^>\s+/, '') + '</blockquote>'; i++; continue; }
     // Lists - collect consecutive list items
@@ -2151,8 +2151,8 @@ function showAnswerBank() {
       cat.items.forEach(function(item) {
         h += '<div class="pcard-section">';
         h += '<h4 style="cursor:pointer" onclick="this.parentElement.querySelector(\'pre\').style.display=this.parentElement.querySelector(\'pre\').style.display===\'none\'?\'block\':\'none\'">▸ ' + item.name + '</h4>';
-        h += '<pre style="display:none;white-space:pre-wrap;font-size:12px;line-height:1.8;background:#f8f8f8;padding:12px;border-radius:6px;margin-top:8px">' + item.content + '</pre>';
-        h += '<button onclick="event.stopPropagation();navigator.clipboard.writeText(this.previousElementSibling.textContent);this.textContent=\'已复制!\';setTimeout(function(){this.textContent=\'📋 复制\'}.bind(this),1500)" style="display:none;margin-top:4px;font-size:11px;padding:3px 8px;border:1px solid #d0cdc6;border-radius:4px;background:#fff;cursor:pointer">📋 复制</button>';
+        h += '<pre style="display:none;white-space:pre-wrap;font-size:12px;line-height:1.8;background:rgba(255,255,255,.04);padding:12px;border-radius:6px;margin-top:8px">' + item.content + '</pre>';
+        h += '<button onclick="event.stopPropagation();navigator.clipboard.writeText(this.previousElementSibling.textContent);this.textContent=\'已复制!\';setTimeout(function(){this.textContent=\'📋 复制\'}.bind(this),1500)" style="display:none;margin-top:4px;font-size:11px;padding:3px 8px;border:1px solid var(--bdr);border-radius:4px;background:rgba(255,255,255,.06);color:var(--t);cursor:pointer">📋 复制</button>';
         h += '</div>';
       });
       
@@ -2468,7 +2468,7 @@ function qCard(q) {
     '</div></div><div class="qb"><div class="qa">' + (q.answer || '<em style="color:#999">暂无答案</em>') + '</div>' +
     (q.knowledge && q.knowledge.length ? '<div style="margin-top:8px;display:flex;flex-wrap:wrap;gap:4px">' + q.knowledge.map(function(k){return '<span class="rt" style="cursor:pointer;font-size:11px" onclick="event.stopPropagation();navigateByKnowledge(\''+k.replace(/'/g,"\\'")+'\')">'+k+'</span>';}).join('') + '</div>' : '') +
     '<div style="margin-top:12px"><div class="kn-accordion"><div class="kn-acc-hdr" onclick="this.parentElement.classList.toggle(\'open\')"><span class="kn-acc-arrow">▸</span> 🤖 AI批改这道题</div>' +
-    '<div class="kn-acc-body" id="grade-' + qid + '"><textarea id="ta-' + qid + '" placeholder="在此输入你的作答..." style="width:100%;min-height:60px;border:1px solid #d0cdc6;border-radius:8px;padding:10px;font-size:13px;resize:vertical;font-family:inherit"></textarea>' +
+    '<div class="kn-acc-body" id="grade-' + qid + '"><textarea id="ta-' + qid + '" placeholder="在此输入你的作答..." style="width:100%;min-height:60px;border:1px solid var(--bdr);border-radius:8px;padding:10px;font-size:13px;resize:vertical;font-family:inherit"></textarea>' +
     '<button class="ai-btn ai-btn-sm" onclick="event.stopPropagation();aiGradeQuestion(\'' + q.id + '\',\'' + qid + '\')" style="margin-top:8px">提交批改</button>' +
     '<div id="result-' + qid + '" style="margin-top:10px;padding:10px;display:none"></div></div></div>' +
     '<div class="kn-accordion"><div class="kn-acc-hdr" onclick="this.parentElement.classList.toggle(\'open\')"><span class="kn-acc-arrow">▸</span> 🎓 AI讲解这道题</div>' +
@@ -2713,8 +2713,8 @@ function showStats() {
   
   // Data export/import
   h += '<div style="margin:12px 0;display:flex;gap:8px;justify-content:center">' +
-    '<button onclick="exportData()" style="padding:8px 16px;border:1px solid var(--pu);border-radius:6px;background:#fff;color:var(--pu);cursor:pointer;font-size:13px">📥 导出数据</button>' +
-    '<button onclick="document.getElementById(\'importFile\').click()" style="padding:8px 16px;border:1px solid var(--pu);border-radius:6px;background:#fff;color:var(--pu);cursor:pointer;font-size:13px">📤 导入数据</button>' +
+    '<button onclick="exportData()" style="padding:8px 16px;border:1px solid var(--pu);border-radius:6px;background:rgba(255,255,255,.06);color:var(--t);color:var(--pu);cursor:pointer;font-size:13px">📥 导出数据</button>' +
+    '<button onclick="document.getElementById(\'importFile\').click()" style="padding:8px 16px;border:1px solid var(--pu);border-radius:6px;background:rgba(255,255,255,.06);color:var(--t);color:var(--pu);cursor:pointer;font-size:13px">📤 导入数据</button>' +
     '<input type="file" id="importFile" style="display:none" onchange="importData(event)"></div>';
   
   // AI Diagnosis button
@@ -2942,12 +2942,12 @@ function showAllQuestions() {
   var h = '<div class="hero"><h1>📝 全部真题（' + DATA.length + '道）</h1><div class="desc">2011-2023年人大434国际商务真题，支持按年份/题型/状态筛选。点击展开查看答案和AI批改。</div></div>';
   // Filter bar
   h += '<div class="pcard" style="margin-bottom:12px"><div class="pcard-body" style="display:flex;gap:10px;flex-wrap:wrap;align-items:center">';
-  h += '<select id="aqYear" onchange="filterAllQuestions()" style="padding:5px 8px;border:1px solid var(--bdr);border-radius:6px;font-size:12px;background:#fff"><option value="">全部年份</option>';
+  h += '<select id="aqYear" onchange="filterAllQuestions()" style="padding:5px 8px;border:1px solid var(--bdr);border-radius:6px;font-size:12px;background:rgba(255,255,255,.06);color:var(--t)"><option value="">全部年份</option>';
   var years = []; DATA.forEach(function(q){if(years.indexOf(q.year)<0)years.push(q.year);});
   years.sort().forEach(function(y){h+='<option value="'+y+'">'+y+'年</option>';});
   h += '</select>';
-  h += '<select id="aqType" onchange="filterAllQuestions()" style="padding:5px 8px;border:1px solid var(--bdr);border-radius:6px;font-size:12px;background:#fff"><option value="">全部题型</option><option value="简答">简答</option><option value="论述">论述</option><option value="案例">案例</option></select>';
-  h += '<select id="aqStatus" onchange="filterAllQuestions()" style="padding:5px 8px;border:1px solid var(--bdr);border-radius:6px;font-size:12px;background:#fff"><option value="">全部状态</option><option value="done">已掌握</option><option value="star">重点标记</option><option value="wrong">错题</option><option value="unseen">未做</option></select>';
+  h += '<select id="aqType" onchange="filterAllQuestions()" style="padding:5px 8px;border:1px solid var(--bdr);border-radius:6px;font-size:12px;background:rgba(255,255,255,.06);color:var(--t)"><option value="">全部题型</option><option value="简答">简答</option><option value="论述">论述</option><option value="案例">案例</option></select>';
+  h += '<select id="aqStatus" onchange="filterAllQuestions()" style="padding:5px 8px;border:1px solid var(--bdr);border-radius:6px;font-size:12px;background:rgba(255,255,255,.06);color:var(--t)"><option value="">全部状态</option><option value="done">已掌握</option><option value="star">重点标记</option><option value="wrong">错题</option><option value="unseen">未做</option></select>';
   h += '<input id="aqSearch" placeholder="🔍 搜索题目..." oninput="filterAllQuestions()" style="padding:5px 10px;border:1px solid var(--bdr);border-radius:6px;font-size:12px;flex:1;min-width:120px;outline:none">';
   h += '</div></div>';
   h += '<div id="aqList"></div>';
@@ -3037,7 +3037,7 @@ function showGraph() {
     h2+='<label style="display:flex;align-items:center;gap:4px;font-size:12px;cursor:pointer"><input type="checkbox" checked data-mod="'+m+'" class="graph-mod-toggle" style="cursor:pointer"><span style="display:inline-block;width:12px;height:12px;border-radius:50%;background:'+modColors[m]+'"></span>'+m.substring(0,4)+'</label>';
   });
   h2+='<span style="width:1px;height:20px;background:var(--bdr)"></span>';
-  h2+='<select id="graphEdgeFilter" style="padding:4px 8px;border:1px solid var(--bdr);border-radius:6px;font-size:12px;background:#fff;cursor:pointer"><option value="all">全部关联</option><option value="evolution">仅理论演进</option><option value="coexam">仅真题共现</option></select>';
+  h2+='<select id="graphEdgeFilter" style="padding:4px 8px;border:1px solid var(--bdr);border-radius:6px;font-size:12px;background:rgba(255,255,255,.06);color:var(--t);cursor:pointer"><option value="all">全部关联</option><option value="evolution">仅理论演进</option><option value="coexam">仅真题共现</option></select>';
   h2+='<label style="display:flex;align-items:center;gap:4px;font-size:12px;cursor:pointer"><input type="checkbox" id="graphUnviewed" style="cursor:pointer">只看未浏览</label>';
   h2+='<input id="graphSearch" placeholder="🔍 搜索知识点..." style="padding:5px 10px;border:1px solid var(--bdr);border-radius:6px;font-size:12px;flex:1;min-width:120px;outline:none" oninput="graphFilter()">';
   h2+='</div></div>';
@@ -3048,9 +3048,9 @@ function showGraph() {
   modList.forEach(function(m){h2+='<radialGradient id="grad-'+m.substring(0,2)+'"><stop offset="0%" stop-color="'+modLight[m]+'" stop-opacity="0.9"/><stop offset="100%" stop-color="'+modColors[m]+'" stop-opacity="0.7"/></radialGradient>';});
   h2+='</defs><g id="graphViewport"><g id="graphEdges"></g><g id="graphNodes"></g></g></svg>';
   h2+='<div style="position:absolute;bottom:12px;right:12px;display:flex;flex-direction:column;gap:4px">';
-  h2+='<button onclick="graphZoom(1.2)" style="width:32px;height:32px;border:1px solid var(--bdr);background:#fff;border-radius:6px;cursor:pointer;font-size:16px;box-shadow:0 2px 6px rgba(0,0,0,.1)">+</button>';
-  h2+='<button onclick="graphZoom(0.8)" style="width:32px;height:32px;border:1px solid var(--bdr);background:#fff;border-radius:6px;cursor:pointer;font-size:16px;box-shadow:0 2px 6px rgba(0,0,0,.1)">−</button>';
-  h2+='<button onclick="graphReset()" style="width:32px;height:32px;border:1px solid var(--bdr);background:#fff;border-radius:6px;cursor:pointer;font-size:14px;box-shadow:0 2px 6px rgba(0,0,0,.1)">↺</button>';
+  h2+='<button onclick="graphZoom(1.2)" style="width:32px;height:32px;border:1px solid var(--bdr);background:rgba(255,255,255,.06);color:var(--t);border-radius:6px;cursor:pointer;font-size:16px;box-shadow:0 2px 6px rgba(0,0,0,.1)">+</button>';
+  h2+='<button onclick="graphZoom(0.8)" style="width:32px;height:32px;border:1px solid var(--bdr);background:rgba(255,255,255,.06);color:var(--t);border-radius:6px;cursor:pointer;font-size:16px;box-shadow:0 2px 6px rgba(0,0,0,.1)">−</button>';
+  h2+='<button onclick="graphReset()" style="width:32px;height:32px;border:1px solid var(--bdr);background:rgba(255,255,255,.06);color:var(--t);border-radius:6px;cursor:pointer;font-size:14px;box-shadow:0 2px 6px rgba(0,0,0,.1)">↺</button>';
   h2+='</div></div>';
   h2+='<div id="graphDetail" style="display:none;width:280px;flex-shrink:0;background:var(--card);border-radius:14px;box-shadow:0 4px 20px rgba(0,0,0,.1);overflow-y:auto;border:1px solid var(--bdr)"></div>';
   h2+='</div>';
@@ -3468,7 +3468,7 @@ function aiExplainFollowup() {
   if (!q) return;
   inp.value = '';
   var content = document.getElementById('aiExplainContent');
-  content.innerHTML += '<hr style="margin:12px 0;border:none;border-top:1px solid #e0ddd6"><div style="background:var(--pu);color:#fff;padding:8px 12px;border-radius:8px;margin-bottom:8px;font-size:13px">🙋 '+q+'</div><div id="aiExplainResp"></div>';
+  content.innerHTML += '<hr style="margin:12px 0;border:none;border-top:1px solid var(--bdr)"><div style="background:var(--pu);color:#fff;padding:8px 12px;border-radius:8px;margin-bottom:8px;font-size:13px">🙋 '+q+'</div><div id="aiExplainResp"></div>';
   aiExplainHistory.push({role:'user',content:q});
   var msgs = [{role:'system',content:RUC434_STYLE+'\n你是人大434考研辅导老师。基于之前的讲解继续回答学生的追问，严格遵循以上写作风格。用中文，结构化输出。'}];
   aiExplainHistory.slice(-10).forEach(function(h){msgs.push({role:h.role,content:h.content});});
