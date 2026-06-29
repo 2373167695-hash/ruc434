@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<!-- v2.1 · 2026-06-29 03:08 · modular -->
+<!-- v2.1 · 2026-06-29 08:50 · modular -->
 <html lang="zh-CN">
 <head>
 <meta charset="UTF-8">
@@ -364,7 +364,7 @@ body.sb-collapsed .sidebar.open ~ .sidebar-backdrop{display:block}
 
 /* ===== AI CHAT FULL-PAGE ===== */
 .ai-chat-wrap{position:fixed;top:0;left:0;right:0;bottom:0;display:flex;flex-direction:column;z-index:100;background:transparent;overflow:hidden}
-.ai-chat-hdr{flex-shrink:0;position:relative;z-index:1;padding:14px 24px;display:flex;justify-content:space-between;align-items:center;
+.ai-chat-hdr{flex-shrink:0;position:relative;z-index:1;padding:14px 12px;display:flex;justify-content:space-between;align-items:center;
   background:rgba(255,255,255,.06);backdrop-filter:url(#liquid-glass-filter) blur(0.5px) saturate(1.2);-webkit-backdrop-filter:url(#liquid-glass-filter) blur(0.5px) saturate(1.2);
   border-bottom:1px solid rgba(255,255,255,.08)}
 .ai-chat-hdr h3{font-size:17px;font-weight:700;color:var(--t)}
@@ -373,7 +373,7 @@ body.sb-collapsed .sidebar.open ~ .sidebar-backdrop{display:block}
 .ai-chat-hdr-btn{padding:6px 14px;background:var(--glass-sm-bg);backdrop-filter:var(--glass-sm-blur);-webkit-backdrop-filter:var(--glass-sm-blur);
   border:1px solid var(--glass-sm-border);border-radius:var(--radius);font-size:12px;cursor:pointer;color:var(--ts);font-family:inherit;transition:var(--transition)}
 .ai-chat-hdr-btn:hover{background:rgba(255,255,255,.25);color:var(--t)}
-.ai-chat-body{flex:1 1 0;overflow-y:auto;min-height:0;padding:24px 24px 8px;display:flex;flex-direction:column;gap:14px;position:relative;z-index:1;scroll-behavior:smooth}
+.ai-chat-body{flex:1 1 0;overflow-y:auto;min-height:0;padding:24px 12px 8px;display:flex;flex-direction:column;gap:14px;position:relative;z-index:1;scroll-behavior:smooth}
 .ai-chat-body::-webkit-scrollbar{width:6px}.ai-chat-body::-webkit-scrollbar-track{background:transparent}.ai-chat-body::-webkit-scrollbar-thumb{background:rgba(94,92,230,.15);border-radius:3px}.ai-chat-body::-webkit-scrollbar-thumb:hover{background:rgba(94,92,230,.3)}
 .ai-welcome{background:rgba(255,255,255,.08);backdrop-filter:blur(24px) saturate(200%);-webkit-backdrop-filter:blur(24px) saturate(200%);
   padding:20px 24px;border-radius:var(--radius-lg);font-size:14px;line-height:1.8;max-width:78%;align-self:flex-start;
@@ -401,7 +401,7 @@ body.sb-collapsed .sidebar.open ~ .sidebar-backdrop{display:block}
   border:1px solid rgba(255,255,255,.08);font-size:13px;color:var(--ts);align-self:flex-start;max-width:200px}
 .ai-loading .ai-dot{width:7px;height:7px;border-radius:50%;background:var(--pu);display:inline-block;margin:0 2px;animation:aiBounce 1.4s infinite ease-in-out}
 .ai-loading .ai-dot:nth-child(1){animation-delay:0s}.ai-loading .ai-dot:nth-child(2){animation-delay:.2s}.ai-loading .ai-dot:nth-child(3){animation-delay:.4s}
-.ai-chat-input-bar{flex-shrink:0;position:relative;z-index:1;padding:16px 24px 20px;display:flex;gap:12px;align-items:flex-end;
+.ai-chat-input-bar{flex-shrink:0;position:relative;z-index:1;padding:16px 12px 20px;display:flex;gap:12px;align-items:flex-end;
   background:rgba(255,255,255,.06);backdrop-filter:url(#liquid-glass-filter) blur(0.5px) saturate(1.2);-webkit-backdrop-filter:url(#liquid-glass-filter) blur(0.5px) saturate(1.2);
   border-top:1px solid rgba(255,255,255,.08)}
 .ai-chat-textarea{flex:1;padding:12px 18px;border:1px solid rgba(255,255,255,.1);border-radius:var(--radius);
