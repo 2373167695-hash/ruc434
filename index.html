@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<!-- v2.1 · 2026-07-02 07:39 · modular -->
+<!-- v2.1 · 2026-07-02 12:40 · modular -->
 <html lang="zh-CN">
 <head>
 <meta charset="UTF-8">
@@ -2105,6 +2105,30 @@ function showHome() {recordTrend();var bb=document.getElementById('backBtn');if(
     '<div class="st">⭐ <strong>'+s+'</strong> 重点题</div>'+
     '<div class="st">👨‍🏫 <strong>'+pn+'</strong> 位导师</div>'+
     '<div class="st">🎯 <strong>'+prn+'</strong> 预测</div></div></div></div></div>';
+
+  // Countdown to exam
+  var now = new Date();
+  var examYear = now.getMonth() >= 11 ? now.getFullYear() + 1 : now.getFullYear();
+  var examDate = new Date(examYear, 11, 27); // 12月27日
+  if (examDate.getDay() !== 6) { // 找到12月最后一个周六
+    examDate.setDate(examDate.getDate() - (examDate.getDay() + 1) % 7);
+  }
+  var diffDays = Math.ceil((examDate - now) / 86400000);
+  var countdownColor = diffDays <= 30 ? '#ff453a' : diffDays <= 90 ? '#ff9f0a' : '#5e5ce6';
+  var countdownText = diffDays <= 0 ? '考试加油！' : diffDays + ' 天';
+  var examDateStr = examDate.getFullYear() + '年' + (examDate.getMonth()+1) + '月' + examDate.getDate() + '日';
+  h += '<div style="background:linear-gradient(135deg,'+countdownColor+'15,'+countdownColor+'05);border:1px solid '+countdownColor+'30;border-radius:20px;padding:16px 24px;margin-bottom:16px;display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:12px">'+
+    '<div style="display:flex;align-items:center;gap:12px">'+
+    '<div style="font-size:32px;font-weight:800;color:'+countdownColor+';line-height:1">'+countdownText+'</div>'+
+    '<div>'+
+    '<div style="font-size:14px;font-weight:600;color:var(--t)">距离考研初试</div>'+
+    '<div style="font-size:11px;color:var(--ts)">'+examDateStr+'（周日）</div>'+
+    '</div></div>'+
+    '<div style="display:flex;gap:8px">'+
+    '<div style="text-align:center;padding:6px 12px;background:rgba(255,255,255,.04);border-radius:10px"><div style="font-size:18px;font-weight:700;color:var(--t)">'+Math.floor(diffDays/30)+'</div><div style="font-size:10px;color:var(--ts)">月</div></div>'+
+    '<div style="text-align:center;padding:6px 12px;background:rgba(255,255,255,.04);border-radius:10px"><div style="font-size:18px;font-weight:700;color:var(--t)">'+Math.floor(diffDays/7)+'</div><div style="font-size:10px;color:var(--ts)">周</div></div>'+
+    '<div style="text-align:center;padding:6px 12px;background:rgba(255,255,255,.04);border-radius:10px"><div style="font-size:18px;font-weight:700;color:var(--t)">'+(n-d)+'</div><div style="font-size:10px;color:var(--ts)">题未做</div></div>'+
+    '</div></div>';
 
   // Today tasks row
   var dueW = getDueWrongCount();
