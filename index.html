@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<!-- v2.1 · 2026-07-02 13:38 · modular -->
+<!-- v2.1 · 2026-07-02 13:54 · modular -->
 <html lang="zh-CN">
 <head>
 <meta charset="UTF-8">
@@ -2441,6 +2441,22 @@ function buildAIContext(query) {
     if (kn.exam) ctx += '历年考察：' + kn.exam + '\n';
     ctx += '\n';
   }
+
+  // === 答题风格范例（必须模仿） ===
+  ctx += '=== 答题风格范例（你的回答必须严格模仿以下标准答案的风格和结构） ===\n\n';
+  var examples = DATA.filter(function(q) { return q.answer && q.answer.length > 200; }).slice(0, 3);
+  examples.forEach(function(q) {
+    ctx += '【' + q.year + '年 第' + q.num + '题 ' + q.type + '】\n';
+    ctx += '题目：' + q.question + '\n';
+    ctx += '标准答案：\n' + q.answer + '\n\n';
+  });
+  ctx += '【风格要点】\n';
+  ctx += '1. 开头直接给出定义或核心观点，不要绕弯\n';
+  ctx += '2. 用用①②③④分点作答，每条要点后附简短解释\n';
+  ctx += '3. 理论名称必须中英文对照\n';
+  ctx += '4. 结尾必须有【考点提示】或【答题技巧】\n';
+  ctx += '5. 对比题必须用表格或"相同点/不同点"框架\n';
+  ctx += '6. 案例分析必须引用题干原文信息\n\n';
   
   // === HOT TOPICS ===
   if (typeof HOT_TOPICS !== 'undefined' && HOT_TOPICS && HOT_TOPICS.categories) {
