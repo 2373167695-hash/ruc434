@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<!-- v2.1 · 2026-07-02 12:40 · modular -->
+<!-- v2.1 · 2026-07-02 12:47 · modular -->
 <html lang="zh-CN">
 <head>
 <meta charset="UTF-8">
@@ -2109,10 +2109,7 @@ function showHome() {recordTrend();var bb=document.getElementById('backBtn');if(
   // Countdown to exam
   var now = new Date();
   var examYear = now.getMonth() >= 11 ? now.getFullYear() + 1 : now.getFullYear();
-  var examDate = new Date(examYear, 11, 27); // 12月27日
-  if (examDate.getDay() !== 6) { // 找到12月最后一个周六
-    examDate.setDate(examDate.getDate() - (examDate.getDay() + 1) % 7);
-  }
+  var examDate = new Date(examYear, 11, 19); // 12月19日
   var diffDays = Math.ceil((examDate - now) / 86400000);
   var countdownColor = diffDays <= 30 ? '#ff453a' : diffDays <= 90 ? '#ff9f0a' : '#5e5ce6';
   var countdownText = diffDays <= 0 ? '考试加油！' : diffDays + ' 天';
