@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<!-- v2.1 · 2026-07-02 12:47 · modular -->
+<!-- v2.1 · 2026-07-02 13:23 · modular -->
 <html lang="zh-CN">
 <head>
 <meta charset="UTF-8">
@@ -410,6 +410,10 @@ body.sb-collapsed .sidebar.open ~ .sidebar-backdrop{display:block}
   resize:none;font-family:inherit;min-height:44px;max-height:120px;color:var(--t);transition:var(--transition)}
 .ai-chat-textarea::placeholder{color:var(--ts)}
 .ai-chat-textarea:focus{border-color:rgba(94,92,230,.3);box-shadow:0 0 0 3px rgba(94,92,230,.1)}
+.ai-chat-voice{width:44px;height:44px;border-radius:var(--radius);border:1px solid rgba(255,255,255,.1);
+  background:rgba(255,255,255,.06);font-size:18px;cursor:pointer;transition:var(--transition);flex-shrink:0}
+.ai-chat-voice:hover{background:rgba(94,92,230,.15);border-color:rgba(94,92,230,.3)}
+.ai-chat-voice:active{transform:scale(.95)}
 .ai-chat-send{padding:12px 24px;background:linear-gradient(135deg,#5e5ce6,#007aff);color:#fff;border:none;
   border-radius:var(--radius);font-size:14px;font-weight:600;cursor:pointer;height:44px;white-space:nowrap;font-family:inherit;
   transition:var(--transition);box-shadow:0 2px 12px rgba(94,92,230,.2)}
@@ -2553,6 +2557,7 @@ function showAI() {
   }
   h += '</div>';
   h += '<div class="ai-chat-input-bar">';
+  h += '<button id="voiceBtn" class="ai-chat-voice" onclick="toggleVoice()" title="语音输入">🎤</button>';
   h += '<textarea id="ai-chat-input" class="ai-chat-textarea" placeholder="输入你的问题... (Enter发送，Shift+Enter换行)" rows="2" onkeydown="if(event.key===\'Enter\' && !event.shiftKey){event.preventDefault();sendAIMessage()}"></textarea>';
   h += '<button class="ai-chat-send" onclick="sendAIMessage()">发送</button>';
   h += '</div></div>';
@@ -2654,6 +2659,173 @@ function clearAIChat() {
   chatHistory = [];
   try { localStorage.removeItem('r434_chat'); } catch(e) {}
   showAI(); // Re-render
+}
+
+// ===== VOICE CHAT (AI助手专用) =====
+var _mediaRecorder = null, _audioChunks = [], _isRecording = false;
+
+function toggleVoice() {
+  if (_isRecording) { stopVoice(); } else { startVoice(); }
+}
+
+function startVoice() {
+  if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
+    alert('当前浏览器不支持录音，请使用Chrome或Safari');
+    return;
+  }
+  navigator.mediaDevices.getUserMedia({ audio: true }).then(function(stream) {
+    _mediaRecorder = new MediaRecorder(stream, { mimeType: 'audio/webm;codecs=opus' });
+    _audioChunks = [];
+    _mediaRecorder.ondataavailable = function(e) { if (e.data.size > 0) _audioChunks.push(e.data); };
+    _mediaRecorder.onstop = function() {
+      stream.getTracks().forEach(function(t) { t.stop(); });
+      if (_audioChunks.length > 0) processVoice();
+    };
+    _mediaRecorder.start();
+    _isRecording = true;
+    var btn = document.getElementById('voiceBtn');
+    if (btn) { btn.textContent = '⏹'; btn.style.background = 'rgba(255,69,58,.2)'; btn.style.color = '#ff453a'; }
+    var input = document.getElementById('ai-chat-input');
+    if (input) { input.placeholder = '🎤 录音中...点击停止'; input.disabled = true; }
+  }).catch(function(err) {
+    alert('无法访问麦克风：' + err.message);
+  });
+}
+
+function stopVoice() {
+  if (_mediaRecorder && _mediaRecorder.state === 'recording') _mediaRecorder.stop();
+  _isRecording = false;
+  var btn = document.getElementById('voiceBtn');
+  if (btn) { btn.textContent = '🎤'; btn.style.background = ''; btn.style.color = ''; }
+  var input = document.getElementById('ai-chat-input');
+  if (input) { input.placeholder = '输入问题... (Enter发送)'; input.disabled = false; }
+}
+
+function processVoice() {
+  var blob = new Blob(_audioChunks, { type: 'audio/webm' });
+  var reader = new FileReader();
+  reader.onload = function() {
+    var base64 = reader.result.split(',')[1];
+    var input = document.getElementById('ai-chat-input');
+    if (input) input.value = '🎤 识别中...';
+    // ASR: 语音转文字
+    fetch(DS_URL, {
+      method: 'POST',
+      headers: { Authorization: 'Bearer ' + getAPIKey(), 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        model: 'mimo-v2.5-asr',
+        messages: [{ role: 'user', content: 'data:audio/webm;base64,' + base64 }],
+        asr_options: { language: 'zh' }
+      })
+    }).then(function(r) { return r.json(); }).then(function(d) {
+      var text = (d.choices && d.choices[0] && d.choices[0].message) ? d.choices[0].message.content : '';
+      if (text) {
+        if (input) input.value = text;
+        sendVoiceMessage(text);
+      } else {
+        if (input) { input.value = ''; input.placeholder = '未识别到语音，请重试'; }
+        setTimeout(function() { if (input) input.placeholder = '输入问题... (Enter发送)'; }, 2000);
+      }
+    }).catch(function(err) {
+      if (input) { input.value = ''; input.placeholder = '识别失败：' + err.message; }
+      setTimeout(function() { if (input) input.placeholder = '输入问题... (Enter发送)'; }, 2000);
+    });
+  };
+  reader.readAsDataURL(blob);
+}
+
+function sendVoiceMessage(q) {
+  var chatBody = document.getElementById('ai-chat-body');
+  if (!chatBody) return;
+  chatBody.innerHTML += '<div class="ai-msg ai-msg-user">🎤 ' + escapeHtml(q) + '</div>';
+  var loadingId = 'ai-loading-' + Date.now();
+  chatBody.innerHTML += '<div id="' + loadingId + '" class="ai-loading"><span class="ai-dot"></span><span class="ai-dot"></span><span class="ai-dot"></span> 思考中...</div>';
+  chatBody.scrollTop = chatBody.scrollHeight;
+  chatHistory.push({role: 'user', content: q});
+  var ctx = buildAIContext(q);
+  var sys = RUC434_STYLE + "\n你是人大434国际商务考研AI助手。请严格遵循以上写作风格，简洁回答，适合语音朗读。不要使用markdown格式、表格、代码块。\n" + ctx;
+  var msgs = [{role: 'system', content: sys}];
+  chatHistory.slice(-10).forEach(function(h) { msgs.push({role: h.role, content: h.content}); });
+  fetch(DS_URL, {
+    method: 'POST',
+    headers: {Authorization: 'Bearer ' + getAPIKey(), 'Content-Type': 'application/json'},
+    body: JSON.stringify({model: 'mimo-v2.5', messages: msgs, stream: true, temperature: 0.3})
+  }).then(function(r) {
+    if (!r.ok) throw Error('HTTP ' + r.status);
+    return r.body.getReader();
+  }).then(function(rd) {
+    var b = '', t = '', d = new TextDecoder();
+    var responseId = 'ai-response-' + Date.now();
+    var loadingEl = document.getElementById(loadingId);
+    if (loadingEl) { loadingEl.id = responseId; loadingEl.className = 'ai-msg ai-msg-bot'; loadingEl.innerHTML = ''; }
+    function n() {
+      rd.read().then(function(r) {
+        if (r.done) {
+          var respEl = document.getElementById(responseId);
+          if (respEl) respEl.innerHTML = renderMarkdown(t);
+          chatHistory.push({role: 'assistant', content: t});
+          saveState();
+          speakText(t); // TTS播放AI回复
+          return;
+        }
+        b += d.decode(r.value, {stream: true});
+        var ls = b.split('\n'); b = ls.pop() || '';
+        ls.forEach(function(l) {
+          if (l.startsWith('data: ')) {
+            var dd = l.substring(6); if (dd == '[DONE]') return;
+            try {
+              var p = JSON.parse(dd);
+              if (p.choices && p.choices[0].delta) {
+                var x = p.choices[0].delta.content || '';
+                if (x) {
+                  t += x;
+                  var respEl = document.getElementById(responseId);
+                  if (respEl) respEl.innerHTML = renderMarkdown(t);
+                  chatBody.scrollTop = chatBody.scrollHeight;
+                }
+              }
+            } catch(e) {}
+          }
+        });
+        n();
+      });
+    }
+    n();
+  }).catch(function(err) {
+    var loadingEl = document.getElementById(loadingId);
+    if (loadingEl) loadingEl.innerHTML = '<div class="ai-msg-err">请求失败：' + err.message + '</div>';
+  });
+}
+
+function speakText(text) {
+  if (!text) return;
+  // 清理markdown格式，保留纯文本
+  var clean = text.replace(/[#*`\[\]()]/g, '').replace(/\n+/g, '。').substring(0, 500);
+  fetch(DS_URL, {
+    method: 'POST',
+    headers: { Authorization: 'Bearer ' + getAPIKey(), 'Content-Type': 'application/json' },
+    body: JSON.stringify({
+      model: 'mimo-v2.5-tts',
+      messages: [
+        { role: 'user', content: '用自然流畅的语气朗读' },
+        { role: 'assistant', content: clean }
+      ]
+    })
+  }).then(function(r) { return r.json(); }).then(function(d) {
+    var audioData = null;
+    if (d.choices && d.choices[0] && d.choices[0].message) {
+      var content = d.choices[0].message.audio || d.choices[0].message.content;
+      if (typeof content === 'string' && content.indexOf('data:audio') === 0) {
+        audioData = content;
+      } else if (d.choices[0].message.audio && d.choices[0].message.audio.data) {
+        audioData = 'data:audio/wav;base64,' + d.choices[0].message.audio.data;
+      }
+    }
+    if (audioData) {
+      var audio = new Audio(audioData);
+      audio.play();
+    }
+  }).catch(function() {});
 }
 
 function showMacro() {
