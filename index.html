@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<!-- v2.1 · 2026-07-02 13:54 · modular -->
+<!-- v2.1 · 2026-07-02 14:12 · modular -->
 <html lang="zh-CN">
 <head>
 <meta charset="UTF-8">
@@ -2982,17 +2982,6 @@ function showHome() {recordTrend();var bb=document.getElementById('backBtn');if(
     var fc = r.count>=10?'#ff453a':r.count>=5?'#ff9f0a':r.count>=2?'#5e5ce6':'var(--ts)';
     var fbg = r.count>=10?'rgba(255,69,58,.06)':r.count>=5?'rgba(255,159,10,.06)':r.count>=2?'rgba(94,92,230,.04)':'transparent';
     var tc = []; for (var tp in r.types) tc.push(tp+'×'+r.types[tp]);
-    h += '<tr style="border-bottom:1px solid rgba(0,0,0,.03);cursor:pointer" onclick="navigateByKnowledge(\''+r.name.replace(/'/g,"\\'")+'\')">'+
-      '<td style="padding:5px 10px;font-weight:600">'+r.name+'</td>'+
-      '<td style="padding:5px 10px;color:var(--ts);font-size:10px">'+r.module+'</td>'+
-      '<td style="padding:5px 10px;text-align:center"><span style="display:inline-block;padding:2px 7px;border-radius:8px;background:'+fbg+';color:'+fc+';font-weight:700">'+r.count+'</span><div style="height:2px;background:rgba(0,0,0,.04);margin-top:2px;border-radius:1px"><div style="height:2px;background:'+fc+';border-radius:1px;opacity:.3;width:'+Math.round(r.count/maxC*100)+'%"></div></div></td>'+
-      '<td style="padding:5px 10px;color:var(--ts);font-size:10px">'+r.years.join(', ')+'</td>'+
-      '<td style="padding:5px 10px;color:var(--ts);font-size:10px">'+tc.join(' ')+'</td></tr>';
-  });
-  h += '</table></div></div>';
-  
-  document.getElementById("ct").innerHTML = h;
-}
 
 function showKnContent(key, topicName) {
   if (key === 'home') { showHome(); return; }
