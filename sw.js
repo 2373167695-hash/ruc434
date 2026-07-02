@@ -1,7 +1,7 @@
 // Service Worker for 人大434备考系统
-var CACHE_VERSION = 'ruc434-v2';
+var CACHE_VERSION = 'ruc434-v1';
 var CACHE_URLS = [
-  'index.html',
+  '.',
   'manifest.json',
   'https://cdn.jsdelivr.net/npm/chart.js@4.4.7/dist/chart.umd.min.js',
   'https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/katex.min.css',
