@@ -1,5 +1,5 @@
 // Service Worker for 人大434备考系统
-var CACHE_VERSION = 'ruc434-v1';
+var CACHE_VERSION = 'ruc434-v5';
 var CACHE_URLS = [
   '.',
   'manifest.json',
