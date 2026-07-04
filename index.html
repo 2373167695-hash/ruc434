@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<!-- v2.1 · 2026-07-04 01:31 · modular -->
+<!-- v2.1 · 2026-07-04 01:35 · modular -->
 <html lang="zh-CN">
 <head>
 <meta charset="UTF-8">
@@ -7003,8 +7003,9 @@ function capLaunch(actionId, capabilityCode) {
 // ===== INIT DONE =====
 
 // ===== INIT DONE =====
-// Register service worker for PWA
-if ('serviceWorker' in navigator) { navigator.serviceWorker.register('sw.js?v=6'); }
+// Service Worker disabled due to persistent caching issues
+// To re-enable PWA offline support, uncomment:
+// if ('serviceWorker' in navigator) { navigator.serviceWorker.register('sw.js'); }
 
 // 液态玻璃位移图生成
 (function() {
