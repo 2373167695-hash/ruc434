@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<!-- v2.1 · 2026-07-04 02:13 · modular -->
+<!-- v2.1 · 2026-07-04 02:18 · modular -->
 <html lang="zh-CN">
 <head>
 <meta charset="UTF-8">
@@ -574,9 +574,9 @@ body.sb-collapsed .sidebar.open ~ .sidebar-backdrop{display:block}
   position: relative;
   overflow: auto;
   border-radius: var(--radius);
-  background: rgba(255,255,255,.02);
+  background: rgba(255,255,255,.015);
   border: 1px solid rgba(255,255,255,.06);
-  max-height: calc(100vh - 200px);
+  max-height: calc(100vh - 180px);
 }
 .tmap-svg {
   display: block;
@@ -591,72 +591,78 @@ body.sb-collapsed .sidebar.open ~ .sidebar-backdrop{display:block}
 }
 .tmap-node {
   position: absolute;
-  border-radius: 8px;
+  border-radius: 10px;
   border: 1px solid;
-  padding: 4px 10px;
+  padding: 6px 12px;
   display: flex;
   align-items: center;
-  gap: 4px;
+  gap: 5px;
   flex-wrap: wrap;
-  cursor: pointer;
-  transition: all .2s;
-  backdrop-filter: blur(12px) saturate(160%);
-  -webkit-backdrop-filter: blur(12px) saturate(160%);
+  transition: all .2s, box-shadow .3s;
+  backdrop-filter: blur(14px) saturate(160%);
+  -webkit-backdrop-filter: blur(14px) saturate(160%);
 }
 .tmap-node:hover {
-  transform: translateY(-1px);
-  box-shadow: 0 4px 20px rgba(0,0,0,.2);
+  transform: translateY(-2px);
+  box-shadow: 0 6px 24px rgba(0,0,0,.25);
   z-index: 10;
 }
 .tmap-done {
-  box-shadow: 0 0 12px rgba(52,199,89,.15);
+  box-shadow: 0 0 16px rgba(52,199,89,.12);
+}
+.tmap-arr {
+  font-size: 10px;
+  flex-shrink: 0;
+  width: 14px;
+  text-align: center;
+  line-height: 1;
+  transition: transform .2s;
+  user-select: none;
 }
 .tmap-label {
-  font-size: 11px;
-  color: rgba(255,255,255,.8);
-  line-height: 1.25;
+  color: rgba(255,255,255,.85);
+  line-height: 1.3;
   flex: 1;
   min-width: 0;
 }
 .tmap-code {
-  font-size: 9px;
+  font-size: 10px;
   color: rgba(255,255,255,.25);
-  font-family: 'SF Mono', 'Monaco', monospace;
+  font-family: 'SF Mono','Monaco',monospace;
   background: rgba(255,255,255,.04);
-  padding: 1px 5px;
-  border-radius: 4px;
+  padding: 1px 6px;
+  border-radius: 5px;
   flex-shrink: 0;
 }
 .tmap-check {
-  font-size: 10px;
+  font-size: 11px;
   color: #4ade80;
   flex-shrink: 0;
 }
 .tmap-acts {
   display: flex;
   flex-wrap: wrap;
-  gap: 3px;
+  gap: 4px;
   width: 100%;
-  margin-top: 2px;
+  margin-top: 3px;
 }
 .tmap-btn {
-  font-size: 9px;
-  padding: 2px 7px;
-  border-radius: 6px;
-  background: rgba(94,92,230,.1);
+  font-size: 10px;
+  padding: 3px 8px;
+  border-radius: 7px;
+  background: rgba(94,92,230,.12);
   color: #a5b4fc;
   cursor: pointer;
-  border: 1px solid rgba(94,92,230,.15);
+  border: 1px solid rgba(94,92,230,.18);
   transition: all .12s;
   white-space: nowrap;
-  line-height: 1.3;
+  line-height: 1.4;
 }
 .tmap-btn:hover {
-  background: rgba(94,92,230,.2);
-  border-color: rgba(94,92,230,.3);
+  background: rgba(94,92,230,.22);
+  border-color: rgba(94,92,230,.35);
   color: #c4b5fd;
 }
-/* Scrollbar styling for the diagram container */
 .tmap-wrap::-webkit-scrollbar { width: 6px; height: 6px; }
 .tmap-wrap::-webkit-scrollbar-track { background: transparent; }
 .tmap-wrap::-webkit-scrollbar-thumb { background: rgba(255,255,255,.1); border-radius: 3px; }
@@ -6963,7 +6969,7 @@ function otL3Check3() {
   if (tab) { tab.style.background = 'rgba(48,209,88,.08)'; tab.style.color = 'rgba(48,209,88,.6)'; }
 }
 
-// ===== 能力地图 — 逻辑框架图（树状图可视化） =====
+// ===== 能力地图 — 逻辑框架图（可折叠底层节点） =====
 function showCapabilityMap() {
   document.getElementById('bc').innerHTML = '🧭 <span>能力地图</span>';
   var progress = JSON.parse(localStorage.getItem('r434_cap_progress') || '{}');
@@ -6979,138 +6985,183 @@ function showCapabilityMap() {
 
   var tree = typeof CAPABILITY_TREE !== 'undefined' ? CAPABILITY_TREE : null;
   if (!tree || !tree.children) {
-    document.getElementById('ct').innerHTML = '<div class="hero" style="margin-bottom:16px"><h1>🧭 能力地图</h1><p class="desc">47个能力节点</p></div><div class="pcard" style="padding:40px;text-align:center"><p style="color:rgba(255,255,255,.3)">能力树数据加载中...</p></div>';
+    document.getElementById('ct').innerHTML = '<div class="hero"><h1>🧭 能力地图</h1></div><div class="pcard" style="padding:40px;text-align:center"><p style="color:rgba(255,255,255,.3)">能力树数据加载中...</p></div>';
     return;
   }
 
-  // --- Layout algorithm ---
-  // Left-to-right tree: root on left, leaves on right
-  var LX = 40;          // left padding
-  var DX = 170;         // horizontal gap between levels
-  var NODE_W = [200, 170, 150, 130, 110, 96]; // node width per depth
-  var NODE_H = [48, 38, 34, 28, 24, 22];       // node height per depth
-  var LEAF_VGAP = 8;    // vertical gap between leaf nodes
+  // Keep track of which L3 nodes are expanded (show L4-L5)
+  window._ctEx = window._ctEx || {};
   
-  // Phase 1: Assign leaf ordering
-  var leafOrder = 0;
-  function assignLeafOrder(node) {
-    if (!node.children || !node.children.length) {
-      leafOrder++; node._leafIdx = leafOrder - 1;
-    } else {
-      node.children.forEach(assignLeafOrder);
-      node._leafCount = node.children.reduce(function(s,c){return s+(c._leafCount||1);},0);
-    }
+  // Full layout: compute positions for ALL nodes (L0-L5)
+  // Use larger dimensions
+  var NODE_W = [280, 240, 210, 180, 150, 130];
+  var NODE_H = [58, 50, 44, 38, 32, 28];
+  var DX = 250;   // horizontal gap between levels
+  var LX = 40;    // left padding
+  var VG = 14;    // vertical gap between leaves
+
+  // Assign leaf ordering across the entire tree
+  var leafIdx = 0;
+  function orderLeaves(n) {
+    if (!n.children || !n.children.length) { leafIdx++; n._li = leafIdx - 1; return; }
+    n.children.forEach(orderLeaves);
+    n._lc = n.children.reduce(function(s,c){return s+(c._lc||1);},0);
   }
-  assignLeafOrder(tree);
-  
-  // Phase 2: Assign (x,y) positions. y is center of node.
-  function layoutNode(node, depth) {
-    var w = NODE_W[Math.min(depth, NODE_W.length-1)];
-    var h = NODE_H[Math.min(depth, NODE_H.length-1)];
-    var x = LX + depth * DX;
-    
-    if (!node.children || !node.children.length) {
-      var y = 60 + node._leafIdx * (h + LEAF_VGAP);
-      node._pos = {x:x, y:y, w:w, h:h, depth:depth};
+  orderLeaves(tree);
+
+  // Position all nodes
+  function layoutAll(n, d) {
+    var w = NODE_W[Math.min(d, NODE_W.length-1)];
+    var h = NODE_H[Math.min(d, NODE_H.length-1)];
+    var x = LX + d * DX;
+    if (!n.children || !n.children.length) {
+      n._p = {x:x, y:70 + n._li*(h+VG), w:w, h:h, d:d};
       return;
     }
-    // Position children
-    node.children.forEach(function(c){layoutNode(c, depth+1);});
-    // Center Y over children
-    var first = node.children[0]._pos;
-    var last = node.children[node.children.length-1]._pos;
-    var y = (first.y + last.y) / 2;
-    node._pos = {x:x, y:y, w:w, h:h, depth:depth};
+    n.children.forEach(function(c){layoutAll(c, d+1);});
+    var first = n.children[0]._p, last = n.children[n.children.length-1]._p;
+    n._p = {x:x, y:(first.y+last.y)/2, w:w, h:h, d:d};
   }
-  layoutNode(tree, 0);
-  
-  // Compute canvas size
-  var maxX = 0, maxY = 0;
-  function scanBounds(node) {
-    var p = node._pos;
-    if (p.x + p.w > maxX) maxX = p.x + p.w;
-    if (p.y + p.h/2 > maxY) maxY = p.y + p.h/2;
-    if (node.children) node.children.forEach(scanBounds);
+  layoutAll(tree, 0);
+
+  // Canvas bounds
+  var maxX=0, maxY=0;
+  (function scan(n){
+    if (n._p.x+n._p.w>maxX) maxX=n._p.x+n._p.w;
+    if (n._p.y+n._p.h/2>maxY) maxY=n._p.y+n._p.h/2;
+    if (n.children) n.children.forEach(scan);
+  })(tree);
+  var CW = maxX+100, CH = maxY+60;
+
+  // Determine what's visible: L0-L3 always, L4-L5 only if parent L3 expanded
+  function isVisible(n) {
+    if (n._p.d <= 3) return true;
+    // Walk up to find the L3 ancestor
+    var p = n;
+    while (p && p._p && p._p.d > 3) {
+      p = p._parent;
+    }
+    if (p && p._p && p._p.d === 3) return !!window._ctEx[p.code];
+    return false;
   }
-  scanBounds(tree);
-  var CW = maxX + 80, CH = maxY + 40;
-  
-  // Phase 3: Generate SVG paths
+  // Tag parent references for L4-L5 nodes
+  function tagParent(n, parent) {
+    n._parent = parent;
+    if (n.children) n.children.forEach(function(c){tagParent(c, n);});
+  }
+  tagParent(tree, null);
+
+  // Generate SVG paths (only for visible subtrees)
   var paths = '';
-  function genPaths(node) {
-    if (!node.children || !node.children.length) return;
-    var pp = node._pos;
-    var px = pp.x + pp.w;
-    var py = pp.y;
-    node.children.forEach(function(c){
-      var cp = c._pos;
-      var cx = cp.x;
-      var cy = cp.y;
-      var mx = (px + cx) / 2;
-      paths += '<path d="M' + px + ' ' + py + ' C' + mx + ' ' + py + ' ' + mx + ' ' + cy + ' ' + cx + ' ' + cy + '" fill="none" stroke="rgba(255,255,255,.08)" stroke-width="1.5"/>';
-      genPaths(c);
+  function genP(n) {
+    if (!n.children || !n.children.length) return;
+    var pp = n._p, px = pp.x+pp.w, py = pp.y;
+    n.children.forEach(function(c){
+      // Skip path if child is hidden (L4-L5 collapsed)
+      if (!isVisible(c)) return;
+      var cp = c._p, cx = cp.x, cy = cp.y;
+      var mx = (px+cx)/2;
+      paths += '<path d="M'+px+' '+py+' C'+mx+' '+py+' '+mx+' '+cy+' '+cx+' '+cy+'" fill="none" stroke="rgba(255,255,255,.1)" stroke-width="2" data-path="'+c.code+'"/>';
+      genP(c);
     });
   }
-  genPaths(tree);
-  
-  // Phase 4: Generate HTML node cards
+  genP(tree);
+
+  // Generate node cards
+  var tagBg  = {intention:'rgba(232,200,107,.12)', knowledge:'rgba(94,92,230,.12)', framework:'rgba(52,199,89,.12)', expression:'rgba(0,122,255,.12)'};
+  var tagBd  = {intention:'rgba(232,200,107,.25)', knowledge:'rgba(94,92,230,.25)', framework:'rgba(52,199,89,.25)', expression:'rgba(0,122,255,.25)'};
+  var tagTxt = {intention:'#fbbf24', knowledge:'#a5b4fc', framework:'#4ade80', expression:'#60a5fa'};
   var nodesHTML = '';
-  function genNodes(node) {
-    var p = node._pos;
-    var done = progress[node.code];
-    var isLeaf = !node.children || !node.children.length;
-    var tagColor = {'intention':'rgba(232,200,107,.15)','knowledge':'rgba(94,92,230,.15)','framework':'rgba(52,199,89,.15)','expression':'rgba(0,122,255,.15)'};
-    var tagBorder = {'intention':'rgba(232,200,107,.25)','knowledge':'rgba(94,92,230,.25)','framework':'rgba(52,199,89,.25)','expression':'rgba(0,122,255,.25)'};
-    var bg = tagColor[node.tag] || 'rgba(255,255,255,.04)';
-    var bd = tagBorder[node.tag] || 'rgba(255,255,255,.1)';
-    if (done) { bg = 'rgba(52,199,89,.08)'; bd = 'rgba(52,199,89,.2)'; }
+  
+  function genN(n) {
+    var p = n._p, done = progress[n.code];
+    var bg = tagBg[n.tag] || 'rgba(255,255,255,.04)';
+    var bd = tagBd[n.tag] || 'rgba(255,255,255,.12)';
+    var tc = tagTxt[n.tag] || '';
+    if (done) { bg='rgba(52,199,89,.1)'; bd='rgba(52,199,89,.25)'; }
     
-    var opacity = 1 - p.depth * 0.08;
-    nodesHTML += '<div class="tmap-node' + (done?' tmap-done':'') + '" style="left:' + p.x + 'px;top:' + (p.y-p.h/2) + 'px;width:' + p.w + 'px;min-height:' + p.h + 'px;opacity:' + opacity + ';background:' + bg + ';border-color:' + bd + '">';
-    nodesHTML += '<div class="tmap-label">' + (node.label||'') + '</div>';
-    if (node.code) nodesHTML += '<span class="tmap-code">' + node.code + '</span>';
+    var isLeaf = !n.children || !n.children.length;
+    var isL3 = (p.d === 3);
+    var show = isVisible(n);
+    var expanded = isL3 && window._ctEx[n.code];
+    var fs = [16,15,14,13,11,11][Math.min(p.d,5)];
+    var fw = p.d<=1?700:p.d<=2?600:500;
+    var op = 1-p.d*0.06;
+    var hasKids = n.children && n.children.length;
+
+    nodesHTML += '<div class="tmap-node'+(done?' tmap-done':'')+'" style="left:'+p.x+'px;top:'+(p.y-p.h/2)+'px;width:'+p.w+'px;min-height:'+p.h+'px;display:'+(show?'flex':'none')+';opacity:'+op+';background:'+bg+';border-color:'+bd+'" data-code="'+n.code+'" data-depth="'+p.d+'">';
+    
+    // Expand/collapse arrow for L3 nodes
+    if (isL3 && hasKids) {
+      nodesHTML += '<span class="tmap-arr" style="color:'+tc+'">'+(expanded?'▼':'▶')+'</span>';
+    } else if (hasKids && p.d>3) {
+      nodesHTML += '<span class="tmap-arr" style="visibility:hidden">▶</span>';
+    }
+    
+    // Icon
+    var ico = {intention:'🔍',knowledge:'📚',framework:'🏗️',expression:'✍️',task:'📋'};
+    if (p.d<=1) nodesHTML += '<span style="font-size:20px;flex-shrink:0">'+(p.d===0?'🎯':p.d===1?(n.code==='0.1'?'🧠':'✏️'):'')+'</span>';
+    else if (ico[n.tag]) nodesHTML += '<span style="font-size:14px;flex-shrink:0;opacity:.5">'+ico[n.tag]+'</span>';
+    
+    // Label
+    nodesHTML += '<div class="tmap-label" style="font-size:'+fs+'px;font-weight:'+fw+'">'+n.label+'</div>';
+    
+    // Code badge (only L0-L2)
+    if (n.code && p.d<=2) nodesHTML += '<span class="tmap-code">'+n.code+'</span>';
     if (done) nodesHTML += '<span class="tmap-check">✓</span>';
     
-    // Leaf training buttons
-    if (isLeaf && typeof CAPABILITY_MAP !== 'undefined' && CAPABILITY_MAP[node.code]) {
+    // Training buttons for leaf nodes (visible only when expanded)
+    if (isLeaf && show && typeof CAPABILITY_MAP!=='undefined' && CAPABILITY_MAP[n.code]) {
       nodesHTML += '<div class="tmap-acts">';
-      CAPABILITY_MAP[node.code].forEach(function(a){
-        nodesHTML += '<button onclick="event.stopPropagation();capLaunch(\''+a.id+'\',\''+(node.code||'')+'\')" class="tmap-btn">'+a.icon+' '+a.desc+'</button>';
+      CAPABILITY_MAP[n.code].forEach(function(a){
+        nodesHTML += '<button onclick="event.stopPropagation();capLaunch(\''+a.id+'\',\''+(n.code||'')+'\')" class="tmap-btn">'+a.icon+' '+a.desc+'</button>';
       });
       nodesHTML += '</div>';
     }
     nodesHTML += '</div>';
-    
-    if (node.children) node.children.forEach(genNodes);
+    if (n.children) n.children.forEach(genN);
   }
-  genNodes(tree);
-  
-  // Assemble output
+  genN(tree);
+
+  // Assemble
   var h = '';
-  h += '<div class="hero" style="margin-bottom:12px"><h1>🧭 能力地图</h1><p class="desc">逻辑框架图 · 47个能力节点 · ' + completedLeaves + ' 个已点亮 · 可拖拽滚动查看</p></div>';
-  h += '<div style="margin-bottom:12px">' + progressBar(pct, completedLeaves, totalLeaves) + '</div>';
-  h += '<div class="tmap-wrap">';
-  h += '<svg class="tmap-svg" style="width:' + CW + 'px;height:' + CH + 'px" viewBox="0 0 ' + CW + ' ' + CH + '">';
-  h += '<defs><filter id="glow"><feGaussianBlur stdDeviation="3" result="blur"/><feMerge><feMergeNode in="blur"/><feMergeNode in="SourceGraphic"/></feMerge></filter></defs>';
+  h += '<div class="hero" style="margin-bottom:12px"><h1>🧭 能力地图</h1><p class="desc">逻辑框架图 · 点击'+(window._ctEx && Object.keys(window._ctEx).length?'▼':'▶')+'展开底层训练节点 · '+completedLeaves+'/'+totalLeaves+' 已点亮</p></div>';
+  h += '<div style="margin-bottom:12px">'+progressBar(pct, completedLeaves, totalLeaves)+'</div>';
+  h += '<div class="tmap-wrap" id="tmapWrap">';
+  h += '<svg class="tmap-svg" style="width:'+CW+'px;height:'+CH+'px" viewBox="0 0 '+CW+' '+CH+'">';
+  h += '<defs><filter id="g"><feGaussianBlur stdDeviation="3" result="b"/><feMerge><feMergeNode in="b"/><feMergeNode in="SourceGraphic"/></feMerge></filter></defs>';
   h += paths;
   h += '</svg>';
-  h += '<div class="tmap-nodes" style="width:' + CW + 'px;height:' + CH + 'px">' + nodesHTML + '</div>';
+  h += '<div class="tmap-nodes" style="width:'+CW+'px;height:'+CH+'px">'+nodesHTML+'</div>';
   h += '</div>';
-  
+
   document.getElementById('ct').innerHTML = h;
   document.getElementById('ct').scrollTop = 0;
+  
+  // Attach click handlers to L3 nodes
+  setTimeout(function(){
+    var ct = document.getElementById('ct');
+    if (!ct) return;
+    var nodes = ct.querySelectorAll('.tmap-node[data-depth="3"]');
+    nodes.forEach(function(nd){
+      nd.onclick = function(e){
+        e.stopPropagation();
+        var code = nd.getAttribute('data-code');
+        window._ctEx = window._ctEx || {};
+        window._ctEx[code] = !window._ctEx[code];
+        showCapabilityMap(); // re-render
+      };
+      nd.style.cursor = 'pointer';
+    });
+  }, 50);
 }
 
 function progressBar(pct, done, total) {
-  var r = 30, circ = 2 * Math.PI * r, offset = circ * (1 - pct / 100);
-  var color = pct >= 60 ? '#4ade80' : pct >= 30 ? '#fbbf24' : '#f87171';
-  return '<div class="pcard" style="padding:10px 16px;display:flex;align-items:center;gap:12px">' +
-    '<svg width="68" height="68" style="flex-shrink:0"><circle cx="34" cy="34" r="' + r + '" fill="none" stroke="rgba(255,255,255,.04)" stroke-width="4"/><circle cx="34" cy="34" r="' + r + '" fill="none" stroke="' + color + '" stroke-width="4" stroke-linecap="round" stroke-dasharray="' + circ + '" stroke-dashoffset="' + offset + '" transform="rotate(-90,34,34)" style="transition:stroke-dashoffset 1s ease"/><text x="34" y="38" text-anchor="middle" fill="rgba(255,255,255,.9)" font-size="15" font-weight="800">' + pct + '%</text></svg>' +
-    '<div><div style="font-weight:700;font-size:13px">学习进度</div><div style="font-size:11px;color:rgba(255,255,255,.35);margin-top:1px">' + done + '/' + total + ' 个节点已完成</div></div></div>';
-}
-
-function toggleCapNode(nodeId) {
-  window._capToggle(nodeId);
+  var r = 28, circ = 2*Math.PI*r, offset = circ*(1-pct/100);
+  var color = pct>=60?'#4ade80':pct>=30?'#fbbf24':'#f87171';
+  return '<div class="pcard" style="padding:10px 16px;display:flex;align-items:center;gap:14px">'+
+    '<svg width="64" height="64" style="flex-shrink:0"><circle cx="32" cy="32" r="'+r+'" fill="none" stroke="rgba(255,255,255,.04)" stroke-width="4"/><circle cx="32" cy="32" r="'+r+'" fill="none" stroke="'+color+'" stroke-width="4" stroke-linecap="round" stroke-dasharray="'+circ+'" stroke-dashoffset="'+offset+'" transform="rotate(-90,32,32)" style="transition:stroke-dashoffset 1s"/><text x="32" y="36" text-anchor="middle" fill="rgba(255,255,255,.9)" font-size="15" font-weight="800">'+pct+'%</text></svg>'+
+    '<div><div style="font-weight:700;font-size:14px">学习进度</div><div style="font-size:12px;color:rgba(255,255,255,.35);margin-top:1px">'+done+'/'+total+' 个节点已完成</div></div></div>';
 }
 
 function capLaunch(actionId, capabilityCode) {
