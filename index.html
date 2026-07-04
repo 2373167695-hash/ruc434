@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<!-- v2.1 · 2026-07-04 01:01 · modular -->
+<!-- v2.1 · 2026-07-04 01:25 · modular -->
 <html lang="zh-CN">
 <head>
 <meta charset="UTF-8">
@@ -3539,7 +3539,7 @@ function buildNav() {
       (part.chapters || []).forEach(function(ch,chi) {
         var chId = 'knc_' + pi + '_' + chi;
         knh += '<div class="ni lv1" onclick="event.stopPropagation();var el=document.getElementById(\'' + chId + '\');if(el){el.style.display=el.style.display===\'block\'?\'none\':\'block\'}">📂 ' + ch.name + '</div>';
-        kn// removed stray CSS
+        knh += '<div id="' + chId + '" style="display:none">';
         (ch.groups || []).forEach(function(grp) {
           knh += '<div class="ni lv2" style="font-size:10px;color:#888;cursor:default;padding:4px 0 2px 30px">' + grp.name + '</div>';
           (grp.topics || []).forEach(function(tp) {
