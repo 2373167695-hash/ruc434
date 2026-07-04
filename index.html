@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<!-- v2.1 · 2026-07-03 09:20 · modular -->
+<!-- v2.1 · 2026-07-04 00:56 · modular -->
 <html lang="zh-CN">
 <head>
 <meta charset="UTF-8">
@@ -2340,6 +2340,914 @@ var MATERIAL_LIBRARY = {
     }
   }
 };
+var CAPABILITY_TREE = {
+  "label": "434专业课高分",
+  "code": "0",
+  "tag": null,
+  "desc": "终极目标：解题能力 × 答题能力",
+  "children": [
+    {
+      "label": "解题能力：看到题 → 知道怎么想",
+      "code": "0.1",
+      "tag": "intention",
+      "desc": "读懂题目在考什么，该调的知识能调出来",
+      "children": [
+        {
+          "label": "意图识别：读懂题在考什么",
+          "code": "1.1",
+          "tag": "intention",
+          "desc": "短时间内判断题目考查方向",
+          "children": [
+            {
+              "label": "题型识别与分值判断",
+              "code": "1.1.1",
+              "tag": "intention",
+              "desc": "看到题目立即判断题型和答题要求",
+              "children": [
+                {
+                  "label": "建立四类题型特征库：名词解释/简答/论述/案例的题干特征词",
+                  "code": "1.1.1.1",
+                  "tag": "task",
+                  "children": []
+                },
+                {
+                  "label": "建立分值-篇幅-深度对照表",
+                  "code": "1.1.1.2",
+                  "tag": "task",
+                  "children": []
+                },
+                {
+                  "label": "盲测：随机30题，10秒标注题型，准确率目标100%",
+                  "code": "1.1.1.3",
+                  "tag": "task",
+                  "children": []
+                }
+              ]
+            },
+            {
+              "label": "认知层次判断",
+              "code": "1.1.2",
+              "tag": "intention",
+              "desc": "判断题目要求记忆/理解/应用/评价的哪个层次",
+              "children": [
+                {
+                  "label": "掌握四层特征词：记忆→理解→应用→评价",
+                  "code": "1.1.2.1",
+                  "tag": "task",
+                  "children": []
+                },
+                {
+                  "label": "题库逐题标注层次，形成\"题型-层次-板块\"三维索引",
+                  "code": "1.1.2.2",
+                  "tag": "task",
+                  "children": []
+                }
+              ]
+            },
+            {
+              "label": "知识板块定位",
+              "code": "1.1.3",
+              "tag": "intention",
+              "desc": "快速定位题目对应的知识板块",
+              "children": [
+                {
+                  "label": "构建三级索引：5个一级板块→二级考点→具体知识点",
+                  "code": "1.1.3.1",
+                  "tag": "task",
+                  "children": []
+                },
+                {
+                  "label": "统计出题频率，标注高频考点优先级",
+                  "code": "1.1.3.2",
+                  "tag": "task",
+                  "children": []
+                },
+                {
+                  "label": "盲测：30秒内写出板块和考点",
+                  "code": "1.1.3.3",
+                  "tag": "task",
+                  "children": []
+                }
+              ]
+            },
+            {
+              "label": "关键词与指令拆解",
+              "code": "1.1.4",
+              "tag": "intention",
+              "desc": "提取核心概念词、限定条件词、指令动词",
+              "children": [
+                {
+                  "label": "三色标注：概念词(红)/条件词(蓝)/指令词(绿)",
+                  "code": "1.1.4.1",
+                  "tag": "task",
+                  "children": []
+                },
+                {
+                  "label": "指令词速查表：比较→对照；分析→层层展开；评述→辩证",
+                  "code": "1.1.4.2",
+                  "tag": "task",
+                  "children": []
+                },
+                {
+                  "label": "对全部真题做三色拆解并标注答题方向",
+                  "code": "1.1.4.3",
+                  "tag": "task",
+                  "children": []
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "label": "知识调用：该调的知识能调出来",
+          "code": "1.2",
+          "tag": "knowledge",
+          "desc": "脑中有结构、分得清、取得到",
+          "children": [
+            {
+              "label": "知识储备——概念、理论、政策、案例四层弹药",
+              "code": "1.2.1",
+              "tag": "knowledge",
+              "desc": "确保每个考点有内容可输出",
+              "children": [
+                {
+                  "label": "概念定义",
+                  "code": "1.2.1.1",
+                  "tag": "knowledge",
+                  "desc": "约95个核心概念精确记忆",
+                  "children": [
+                    {
+                      "label": "按板块整理概念，用压缩句式记忆：X是（主体）通过（方式）实现（结果）",
+                      "code": "1.2.1.1.1",
+                      "tag": "task",
+                      "children": []
+                    },
+                    {
+                      "label": "默写测试：随机20个，15分钟，准确率≥90%",
+                      "code": "1.2.1.1.2",
+                      "tag": "task",
+                      "children": []
+                    }
+                  ]
+                },
+                {
+                  "label": "理论逻辑",
+                  "code": "1.2.1.2",
+                  "tag": "knowledge",
+                  "desc": "五要素模板标准化每个理论",
+                  "children": [
+                    {
+                      "label": "理论解剖：前提假设→核心命题→逻辑推导→主要结论→局限批评",
+                      "code": "1.2.1.2.1",
+                      "tag": "task",
+                      "children": []
+                    },
+                    {
+                      "label": "默写测试：随机5个理论，完整度≥85%",
+                      "code": "1.2.1.2.2",
+                      "tag": "task",
+                      "children": []
+                    }
+                  ]
+                },
+                {
+                  "label": "政策制度",
+                  "code": "1.2.1.3",
+                  "tag": "knowledge",
+                  "desc": "贸易/投资/货币政策工具体系",
+                  "children": [
+                    {
+                      "label": "每种工具：定义→机制→效应→图形→案例",
+                      "code": "1.2.1.3.1",
+                      "tag": "task",
+                      "children": []
+                    },
+                    {
+                      "label": "效应默写：如画关税局部均衡图并计算净福利变化",
+                      "code": "1.2.1.3.2",
+                      "tag": "task",
+                      "children": []
+                    }
+                  ]
+                },
+                {
+                  "label": "案例素材",
+                  "code": "1.2.1.4",
+                  "tag": "knowledge",
+                  "desc": "每个素材只记三要素",
+                  "children": [
+                    {
+                      "label": "素材库：背景一句+事件一句+理论标签一个",
+                      "code": "1.2.1.4.1",
+                      "tag": "task",
+                      "children": []
+                    },
+                    {
+                      "label": "主题匹配：给理论2分钟说出2个对应案例",
+                      "code": "1.2.1.4.2",
+                      "tag": "task",
+                      "children": []
+                    }
+                  ]
+                }
+              ]
+            },
+            {
+              "label": "知识网络——结构化 + 关联化",
+              "code": "1.2.2",
+              "tag": "knowledge",
+              "desc": "形成可检索的知识网络",
+              "children": [
+                {
+                  "label": "板块内默写框架：一级→二级→理论→应用→评价",
+                  "code": "1.2.2.1",
+                  "tag": "task",
+                  "children": []
+                },
+                {
+                  "label": "跨板块主线：比较优势→贸易政策→FDI→跨国公司→汇率",
+                  "code": "1.2.2.2",
+                  "tag": "task",
+                  "children": []
+                },
+                {
+                  "label": "做题反向建构：每题标注考查的节点和连线",
+                  "code": "1.2.2.3",
+                  "tag": "task",
+                  "children": []
+                }
+              ]
+            },
+            {
+              "label": "易混辨析——精确区分近似概念与理论",
+              "code": "1.2.3",
+              "tag": "knowledge",
+              "desc": "概念辨析+理论辨析",
+              "children": [
+                {
+                  "label": "概念对比表：关税vs配额、直接投资vs间接投资等，五维填写",
+                  "code": "1.2.3.1",
+                  "tag": "task",
+                  "children": []
+                },
+                {
+                  "label": "理论辨析表：垄断优势vs内部化vsOLI，五维框架",
+                  "code": "1.2.3.2",
+                  "tag": "task",
+                  "children": []
+                },
+                {
+                  "label": "情境匹配：给情境判断该用哪个理论并说明排除理由",
+                  "code": "1.2.3.3",
+                  "tag": "task",
+                  "children": []
+                }
+              ]
+            },
+            {
+              "label": "快速提取——需要时即时取出",
+              "code": "1.2.4",
+              "tag": "knowledge",
+              "desc": "概念→内容的快速反射",
+              "children": [
+                {
+                  "label": "闪卡：概念为面内容为背，3秒确认，未通过进入循环",
+                  "code": "1.2.4.1",
+                  "tag": "task",
+                  "children": []
+                },
+                {
+                  "label": "限时提取：板块名→2分钟默写全部概念，追踪数量",
+                  "code": "1.2.4.2",
+                  "tag": "task",
+                  "children": []
+                },
+                {
+                  "label": "反向匹配：给理论30秒说出可解答的题型",
+                  "code": "1.2.4.3",
+                  "tag": "task",
+                  "children": []
+                }
+              ]
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "label": "答题能力：想到的 → 写得出来拿分",
+      "code": "0.2",
+      "tag": "framework",
+      "desc": "把思考过程转换成阅卷老师能给分的答案",
+      "children": [
+        {
+          "label": "框架搭建：答案骨架正确",
+          "code": "2.1",
+          "tag": "framework",
+          "desc": "模板内化 + 要点提炼 + 篇幅匹配",
+          "children": [
+            {
+              "label": "题型模板内化——四类框架肌肉记忆",
+              "code": "2.1.1",
+              "tag": "framework",
+              "desc": "不需要思考就能套出基本结构",
+              "children": [
+                {
+                  "label": "名词解释：定义→要素→意义（≈150字）",
+                  "code": "2.1.1.1",
+                  "tag": "task",
+                  "children": []
+                },
+                {
+                  "label": "简答：总述→分点展开→总结（≈300-400字）",
+                  "code": "2.1.1.2",
+                  "tag": "task",
+                  "children": []
+                },
+                {
+                  "label": "论述：破题→理论→辩证→案例→升华（≈600-800字）",
+                  "code": "2.1.1.3",
+                  "tag": "task",
+                  "children": []
+                },
+                {
+                  "label": "案例分析：识别问题→调用理论→解读案例→结论（≈800-1000字）",
+                  "code": "2.1.1.4",
+                  "tag": "task",
+                  "children": []
+                },
+                {
+                  "label": "各拿10道真题限时3分钟只写骨架，练到闭眼能套",
+                  "code": "2.1.1.5",
+                  "tag": "task",
+                  "children": []
+                }
+              ]
+            },
+            {
+              "label": "要点提炼与编排",
+              "code": "2.1.2",
+              "tag": "framework",
+              "desc": "从思考中筛选得分要点并有序排列",
+              "children": [
+                {
+                  "label": "发散-收敛：5分钟不限量发散→压缩为3-6个核心要点",
+                  "code": "2.1.2.1",
+                  "tag": "task",
+                  "children": []
+                },
+                {
+                  "label": "对照答案计算覆盖率，遗漏原因归类：知识缺口/调用失败/筛选失误",
+                  "code": "2.1.2.2",
+                  "tag": "task",
+                  "children": []
+                },
+                {
+                  "label": "排序：并列按主次、递进按逻辑链，写出排列理由",
+                  "code": "2.1.2.3",
+                  "tag": "task",
+                  "children": []
+                }
+              ]
+            },
+            {
+              "label": "篇幅控制",
+              "code": "2.1.3",
+              "tag": "framework",
+              "desc": "长短与分值匹配",
+              "children": [
+                {
+                  "label": "字数规则：5分≈150字/10分≈350字/20分≈700字/25分≈900字",
+                  "code": "2.1.3.1",
+                  "tag": "task",
+                  "children": []
+                },
+                {
+                  "label": "每次数数字数，偏差>±15%标记校准",
+                  "code": "2.1.3.2",
+                  "tag": "task",
+                  "children": []
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "label": "语言表达：答案血肉精准",
+          "code": "2.2",
+          "tag": "expression",
+          "desc": "术语准确 + 句式规范 + 论述有深度",
+          "children": [
+            {
+              "label": "术语规范化",
+              "code": "2.2.1",
+              "tag": "expression",
+              "desc": "学术语言替代大白话",
+              "children": [
+                {
+                  "label": "术语替换表：口语→学术语，答题后逐句扫描替换",
+                  "code": "2.2.1.1",
+                  "tag": "task",
+                  "children": []
+                },
+                {
+                  "label": "听写测试：念通俗含义写术语，准确率≥95%",
+                  "code": "2.2.1.2",
+                  "tag": "task",
+                  "children": []
+                }
+              ]
+            },
+            {
+              "label": "句式与结构训练",
+              "code": "2.2.2",
+              "tag": "expression",
+              "desc": "论点句+展开句+回扣句",
+              "children": [
+                {
+                  "label": "抄写：每天1段参考答案抄3遍，标注[论点]/(展开)/<举例>",
+                  "code": "2.2.2.1",
+                  "tag": "task",
+                  "children": []
+                },
+                {
+                  "label": "仿写：合上重写同一段，对比术语和句式差距",
+                  "code": "2.2.2.2",
+                  "tag": "task",
+                  "children": []
+                },
+                {
+                  "label": "要点句式内化：论点+因为/即+因此，10个要点专项造句",
+                  "code": "2.2.2.3",
+                  "tag": "task",
+                  "children": []
+                }
+              ]
+            },
+            {
+              "label": "论述深化——辩证+比较+案例+首尾",
+              "code": "2.2.3",
+              "tag": "expression",
+              "desc": "不只罗列，有深度有结构",
+              "children": [
+                {
+                  "label": "强制辩证：论述题至少一处正反分析段",
+                  "code": "2.2.3.1",
+                  "tag": "task",
+                  "children": []
+                },
+                {
+                  "label": "强制比较：插入\"与X相比，Y…\"的对照段落",
+                  "code": "2.2.3.2",
+                  "tag": "task",
+                  "children": []
+                },
+                {
+                  "label": "强制案例：嵌入至少一个案例/数据，一两句带过",
+                  "code": "2.2.3.3",
+                  "tag": "task",
+                  "children": []
+                },
+                {
+                  "label": "首尾打磨：5种开头+3种结尾模板，每题写2版择优",
+                  "code": "2.2.3.4",
+                  "tag": "task",
+                  "children": []
+                }
+              ]
+            }
+          ]
+        }
+      ]
+    }
+  ]
+};
+var CAPABILITY_MAP = {
+  "1.1.1.1": [
+    {
+      "id": "outputtrain:L2",
+      "desc": "输出训练②层：素材串联",
+      "icon": "🔗"
+    },
+    {
+      "id": "outputtrain:L3",
+      "desc": "输出训练③层：真题映射",
+      "icon": "🎯"
+    },
+    {
+      "id": "outputtrain:L3:S3",
+      "desc": "输出训练③ Step 3：案例嵌入",
+      "icon": "🌍"
+    }
+  ],
+  "1.1.1.2": [
+    {
+      "id": "outputtrain:L3",
+      "desc": "输出训练③层：真题映射",
+      "icon": "🎯"
+    },
+    {
+      "id": "outputtrain:L3:S2",
+      "desc": "输出训练③ Step 2：组织结构",
+      "icon": "🧱"
+    }
+  ],
+  "1.1.1.3": [
+    {
+      "id": "outputtrain:L3",
+      "desc": "输出训练③层：真题映射",
+      "icon": "🎯"
+    }
+  ],
+  "1.1.2.1": [
+    {
+      "id": "hot",
+      "desc": "热点素材：浏览案例积累",
+      "icon": "🔥"
+    }
+  ],
+  "1.1.2.2": [
+    {
+      "id": "outputtrain:L3",
+      "desc": "输出训练③层：真题映射",
+      "icon": "🎯"
+    }
+  ],
+  "1.1.3.1": [
+    {
+      "id": "outputtrain:L3",
+      "desc": "输出训练③层：真题映射",
+      "icon": "🎯"
+    }
+  ],
+  "1.1.3.2": [
+    {
+      "id": "hot",
+      "desc": "热点素材：浏览案例积累",
+      "icon": "🔥"
+    }
+  ],
+  "1.1.3.3": [
+    {
+      "id": "outputtrain:L3",
+      "desc": "输出训练③层：真题映射",
+      "icon": "🎯"
+    }
+  ],
+  "1.1.4.1": [
+    {
+      "id": "outputtrain:L1",
+      "desc": "输出训练①层：概念定义扩写",
+      "icon": "📖"
+    }
+  ],
+  "1.1.4.2": [
+    {
+      "id": "hot",
+      "desc": "热点素材：浏览案例积累",
+      "icon": "🔥"
+    }
+  ],
+  "1.1.4.3": [
+    {
+      "id": "hot",
+      "desc": "热点素材：浏览案例积累",
+      "icon": "🔥"
+    }
+  ],
+  "1.2.1.1.1": [
+    {
+      "id": "outputtrain:L1",
+      "desc": "输出训练①层：概念定义扩写",
+      "icon": "📖"
+    },
+    {
+      "id": "outputtrain:L3",
+      "desc": "输出训练③层：真题映射",
+      "icon": "🎯"
+    },
+    {
+      "id": "outputtrain:L3:S3",
+      "desc": "输出训练③ Step 3：案例嵌入",
+      "icon": "🌍"
+    }
+  ],
+  "1.2.1.1.2": [
+    {
+      "id": "hot",
+      "desc": "热点素材：浏览案例积累",
+      "icon": "🔥"
+    }
+  ],
+  "1.2.1.2.1": [
+    {
+      "id": "outputtrain:L1",
+      "desc": "输出训练①层：前提+机理扩写",
+      "icon": "🔬"
+    }
+  ],
+  "1.2.1.2.2": [
+    {
+      "id": "outputtrain:L1",
+      "desc": "输出训练①层：前提+机理扩写",
+      "icon": "🔬"
+    }
+  ],
+  "1.2.1.3.1": [
+    {
+      "id": "outputtrain:L1",
+      "desc": "输出训练①层：概念定义扩写",
+      "icon": "📖"
+    },
+    {
+      "id": "outputtrain:L2",
+      "desc": "输出训练②层：素材串联",
+      "icon": "🔗"
+    }
+  ],
+  "1.2.1.3.2": [
+    {
+      "id": "hot",
+      "desc": "热点素材：浏览案例积累",
+      "icon": "🔥"
+    }
+  ],
+  "1.2.1.4.1": [
+    {
+      "id": "outputtrain:L1",
+      "desc": "输出训练①层：前提+机理扩写",
+      "icon": "🔬"
+    },
+    {
+      "id": "outputtrain:L2",
+      "desc": "输出训练②层：素材串联",
+      "icon": "🔗"
+    }
+  ],
+  "1.2.1.4.2": [
+    {
+      "id": "outputtrain:L1",
+      "desc": "输出训练①层：前提+机理扩写",
+      "icon": "🔬"
+    },
+    {
+      "id": "outputtrain:L2",
+      "desc": "输出训练②层：素材串联",
+      "icon": "🔗"
+    }
+  ],
+  "1.2.2.1": [
+    {
+      "id": "outputtrain:L1",
+      "desc": "输出训练①层：前提+机理扩写",
+      "icon": "🔬"
+    },
+    {
+      "id": "outputtrain:L3",
+      "desc": "输出训练③层：真题映射",
+      "icon": "🎯"
+    },
+    {
+      "id": "outputtrain:L3:S2",
+      "desc": "输出训练③ Step 2：组织结构",
+      "icon": "🧱"
+    }
+  ],
+  "1.2.2.2": [
+    {
+      "id": "outputtrain:L3",
+      "desc": "输出训练③层：真题映射",
+      "icon": "🎯"
+    }
+  ],
+  "1.2.2.3": [
+    {
+      "id": "hot",
+      "desc": "热点素材：浏览案例积累",
+      "icon": "🔥"
+    }
+  ],
+  "1.2.3.1": [
+    {
+      "id": "outputtrain:L1",
+      "desc": "输出训练①层：概念定义扩写",
+      "icon": "📖"
+    }
+  ],
+  "1.2.3.2": [
+    {
+      "id": "outputtrain:L1",
+      "desc": "输出训练①层：前提+机理扩写",
+      "icon": "🔬"
+    },
+    {
+      "id": "outputtrain:L3:S2",
+      "desc": "输出训练③ Step 2：组织结构",
+      "icon": "🧱"
+    }
+  ],
+  "1.2.3.3": [
+    {
+      "id": "outputtrain:L1",
+      "desc": "输出训练①层：前提+机理扩写",
+      "icon": "🔬"
+    }
+  ],
+  "1.2.4.1": [
+    {
+      "id": "outputtrain:L1",
+      "desc": "输出训练①层：概念定义扩写",
+      "icon": "📖"
+    },
+    {
+      "id": "cards",
+      "desc": "记忆卡片：SM-2间隔复习",
+      "icon": "🧠"
+    }
+  ],
+  "1.2.4.2": [
+    {
+      "id": "outputtrain:L1",
+      "desc": "输出训练①层：概念定义扩写",
+      "icon": "📖"
+    },
+    {
+      "id": "outputtrain:L3",
+      "desc": "输出训练③层：真题映射",
+      "icon": "🎯"
+    },
+    {
+      "id": "cards",
+      "desc": "记忆卡片：SM-2间隔复习",
+      "icon": "🧠"
+    }
+  ],
+  "1.2.4.3": [
+    {
+      "id": "outputtrain:L1",
+      "desc": "输出训练①层：前提+机理扩写",
+      "icon": "🔬"
+    },
+    {
+      "id": "outputtrain:L3",
+      "desc": "输出训练③层：真题映射",
+      "icon": "🎯"
+    }
+  ],
+  "2.1.1.1": [
+    {
+      "id": "outputtrain:L1",
+      "desc": "输出训练①层：概念定义扩写",
+      "icon": "📖"
+    }
+  ],
+  "2.1.1.2": [
+    {
+      "id": "hot",
+      "desc": "热点素材：浏览案例积累",
+      "icon": "🔥"
+    }
+  ],
+  "2.1.1.3": [
+    {
+      "id": "outputtrain:L1",
+      "desc": "输出训练①层：前提+机理扩写",
+      "icon": "🔬"
+    },
+    {
+      "id": "outputtrain:L2",
+      "desc": "输出训练②层：素材串联",
+      "icon": "🔗"
+    },
+    {
+      "id": "outputtrain:L3:S3",
+      "desc": "输出训练③ Step 3：案例嵌入",
+      "icon": "🌍"
+    }
+  ],
+  "2.1.1.4": [
+    {
+      "id": "outputtrain:L1",
+      "desc": "输出训练①层：前提+机理扩写",
+      "icon": "🔬"
+    },
+    {
+      "id": "outputtrain:L2",
+      "desc": "输出训练②层：素材串联",
+      "icon": "🔗"
+    }
+  ],
+  "2.1.1.5": [
+    {
+      "id": "hot",
+      "desc": "热点素材：浏览案例积累",
+      "icon": "🔥"
+    }
+  ],
+  "2.1.2.1": [
+    {
+      "id": "outputtrain:L3:S2",
+      "desc": "输出训练③ Step 2：组织结构",
+      "icon": "🧱"
+    }
+  ],
+  "2.1.2.2": [
+    {
+      "id": "hot",
+      "desc": "热点素材：浏览案例积累",
+      "icon": "🔥"
+    }
+  ],
+  "2.1.2.3": [
+    {
+      "id": "outputtrain:L1",
+      "desc": "输出训练①层：前提+机理扩写",
+      "icon": "🔬"
+    }
+  ],
+  "2.1.3.1": [
+    {
+      "id": "hot",
+      "desc": "热点素材：浏览案例积累",
+      "icon": "🔥"
+    }
+  ],
+  "2.1.3.2": [
+    {
+      "id": "hot",
+      "desc": "热点素材：浏览案例积累",
+      "icon": "🔥"
+    }
+  ],
+  "2.2.1.1": [
+    {
+      "id": "outputtrain:L3:S3",
+      "desc": "输出训练③ Step 3：案例嵌入",
+      "icon": "🌍"
+    }
+  ],
+  "2.2.1.2": [
+    {
+      "id": "outputtrain:L3:S3",
+      "desc": "输出训练③ Step 3：案例嵌入",
+      "icon": "🌍"
+    }
+  ],
+  "2.2.2.1": [
+    {
+      "id": "hot",
+      "desc": "热点素材：浏览案例积累",
+      "icon": "🔥"
+    }
+  ],
+  "2.2.2.2": [
+    {
+      "id": "outputtrain:L3:S3",
+      "desc": "输出训练③ Step 3：案例嵌入",
+      "icon": "🌍"
+    }
+  ],
+  "2.2.2.3": [
+    {
+      "id": "outputtrain:L3:S2",
+      "desc": "输出训练③ Step 2：组织结构",
+      "icon": "🧱"
+    },
+    {
+      "id": "outputtrain:L3:S3",
+      "desc": "输出训练③ Step 3：案例嵌入",
+      "icon": "🌍"
+    }
+  ],
+  "2.2.3.1": [
+    {
+      "id": "outputtrain:L3:S3",
+      "desc": "输出训练③ Step 3：案例嵌入",
+      "icon": "🌍"
+    }
+  ],
+  "2.2.3.2": [
+    {
+      "id": "hot",
+      "desc": "热点素材：浏览案例积累",
+      "icon": "🔥"
+    }
+  ],
+  "2.2.3.3": [
+    {
+      "id": "outputtrain:L2",
+      "desc": "输出训练②层：素材串联",
+      "icon": "🔗"
+    }
+  ],
+  "2.2.3.4": [
+    {
+      "id": "hot",
+      "desc": "热点素材：浏览案例积累",
+      "icon": "🔥"
+    }
+  ]
+};
 var macroCount = MACRO_DATA && MACRO_DATA.dashboard ? MACRO_DATA.dashboard.indicators.length : 0;
 document.getElementById("sidebarInfo").textContent = "2011-2023 · " + DATA.length + "题 · " + macroCount + "项指标";
 
@@ -2616,6 +3524,7 @@ function buildNav() {
   knh += '<div class="ni lv0" data-p="graph">🕸️ 知识图谱</div>';
   knh += '<div class="ni lv0" data-p="aichat">💬 AI助手</div>';
   knh += '<div class="sidebar-section-label">备考工具</div>';
+  knh += '<div class="ni lv0" data-p="capmap">🧭 能力地图</div>';
   knh += '<div class="ni lv0" data-p="outputtrain">✍️ 输出训练</div>';
   knh += '<div class="ni lv0" data-p="mockexam">🎯 AI模考</div>';
   knh += '<div class="ni lv0" data-p="macro">📊 宏观数据</div>';
@@ -2758,6 +3667,7 @@ function navigate(p, topicName, skipHistory) {
     else if (p === 'graph') { showGraph(); }
     else if (p === 'aichat') { showAI(); }
     else if (p === 'outputtrain') { showOutputTraining(); }
+    else if (p === 'capmap') { showCapabilityMap(); }
     else if (p === 'mockexam') { showMockExam(); }
     else if (p === 'allquestions') { showAllQuestions(); }
     else if (p === 'wrongbook') { showWrongBook(); }
@@ -5958,6 +6868,135 @@ function otL3Check3() {
   ['otSD3'].forEach(function(id){var el=document.getElementById(id);if(el){el.style.color='#4ade80';el.style.background='rgba(48,209,88,.06)';el.style.borderColor='rgba(48,209,88,.2)';el.textContent='✓';}});
   var tab = document.getElementById('ottab2');
   if (tab) { tab.style.background = 'rgba(48,209,88,.08)'; tab.style.color = 'rgba(48,209,88,.6)'; }
+}
+
+// ===== 能力地图 =====
+function showCapabilityMap() {
+  document.getElementById('bc').innerHTML = '🧭 <span>能力地图</span>';
+  var h = '';
+  h += '<div class="hero" style="margin-bottom:24px"><h1>🧭 能力地图</h1><p class="desc">从能力节点直接启动对应训练 · 点击可展开/收起 · 点击训练入口直接跳转</p></div>';
+  
+  // Progress overview
+  var totalLeaves = 0, completedLeaves = 0;
+  var progress = JSON.parse(localStorage.getItem('r434_cap_progress') || '{}');
+  function countProgress(node) {
+    if (!node.children || !node.children.length) {
+      totalLeaves++;
+      if (progress[node.code]) completedLeaves++;
+      return;
+    }
+    node.children.forEach(function(c) { countProgress(c); });
+  }
+  if (typeof CAPABILITY_TREE !== 'undefined') countProgress(CAPABILITY_TREE);
+  
+  if (totalLeaves > 0) {
+    var pct = Math.round(completedLeaves / totalLeaves * 100);
+    h += '<div class="pcard" style="margin-bottom:20px;padding:18px;display:flex;align-items:center;gap:16px;flex-wrap:wrap">';
+    h += '<div style="flex:1">';
+    h += '<div style="font-weight:700;font-size:14px;margin-bottom:4px">📊 整体进度</div>';
+    h += '<div style="font-size:12px;color:rgba(255,255,255,.4)">' + completedLeaves + '/' + totalLeaves + ' 个能力节点已点亮</div>';
+    h += '</div>';
+    h += '<div style="font-size:32px;font-weight:800;letter-spacing:-1px;color:' + (pct >= 60 ? '#4ade80' : pct >= 30 ? '#fbbf24' : '#f87171') + '">' + pct + '%</div>';
+    h += '</div>';
+  }
+  
+  // Render tree
+  function renderNode(node, depth) {
+    var isLeaf = !node.children || !node.children.length;
+    var isCompleted = progress[node.code];
+    var nodeId = 'cap_' + (node.code || 'root').replace(/\./g, '_');
+    
+    h += '<div class="cap-node" style="margin-left:' + (depth * 20) + 'px">';
+    h += '<div class="cap-row" onclick="toggleCapNode(\'' + nodeId + '\')" style="display:flex;align-items:center;gap:8px;padding:6px 10px;border-radius:8px;cursor:pointer;transition:background .15s;' + (isCompleted ? 'background:rgba(48,209,88,.04)' : '') + '">';
+    
+    if (!isLeaf) {
+      h += '<span style="font-size:10px;color:rgba(255,255,255,.3);width:14px;transition:transform .2s" id="' + nodeId + '_arrow">▶</span>';
+    } else {
+      h += '<span style="width:14px"></span>';
+    }
+    
+    var icon = depth === 0 ? '🎯' : depth === 1 ? (node.tag === 'intention' ? '📐' : '📝') : '·';
+    h += '<span style="font-size:13px;' + (depth <= 1 ? 'font-weight:700' : '') + '">' + icon + ' ' + (node.label || '') + '</span>';
+    
+    if (node.code && node.code !== '0') {
+      h += '<span style="font-size:10px;color:rgba(255,255,255,.25);font-family:monospace">' + node.code + '</span>';
+    }
+    
+    if (isCompleted) {
+      h += '<span style="margin-left:auto;font-size:11px;color:#4ade80">✓</span>';
+    }
+    
+    h += '</div>';
+    
+    // Training action buttons for leaf nodes
+    if (isLeaf && typeof CAPABILITY_MAP !== 'undefined' && CAPABILITY_MAP[node.code]) {
+      var actions = CAPABILITY_MAP[node.code];
+      h += '<div class="cap-children" style="display:block">';
+      h += '<div style="margin-left:42px;padding:4px 0 8px;display:flex;flex-wrap:wrap;gap:6px">';
+      actions.forEach(function(action) {
+        h += '<div onclick="capLaunch(\'' + action.id + '\',\'' + (node.code||'') + '\');event.stopPropagation()" style="font-size:11px;padding:4px 12px;border-radius:14px;background:rgba(94,92,230,.1);color:#a5b4fc;cursor:pointer;border:1px solid rgba(94,92,230,.15);transition:all .15s" title="' + action.desc + '">' + action.icon + ' ' + action.desc + '</div>';
+      });
+      h += '</div></div>';
+    }
+    
+    // Children container
+    if (!isLeaf && node.children && node.children.length) {
+      h += '<div class="cap-children" style="display:' + (depth <= 1 ? 'block' : 'none') + '" id="' + nodeId + '">';
+      node.children.forEach(function(child) { renderNode(child, depth + 1); });
+      h += '</div>';
+    }
+    
+    h += '</div>';
+  }
+  
+  if (typeof CAPABILITY_TREE !== 'undefined') {
+    var root = CAPABILITY_TREE;
+    h += '<div class="pcard" style="padding:16px 20px">';
+    // Render top-level branches
+    if (root.children) {
+      root.children.forEach(function(child) { renderNode(child, 0); });
+    }
+    h += '</div>';
+  } else {
+    h += '<div class="pcard" style="padding:40px;text-align:center"><p style="color:rgba(255,255,255,.3)">能力树数据加载中...</p></div>';
+  }
+  
+  document.getElementById('ct').innerHTML = h;
+  document.getElementById('ct').scrollTop = 0;
+}
+
+function toggleCapNode(nodeId) {
+  var el = document.getElementById(nodeId);
+  var arrow = document.getElementById(nodeId + '_arrow');
+  if (el) {
+    el.style.display = el.style.display === 'none' ? 'block' : 'none';
+    if (arrow) arrow.style.transform = el.style.display === 'none' ? 'rotate(0deg)' : 'rotate(90deg)';
+  }
+}
+
+function capLaunch(actionId, capabilityCode) {
+  // Mark capability as completed
+  if (capabilityCode) {
+    try {
+      var progress = JSON.parse(localStorage.getItem('r434_cap_progress') || '{}');
+      progress[capabilityCode] = true;
+      localStorage.setItem('r434_cap_progress', JSON.stringify(progress));
+    } catch(e) {}
+  }
+  
+  // Navigate to the corresponding feature
+  if (actionId.indexOf('outputtrain') === 0) {
+    navigate('outputtrain');
+    // Set layer based on action
+    var layer = 0;
+    if (actionId.indexOf(':L2') >= 0) layer = 1;
+    if (actionId.indexOf(':L3') >= 0) layer = 2;
+    setTimeout(function() { switchOTLayer(layer); }, 300);
+  } else if (actionId === 'cards') {
+    navigate('cards');
+  } else if (actionId === 'hot') {
+    navigate('hot');
+  }
 }
 
 // ===== INIT DONE =====
