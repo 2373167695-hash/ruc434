@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<!-- v2.1 · 2026-07-04 02:04 · modular -->
+<!-- v2.1 · 2026-07-04 02:09 · modular -->
 <html lang="zh-CN">
 <head>
 <meta charset="UTF-8">
@@ -567,6 +567,130 @@ body.sb-collapsed .sidebar.open ~ .sidebar-backdrop{display:block}
   table{display:block;overflow-x:auto;font-size:11px}
   textarea{font-size:16px!important}input{font-size:16px!important}
   .loading{padding:40px 20px}
+}
+
+/* ===== 能力地图树状结构 ===== */
+.ctree {
+  position: relative;
+}
+.ctree-node {
+  position: relative;
+}
+/* Tree row */
+.ctree-row {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 6px 10px;
+  margin: 1px 0;
+  border-radius: 8px;
+  cursor: pointer;
+  transition: background .15s, transform .15s;
+  position: relative;
+}
+.ctree-row:hover {
+  background: rgba(255,255,255,.04);
+}
+.ctree-row:active {
+  transform: scale(.98);
+}
+.ctree-done {
+  background: rgba(48,209,88,.04);
+}
+.ctree-done:hover {
+  background: rgba(48,209,88,.07);
+}
+/* Depth levels - scaling font size and opacity */
+.ctree-l0 { padding: 10px 14px; }
+.ctree-l0 .ctree-label { font-size: 16px; font-weight: 700; }
+.ctree-l0 .ctree-ico { font-size: 20px; }
+.ctree-l1 { padding: 8px 12px; }
+.ctree-l1 .ctree-label { font-size: 14px; font-weight: 600; }
+.ctree-l2 .ctree-label { font-size: 13px; font-weight: 600; }
+.ctree-l3 .ctree-label { font-size: 12px; font-weight: 500; color: rgba(255,255,255,.7); }
+.ctree-l4 .ctree-label { font-size: 11px; font-weight: 400; color: rgba(255,255,255,.55); }
+.ctree-l5 .ctree-label { font-size: 11px; font-weight: 400; color: rgba(255,255,255,.45); }
+/* Children container */
+.ctree-ch {
+  position: relative;
+  margin-left: 20px;
+  padding-left: 12px;
+  border-left: 1px solid rgba(255,255,255,.08);
+  overflow: hidden;
+  transition: max-height .35s ease, opacity .25s ease;
+}
+/* Arrow */
+.ctree-arr {
+  width: 14px;
+  height: 14px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+/* Icon */
+.ctree-ico {
+  flex-shrink: 0;
+  width: 20px;
+  text-align: center;
+  opacity: .6;
+}
+.ctree-done .ctree-ico {
+  opacity: 1;
+}
+/* Label */
+.ctree-label {
+  flex: 1;
+  line-height: 1.35;
+}
+/* Code badge */
+.ctree-code {
+  font-size: 10px;
+  color: rgba(255,255,255,.15);
+  font-family: 'SF Mono', 'Monaco', monospace;
+  flex-shrink: 0;
+  background: rgba(255,255,255,.03);
+  padding: 1px 6px;
+  border-radius: 4px;
+}
+/* Check mark */
+.ctree-check {
+  font-size: 11px;
+  color: #4ade80;
+  flex-shrink: 0;
+}
+/* Training action buttons */
+.ctree-acts {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 5px;
+  margin: 4px 0 6px 34px;
+  padding: 2px 0;
+}
+.ctree-btn {
+  font-size: 10px;
+  padding: 4px 10px;
+  border-radius: 10px;
+  background: rgba(94,92,230,.08);
+  color: #a5b4fc;
+  cursor: pointer;
+  border: 1px solid rgba(94,92,230,.12);
+  transition: all .15s;
+  white-space: nowrap;
+}
+.ctree-btn:hover {
+  background: rgba(94,92,230,.16);
+  border-color: rgba(94,92,230,.25);
+  color: #c4b5fd;
+}
+/* L0 root node special */
+.ctree .ctree > .ctree-node > .ctree-row {
+  background: rgba(94,92,230,.06);
+  border: 1px solid rgba(94,92,230,.12);
+  border-radius: 10px;
+}
+.ctree .ctree > .ctree-node > .ctree-row:hover {
+  background: rgba(94,92,230,.1);
 }
 </style>
 
@@ -6870,7 +6994,7 @@ function otL3Check3() {
   if (tab) { tab.style.background = 'rgba(48,209,88,.08)'; tab.style.color = 'rgba(48,209,88,.6)'; }
 }
 
-// ===== 能力地图 =====
+// ===== 能力地图 — 树状结构可视化 =====
 function showCapabilityMap() {
   document.getElementById('bc').innerHTML = '🧭 <span>能力地图</span>';
   var progress = JSON.parse(localStorage.getItem('r434_cap_progress') || '{}');
@@ -6885,77 +7009,18 @@ function showCapabilityMap() {
   var pct = totalLeaves > 0 ? Math.round(completedLeaves / totalLeaves * 100) : 0;
   
   var h = '';
-  h += '<div class="hero" style="margin-bottom:20px"><h1>🧭 能力地图</h1><p class="desc">从能力节点直接启动对应训练 · 47个能力节点 · ' + completedLeaves + ' 个已点亮</p></div>';
-  
-  // Progress ring + stats
-  var r = 36, circ = 2 * Math.PI * r, offset = circ * (1 - pct / 100);
-  var color = pct >= 60 ? '#4ade80' : pct >= 30 ? '#fbbf24' : '#f87171';
-  h += '<div class="pcard" style="margin-bottom:20px;padding:14px 20px;display:flex;align-items:center;gap:16px">';
-  h += '<svg width="84" height="84" style="flex-shrink:0"><circle cx="42" cy="42" r="' + r + '" fill="none" stroke="rgba(255,255,255,.06)" stroke-width="5"/><circle cx="42" cy="42" r="' + r + '" fill="none" stroke="' + color + '" stroke-width="5" stroke-linecap="round" stroke-dasharray="' + circ + '" stroke-dashoffset="' + offset + '" transform="rotate(-90,42,42)" style="transition:stroke-dashoffset 1s ease"/><text x="42" y="46" text-anchor="middle" fill="rgba(255,255,255,.9)" font-size="18" font-weight="800">' + pct + '%</text></svg>';
-  h += '<div><div style="font-weight:700;font-size:15px;margin-bottom:2px">学习进度</div><div style="font-size:12px;color:rgba(255,255,255,.4)">解题能力 ' + completedLeaves + '/' + totalLeaves + ' · 两点间的距离就是你的进步空间</div></div>';
-  h += '</div>';
-  
-  // Two-branch layout
-  
-  // Generate branch cards
-  function renderBranch(node, bgColor, icon) {
-    var branchH = '';
-    branchH += '<div class="pcard" style="padding:20px;overflow:hidden">';
-    branchH += '<div style="display:flex;align-items:center;gap:10px;margin-bottom:14px">';
-    branchH += '<div style="width:34px;height:34px;border-radius:10px;background:' + bgColor + ';display:flex;align-items:center;justify-content:center;font-size:16px">' + icon + '</div>';
-    branchH += '<div><div style="font-weight:700;font-size:15px">' + (node.label || '') + '</div>';
-    branchH += '<div style="font-size:11px;color:rgba(255,255,255,.35)">' + (node.desc || '') + '</div></div></div>';
-    
-    // Render sub-nodes
-    function renderSubNode(sn, indent) {
-      var sid = 'cap_' + (sn.code || '').replace(/\./g, '_');
-      var isLeaf = !sn.children || !sn.children.length;
-      var done = progress[sn.code];
-      
-      branchH += '<div style="margin-bottom:2px">';
-      branchH += '<div onclick="window._capToggle(\'' + sid + '\')" style="display:flex;align-items:center;gap:6px;padding:5px 8px 5px ' + (indent * 16 + 4) + 'px;border-radius:6px;cursor:pointer;transition:background .15s;' + (done ? 'background:rgba(48,209,88,.04)' : '') + '" id="' + sid + '_row">';
-      
-      if (!isLeaf && sn.children && sn.children.length) {
-        branchH += '<span style="font-size:9px;color:rgba(255,255,255,.2);width:12px;transition:transform .2s" id="' + sid + '_arr">▶</span>';
-      } else {
-        branchH += '<span style="width:12px"></span>';
-      }
-      var dot = isLeaf ? '○' : '●';
-      branchH += '<span style="font-size:8px;color:' + (done ? '#4ade80' : 'rgba(255,255,255,.2)') + '">' + dot + '</span>';
-      branchH += '<span style="font-size:12px;color:rgba(255,255,255,' + (done ? '.85' : '.55') + ')">' + (sn.label || '') + '</span>';
-      if (sn.code) branchH += '<span style="font-size:9px;color:rgba(255,255,255,.18);font-family:monospace">' + sn.code + '</span>';
-      if (done) branchH += '<span style="margin-left:auto;font-size:10px;color:#4ade80">✓</span>';
-      branchH += '</div>';
-      
-      // Leaf actions
-      if (isLeaf && typeof CAPABILITY_MAP !== 'undefined' && CAPABILITY_MAP[sn.code]) {
-        var actions = CAPABILITY_MAP[sn.code];
-        branchH += '<div style="padding:2px 0 6px ' + (indent * 16 + 30) + 'px;display:flex;flex-wrap:wrap;gap:4px">';
-        actions.forEach(function(a) {
-          branchH += '<div onclick="capLaunch(\'' + a.id + '\',\'' + (sn.code || '') + '\');event.stopPropagation()" style="font-size:10px;padding:3px 10px;border-radius:10px;background:rgba(94,92,230,.08);color:#a5b4fc;cursor:pointer;border:1px solid rgba(94,92,230,.12);transition:all .12s" title="' + a.desc + '">' + a.icon + ' ' + a.desc.substring(0,12) + '</div>';
-        });
-        branchH += '</div>';
-      }
-      
-      // Children
-      if (sn.children && sn.children.length) {
-        branchH += '<div id="' + sid + '" style="display:' + (indent === 0 ? 'block' : 'none') + '">';
-        sn.children.forEach(function(c) { renderSubNode(c, indent + 1); });
-        branchH += '</div>';
-      }
-      branchH += '</div>';
-    }
-    
-    if (node.children) node.children.forEach(function(c) { renderSubNode(c, 0); });
-    branchH += '</div>';
-    return branchH;
-  }
-  
+  h += '<div class="hero" style="margin-bottom:16px"><h1>🧭 能力地图</h1><p class="desc">47个能力节点 — 点击节点展开 · 叶子节点可启动对应训练 · ' + completedLeaves + ' 个已点亮</p></div>';
+  h += pcard('progress', progressBar(pct, completedLeaves, totalLeaves));
+
   var tree = typeof CAPABILITY_TREE !== 'undefined' ? CAPABILITY_TREE : null;
   if (tree && tree.children) {
-    h += '<div style="display:grid;grid-template-columns:1fr 1fr;gap:16px">';
-    if (tree.children[0]) h += renderBranch(tree.children[0], 'rgba(232,200,107,.12)', '📐');
-    if (tree.children[1]) h += renderBranch(tree.children[1], 'rgba(107,142,194,.12)', '📝');
+    h += '<div class="ctree">';
+    // Render root
+    h += nodeRow(tree, 0, 'ctree_root', true, progress);
+    // Level 1 children
+    h += '<div class="ctree-ch" id="ctree_root" style="display:block">';
+    tree.children.forEach(function(c) { h += renderNode(c, 1, progress); });
+    h += '</div>';
     h += '</div>';
   } else {
     h += '<div class="pcard" style="padding:40px;text-align:center"><p style="color:rgba(255,255,255,.3)">能力树数据加载中...</p></div>';
@@ -6964,6 +7029,99 @@ function showCapabilityMap() {
   document.getElementById('ct').innerHTML = h;
   document.getElementById('ct').scrollTop = 0;
 }
+
+function progressBar(pct, done, total) {
+  var r = 34, circ = 2 * Math.PI * r, offset = circ * (1 - pct / 100);
+  var color = pct >= 60 ? '#4ade80' : pct >= 30 ? '#fbbf24' : '#f87171';
+  return '<div style="display:flex;align-items:center;gap:14px">' +
+    '<svg width="78" height="78" style="flex-shrink:0"><circle cx="39" cy="39" r="' + r + '" fill="none" stroke="rgba(255,255,255,.04)" stroke-width="4"/><circle cx="39" cy="39" r="' + r + '" fill="none" stroke="' + color + '" stroke-width="4" stroke-linecap="round" stroke-dasharray="' + circ + '" stroke-dashoffset="' + offset + '" transform="rotate(-90,39,39)" style="transition:stroke-dashoffset 1s ease"/><text x="39" y="43" text-anchor="middle" fill="rgba(255,255,255,.9)" font-size="16" font-weight="800">' + pct + '%</text></svg>' +
+    '<div><div style="font-weight:700;font-size:14px">学习进度</div><div style="font-size:11px;color:rgba(255,255,255,.35);margin-top:2px">已完成 ' + done + '/' + total + ' 个节点</div></div></div>';
+}
+
+function pcard(cls, inner) {
+  return '<div class="pcard' + (cls ? ' ' + cls : '') + '" style="padding:14px 18px;margin-bottom:14px">' + inner + '</div>';
+}
+
+function nodeRow(node, depth, id, expanded, prog) {
+  var isLeaf = !node.children || !node.children.length;
+  var done = prog[node.code];
+  var sid = 'ctree_' + (node.code || '0').replace(/\./g, '_');
+  var lvlCls = 'ctree-l' + Math.min(depth, 5);
+  var stateCls = done ? ' ctree-done' : '';
+  
+  var html = '<div class="ctree-row ' + lvlCls + stateCls + '" onclick="window._ctToggle(\'' + sid + '\',' + isLeaf + ')" id="' + sid + '_row">';
+  
+  // Arrow
+  html += '<span class="ctree-arr" id="' + sid + '_arr">';
+  html += isLeaf ? '<svg width="10" height="10" viewBox="0 0 10 10"><circle cx="5" cy="5" r="3" fill="' + (done ? '#4ade80' : 'rgba(255,255,255,.15)') + '"/></svg>' :
+    ('<svg width="12" height="12" viewBox="0 0 12 12" style="transition:transform .2s;transform:rotate(' + (expanded ? '90' : '0') + 'deg)"><path d="M4 2l5 4-5 4" fill="none" stroke="rgba(255,255,255,.25)" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>');
+  html += '</span>';
+  
+  // Icon
+  var iconMap = {root:'🎯', intention:'🔍', knowledge:'📚', framework:'🏗️', expression:'✍️', task:'📋'};
+  var ico = iconMap[node.tag] || (depth <= 2 ? '●' : '○');
+  html += '<span class="ctree-ico">' + ico + '</span>';
+  
+  // Label
+  html += '<span class="ctree-label">' + (node.label || '') + '</span>';
+  
+  // Code
+  if (node.code) html += '<span class="ctree-code">' + node.code + '</span>';
+  
+  // Check
+  if (done) html += '<span class="ctree-check">✓</span>';
+  
+  html += '</div>';
+  
+  // Training actions for leaf nodes
+  if (isLeaf && typeof CAPABILITY_MAP !== 'undefined' && CAPABILITY_MAP[node.code]) {
+    var actions = CAPABILITY_MAP[node.code];
+    html += '<div class="ctree-acts" id="' + sid + '_acts" style="display:none">';
+    actions.forEach(function(a) {
+      html += '<button onclick="event.stopPropagation();capLaunch(\'' + a.id + '\',\'' + (node.code || '') + '\')" class="ctree-btn" title="' + a.desc + '">' + a.icon + ' ' + a.desc + '</button>';
+    });
+    html += '</div>';
+  }
+  
+  return html;
+}
+
+function renderNode(node, depth, prog) {
+  var isLeaf = !node.children || !node.children.length;
+  var sid = 'ctree_' + (node.code || '0').replace(/\./g, '_');
+  var expanded = (depth <= 2); // Top 2 levels expanded by default
+  
+  var html = '';
+  html += '<div class="ctree-node">';
+  html += nodeRow(node, depth, sid, expanded, prog);
+  
+  if (!isLeaf) {
+    html += '<div class="ctree-ch" id="' + sid + '" style="display:' + (expanded ? 'block' : 'none') + '">';
+    node.children.forEach(function(c) { html += renderNode(c, depth + 1, prog); });
+    html += '</div>';
+  }
+  
+  html += '</div>';
+  return html;
+}
+
+window._ctToggle = function(nodeId, isLeaf) {
+  if (isLeaf) {
+    // Toggle action buttons
+    var acts = document.getElementById(nodeId + '_acts');
+    if (acts) { acts.style.display = acts.style.display === 'none' ? 'flex' : 'none'; }
+    return;
+  }
+  var el = document.getElementById(nodeId);
+  var arrow = document.getElementById(nodeId + '_arr');
+  if (!el) return;
+  var isOpen = el.style.display !== 'none';
+  el.style.display = isOpen ? 'none' : 'block';
+  if (arrow) {
+    var svg = arrow.querySelector('svg');
+    if (svg) svg.style.transform = isOpen ? 'rotate(0deg)' : 'rotate(90deg)';
+  }
+};
 
 window._capToggle = function(nodeId) {
   var el = document.getElementById(nodeId);
