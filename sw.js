@@ -1,5 +1,5 @@
 // Service Worker for 人大434备考系统
-var CACHE_VERSION = 'ruc434-v5';
+var CACHE_VERSION = 'ruc434-v6';
 var CACHE_URLS = [
   '.',
   'manifest.json',
@@ -8,8 +8,9 @@ var CACHE_URLS = [
   'https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/katex.min.js'
 ];
 
-// Install: pre-cache all core assets
+// Install: pre-cache all core assets, take over immediately
 self.addEventListener('install', function(e) {
+  self.skipWaiting();
   e.waitUntil(
     caches.open(CACHE_VERSION).then(function(cache) {
       return cache.addAll(CACHE_URLS).catch(function(err) {
@@ -19,11 +20,13 @@ self.addEventListener('install', function(e) {
   );
 });
 
-// Activate: clean old caches
+// Activate: clean old caches and claim all clients
 self.addEventListener('activate', function(e) {
   e.waitUntil(
     caches.keys().then(function(names) {
       return Promise.all(names.filter(function(n) { return n !== CACHE_VERSION; }).map(function(n) { return caches.delete(n); }));
+    }).then(function() {
+      return self.clients.claim();
     })
   );
 });
