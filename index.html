@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<!-- v2.1 · 2026-07-04 00:56 · modular -->
+<!-- v2.1 · 2026-07-04 01:01 · modular -->
 <html lang="zh-CN">
 <head>
 <meta charset="UTF-8">
@@ -3539,7 +3539,7 @@ function buildNav() {
       (part.chapters || []).forEach(function(ch,chi) {
         var chId = 'knc_' + pi + '_' + chi;
         knh += '<div class="ni lv1" onclick="event.stopPropagation();var el=document.getElementById(\'' + chId + '\');if(el){el.style.display=el.style.display===\'block\'?\'none\':\'block\'}">📂 ' + ch.name + '</div>';
-        knh += '<div id="' + chId + '" style="display:none">';
+        kn// removed stray CSS
         (ch.groups || []).forEach(function(grp) {
           knh += '<div class="ni lv2" style="font-size:10px;color:#888;cursor:default;padding:4px 0 2px 30px">' + grp.name + '</div>';
           (grp.topics || []).forEach(function(tp) {
@@ -6873,89 +6873,90 @@ function otL3Check3() {
 // ===== 能力地图 =====
 function showCapabilityMap() {
   document.getElementById('bc').innerHTML = '🧭 <span>能力地图</span>';
-  var h = '';
-  h += '<div class="hero" style="margin-bottom:24px"><h1>🧭 能力地图</h1><p class="desc">从能力节点直接启动对应训练 · 点击可展开/收起 · 点击训练入口直接跳转</p></div>';
-  
-  // Progress overview
-  var totalLeaves = 0, completedLeaves = 0;
   var progress = JSON.parse(localStorage.getItem('r434_cap_progress') || '{}');
-  function countProgress(node) {
-    if (!node.children || !node.children.length) {
-      totalLeaves++;
-      if (progress[node.code]) completedLeaves++;
-      return;
-    }
-    node.children.forEach(function(c) { countProgress(c); });
-  }
-  if (typeof CAPABILITY_TREE !== 'undefined') countProgress(CAPABILITY_TREE);
   
-  if (totalLeaves > 0) {
-    var pct = Math.round(completedLeaves / totalLeaves * 100);
-    h += '<div class="pcard" style="margin-bottom:20px;padding:18px;display:flex;align-items:center;gap:16px;flex-wrap:wrap">';
-    h += '<div style="flex:1">';
-    h += '<div style="font-weight:700;font-size:14px;margin-bottom:4px">📊 整体进度</div>';
-    h += '<div style="font-size:12px;color:rgba(255,255,255,.4)">' + completedLeaves + '/' + totalLeaves + ' 个能力节点已点亮</div>';
-    h += '</div>';
-    h += '<div style="font-size:32px;font-weight:800;letter-spacing:-1px;color:' + (pct >= 60 ? '#4ade80' : pct >= 30 ? '#fbbf24' : '#f87171') + '">' + pct + '%</div>';
-    h += '</div>';
+  // Count progress
+  var totalLeaves = 0, completedLeaves = 0;
+  function countP(node) {
+    if (!node.children || !node.children.length) { totalLeaves++; if (progress[node.code]) completedLeaves++; return; }
+    node.children.forEach(function(c) { countP(c); });
+  }
+  if (typeof CAPABILITY_TREE !== 'undefined') countP(CAPABILITY_TREE);
+  var pct = totalLeaves > 0 ? Math.round(completedLeaves / totalLeaves * 100) : 0;
+  
+  var h = '';
+  h += '<div class="hero" style="margin-bottom:20px"><h1>🧭 能力地图</h1><p class="desc">从能力节点直接启动对应训练 · 47个能力节点 · ' + completedLeaves + ' 个已点亮</p></div>';
+  
+  // Progress ring + stats
+  var r = 36, circ = 2 * Math.PI * r, offset = circ * (1 - pct / 100);
+  var color = pct >= 60 ? '#4ade80' : pct >= 30 ? '#fbbf24' : '#f87171';
+  h += '<div class="pcard" style="margin-bottom:20px;padding:14px 20px;display:flex;align-items:center;gap:16px">';
+  h += '<svg width="84" height="84" style="flex-shrink:0"><circle cx="42" cy="42" r="' + r + '" fill="none" stroke="rgba(255,255,255,.06)" stroke-width="5"/><circle cx="42" cy="42" r="' + r + '" fill="none" stroke="' + color + '" stroke-width="5" stroke-linecap="round" stroke-dasharray="' + circ + '" stroke-dashoffset="' + offset + '" transform="rotate(-90,42,42)" style="transition:stroke-dashoffset 1s ease"/><text x="42" y="46" text-anchor="middle" fill="rgba(255,255,255,.9)" font-size="18" font-weight="800">' + pct + '%</text></svg>';
+  h += '<div><div style="font-weight:700;font-size:15px;margin-bottom:2px">学习进度</div><div style="font-size:12px;color:rgba(255,255,255,.4)">解题能力 ' + completedLeaves + '/' + totalLeaves + ' · 两点间的距离就是你的进步空间</div></div>';
+  h += '</div>';
+  
+  // Two-branch layout
+  h += '<div style="display:none">';
+  
+  // Generate branch cards
+  function renderBranch(node, bgColor, icon) {
+    var branchH = '';
+    branchH += '<div class="pcard" style="padding:20px;overflow:hidden">';
+    branchH += '<div style="display:flex;align-items:center;gap:10px;margin-bottom:14px">';
+    branchH += '<div style="width:34px;height:34px;border-radius:10px;background:' + bgColor + ';display:flex;align-items:center;justify-content:center;font-size:16px">' + icon + '</div>';
+    branchH += '<div><div style="font-weight:700;font-size:15px">' + (node.label || '') + '</div>';
+    branchH += '<div style="font-size:11px;color:rgba(255,255,255,.35)">' + (node.desc || '') + '</div></div></div>';
+    
+    // Render sub-nodes
+    function renderSubNode(sn, indent) {
+      var sid = 'cap_' + (sn.code || '').replace(/\./g, '_');
+      var isLeaf = !sn.children || !sn.children.length;
+      var done = progress[sn.code];
+      
+      branchH += '<div style="margin-bottom:2px">';
+      branchH += '<div onclick="window._capToggle(\'' + sid + '\')" style="display:flex;align-items:center;gap:6px;padding:5px 8px 5px ' + (indent * 16 + 4) + 'px;border-radius:6px;cursor:pointer;transition:background .15s;' + (done ? 'background:rgba(48,209,88,.04)' : '') + '" id="' + sid + '_row">';
+      
+      if (!isLeaf && sn.children && sn.children.length) {
+        branchH += '<span style="font-size:9px;color:rgba(255,255,255,.2);width:12px;transition:transform .2s" id="' + sid + '_arr">▶</span>';
+      } else {
+        branchH += '<span style="width:12px"></span>';
+      }
+      var dot = isLeaf ? '○' : '●';
+      branchH += '<span style="font-size:8px;color:' + (done ? '#4ade80' : 'rgba(255,255,255,.2)') + '">' + dot + '</span>';
+      branchH += '<span style="font-size:12px;color:rgba(255,255,255,' + (done ? '.85' : '.55') + ')">' + (sn.label || '') + '</span>';
+      if (sn.code) branchH += '<span style="font-size:9px;color:rgba(255,255,255,.18);font-family:monospace">' + sn.code + '</span>';
+      if (done) branchH += '<span style="margin-left:auto;font-size:10px;color:#4ade80">✓</span>';
+      branchH += '</div>';
+      
+      // Leaf actions
+      if (isLeaf && typeof CAPABILITY_MAP !== 'undefined' && CAPABILITY_MAP[sn.code]) {
+        var actions = CAPABILITY_MAP[sn.code];
+        branchH += '<div style="padding:2px 0 6px ' + (indent * 16 + 30) + 'px;display:flex;flex-wrap:wrap;gap:4px">';
+        actions.forEach(function(a) {
+          branchH += '<div onclick="capLaunch(\'' + a.id + '\',\'' + (sn.code || '') + '\');event.stopPropagation()" style="font-size:10px;padding:3px 10px;border-radius:10px;background:rgba(94,92,230,.08);color:#a5b4fc;cursor:pointer;border:1px solid rgba(94,92,230,.12);transition:all .12s" title="' + a.desc + '">' + a.icon + ' ' + a.desc.substring(0,12) + '</div>';
+        });
+        branchH += '</div>';
+      }
+      
+      // Children
+      if (sn.children && sn.children.length) {
+        branchH += '<div id="' + sid + '" style="display:' + (indent === 0 ? 'block' : 'none') + '">';
+        sn.children.forEach(function(c) { renderSubNode(c, indent + 1); });
+        branchH += '</div>';
+      }
+      branchH += '</div>';
+    }
+    
+    if (node.children) node.children.forEach(function(c) { renderSubNode(c, 0); });
+    branchH += '</div>';
+    return branchH;
   }
   
-  // Render tree
-  function renderNode(node, depth) {
-    var isLeaf = !node.children || !node.children.length;
-    var isCompleted = progress[node.code];
-    var nodeId = 'cap_' + (node.code || 'root').replace(/\./g, '_');
-    
-    h += '<div class="cap-node" style="margin-left:' + (depth * 20) + 'px">';
-    h += '<div class="cap-row" onclick="toggleCapNode(\'' + nodeId + '\')" style="display:flex;align-items:center;gap:8px;padding:6px 10px;border-radius:8px;cursor:pointer;transition:background .15s;' + (isCompleted ? 'background:rgba(48,209,88,.04)' : '') + '">';
-    
-    if (!isLeaf) {
-      h += '<span style="font-size:10px;color:rgba(255,255,255,.3);width:14px;transition:transform .2s" id="' + nodeId + '_arrow">▶</span>';
-    } else {
-      h += '<span style="width:14px"></span>';
-    }
-    
-    var icon = depth === 0 ? '🎯' : depth === 1 ? (node.tag === 'intention' ? '📐' : '📝') : '·';
-    h += '<span style="font-size:13px;' + (depth <= 1 ? 'font-weight:700' : '') + '">' + icon + ' ' + (node.label || '') + '</span>';
-    
-    if (node.code && node.code !== '0') {
-      h += '<span style="font-size:10px;color:rgba(255,255,255,.25);font-family:monospace">' + node.code + '</span>';
-    }
-    
-    if (isCompleted) {
-      h += '<span style="margin-left:auto;font-size:11px;color:#4ade80">✓</span>';
-    }
-    
-    h += '</div>';
-    
-    // Training action buttons for leaf nodes
-    if (isLeaf && typeof CAPABILITY_MAP !== 'undefined' && CAPABILITY_MAP[node.code]) {
-      var actions = CAPABILITY_MAP[node.code];
-      h += '<div class="cap-children" style="display:block">';
-      h += '<div style="margin-left:42px;padding:4px 0 8px;display:flex;flex-wrap:wrap;gap:6px">';
-      actions.forEach(function(action) {
-        h += '<div onclick="capLaunch(\'' + action.id + '\',\'' + (node.code||'') + '\');event.stopPropagation()" style="font-size:11px;padding:4px 12px;border-radius:14px;background:rgba(94,92,230,.1);color:#a5b4fc;cursor:pointer;border:1px solid rgba(94,92,230,.15);transition:all .15s" title="' + action.desc + '">' + action.icon + ' ' + action.desc + '</div>';
-      });
-      h += '</div></div>';
-    }
-    
-    // Children container
-    if (!isLeaf && node.children && node.children.length) {
-      h += '<div class="cap-children" style="display:' + (depth <= 1 ? 'block' : 'none') + '" id="' + nodeId + '">';
-      node.children.forEach(function(child) { renderNode(child, depth + 1); });
-      h += '</div>';
-    }
-    
-    h += '</div>';
-  }
-  
-  if (typeof CAPABILITY_TREE !== 'undefined') {
-    var root = CAPABILITY_TREE;
-    h += '<div class="pcard" style="padding:16px 20px">';
-    // Render top-level branches
-    if (root.children) {
-      root.children.forEach(function(child) { renderNode(child, 0); });
-    }
+  var tree = typeof CAPABILITY_TREE !== 'undefined' ? CAPABILITY_TREE : null;
+  if (tree && tree.children) {
+    h += '<div style="display:grid;grid-template-columns:1fr 1fr;gap:16px">';
+    if (tree.children[0]) h += renderBranch(tree.children[0], 'rgba(232,200,107,.12)', '📐');
+    if (tree.children[1]) h += renderBranch(tree.children[1], 'rgba(107,142,194,.12)', '📝');
     h += '</div>';
   } else {
     h += '<div class="pcard" style="padding:40px;text-align:center"><p style="color:rgba(255,255,255,.3)">能力树数据加载中...</p></div>';
@@ -6965,29 +6966,29 @@ function showCapabilityMap() {
   document.getElementById('ct').scrollTop = 0;
 }
 
-function toggleCapNode(nodeId) {
+window._capToggle = function(nodeId) {
   var el = document.getElementById(nodeId);
-  var arrow = document.getElementById(nodeId + '_arrow');
+  var arrow = document.getElementById(nodeId + '_arr');
   if (el) {
     el.style.display = el.style.display === 'none' ? 'block' : 'none';
     if (arrow) arrow.style.transform = el.style.display === 'none' ? 'rotate(0deg)' : 'rotate(90deg)';
   }
+};
+
+function toggleCapNode(nodeId) {
+  window._capToggle(nodeId);
 }
 
 function capLaunch(actionId, capabilityCode) {
-  // Mark capability as completed
   if (capabilityCode) {
     try {
-      var progress = JSON.parse(localStorage.getItem('r434_cap_progress') || '{}');
-      progress[capabilityCode] = true;
-      localStorage.setItem('r434_cap_progress', JSON.stringify(progress));
+      var p = JSON.parse(localStorage.getItem('r434_cap_progress') || '{}');
+      p[capabilityCode] = true;
+      localStorage.setItem('r434_cap_progress', JSON.stringify(p));
     } catch(e) {}
   }
-  
-  // Navigate to the corresponding feature
   if (actionId.indexOf('outputtrain') === 0) {
     navigate('outputtrain');
-    // Set layer based on action
     var layer = 0;
     if (actionId.indexOf(':L2') >= 0) layer = 1;
     if (actionId.indexOf(':L3') >= 0) layer = 2;
@@ -6998,6 +6999,8 @@ function capLaunch(actionId, capabilityCode) {
     navigate('hot');
   }
 }
+
+// ===== INIT DONE =====
 
 // ===== INIT DONE =====
 // Register service worker for PWA
