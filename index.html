@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<!-- v2.1 · 2026-07-04 02:18 · modular -->
+<!-- v2.1 · 2026-07-07 11:14 · modular -->
 <html lang="zh-CN">
 <head>
 <meta charset="UTF-8">
@@ -16,6 +16,7 @@
 <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.7/dist/chart.umd.min.js"></script>
 <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/katex.min.css">
 <script src="https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/katex.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/mermaid@11/dist/mermaid.min.js"></script>
 
 <style>
 /* ===== iOS 26 LIQUID GLASS DESIGN — DARK THEME ===== */
@@ -667,6 +668,129 @@ body.sb-collapsed .sidebar.open ~ .sidebar-backdrop{display:block}
 .tmap-wrap::-webkit-scrollbar-track { background: transparent; }
 .tmap-wrap::-webkit-scrollbar-thumb { background: rgba(255,255,255,.1); border-radius: 3px; }
 .tmap-wrap::-webkit-scrollbar-thumb:hover { background: rgba(255,255,255,.2); }
+
+/* ===== 理论可视化 ===== */
+.tvis-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+  gap: 10px;
+}
+.tvis-card {
+  background: rgba(255,255,255,.03);
+  border: 1px solid rgba(255,255,255,.08);
+  border-radius: 12px;
+  padding: 12px 14px;
+  cursor: pointer;
+  transition: all .2s;
+}
+.tvis-card:hover {
+  background: rgba(255,255,255,.06);
+  border-color: rgba(255,255,255,.14);
+  transform: translateY(-1px);
+}
+.tvis-card.tvis-active {
+  background: rgba(94,92,230,.1);
+  border-color: rgba(94,92,230,.25);
+  box-shadow: 0 0 16px rgba(94,92,230,.1);
+}
+.tvis-card-top {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 6px;
+}
+.tvis-card-mod {
+  font-size: 10px;
+  color: rgba(255,255,255,.35);
+}
+.tvis-card-count {
+  font-size: 9px;
+  color: rgba(255,255,255,.2);
+  background: rgba(255,255,255,.04);
+  padding: 1px 6px;
+  border-radius: 4px;
+}
+.tvis-card-name {
+  font-size: 13px;
+  font-weight: 600;
+  color: rgba(255,255,255,.8);
+  line-height: 1.3;
+}
+.tvis-card-cached {
+  font-size: 10px;
+  color: rgba(52,199,89,.5);
+  margin-top: 4px;
+}
+.tvis-diag {
+  background: rgba(255,255,255,.03);
+  border: 1px solid rgba(255,255,255,.1);
+  border-radius: 14px;
+  margin: 8px 0 14px;
+  overflow: hidden;
+  animation: tvisIn .25s ease;
+}
+@keyframes tvisIn { from { opacity: 0; transform: translateY(-8px); } to { opacity: 1; transform: translateY(0); } }
+.tvis-diag-hdr {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 10px 14px;
+  font-size: 13px;
+  font-weight: 600;
+  color: rgba(255,255,255,.7);
+  border-bottom: 1px solid rgba(255,255,255,.06);
+  background: rgba(255,255,255,.02);
+}
+.tvis-btn-sm {
+  font-size: 10px;
+  padding: 4px 10px;
+  border-radius: 7px;
+  background: rgba(255,255,255,.05);
+  border: 1px solid rgba(255,255,255,.1);
+  color: rgba(255,255,255,.5);
+  cursor: pointer;
+  transition: all .15s;
+}
+.tvis-btn-sm:hover {
+  background: rgba(255,255,255,.1);
+  color: rgba(255,255,255,.8);
+}
+.tvis-body {
+  padding: 20px;
+  overflow-x: auto;
+}
+.tvis-body .mermaid {
+  display: flex;
+  justify-content: center;
+}
+.tvis-body .mermaid svg {
+  max-width: 100%;
+  height: auto;
+}
+.tvis-loading {
+  padding: 40px 20px;
+  text-align: center;
+  color: rgba(255,255,255,.4);
+  font-size: 13px;
+}
+.tvis-spin {
+  display: inline-block;
+  animation: tvisSpin 1s linear infinite;
+  margin-right: 6px;
+}
+@keyframes tvisSpin { from { transform: rotate(0deg); } to { transform: rotate(360deg); } }
+.tvis-error {
+  padding: 20px;
+  text-align: center;
+  color: rgba(255,69,58,.7);
+  font-size: 12px;
+}
+@media (max-width: 768px) {
+  .tvis-grid { grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); }
+}
+@media (max-width: 480px) {
+  .tvis-grid { grid-template-columns: 1fr; }
+}
 </style>
 
 </head>
@@ -3624,6 +3748,7 @@ function buildNav() {
   knh += '<div class="ni lv0" data-p="aichat">💬 AI助手</div>';
   knh += '<div class="sidebar-section-label">备考工具</div>';
   knh += '<div class="ni lv0" data-p="capmap">🧭 能力地图</div>';
+  knh += '<div class="ni lv0" data-p="theoryviz">📐 理论可视化</div>';
   knh += '<div class="ni lv0" data-p="outputtrain">✍️ 输出训练</div>';
   knh += '<div class="ni lv0" data-p="mockexam">🎯 AI模考</div>';
   knh += '<div class="ni lv0" data-p="macro">📊 宏观数据</div>';
@@ -3767,6 +3892,7 @@ function navigate(p, topicName, skipHistory) {
     else if (p === 'aichat') { showAI(); }
     else if (p === 'outputtrain') { showOutputTraining(); }
     else if (p === 'capmap') { showCapabilityMap(); }
+    else if (p === 'theoryviz') { showTheoryViz(); }
     else if (p === 'mockexam') { showMockExam(); }
     else if (p === 'allquestions') { showAllQuestions(); }
     else if (p === 'wrongbook') { showWrongBook(); }
@@ -7163,6 +7289,218 @@ function progressBar(pct, done, total) {
     '<svg width="64" height="64" style="flex-shrink:0"><circle cx="32" cy="32" r="'+r+'" fill="none" stroke="rgba(255,255,255,.04)" stroke-width="4"/><circle cx="32" cy="32" r="'+r+'" fill="none" stroke="'+color+'" stroke-width="4" stroke-linecap="round" stroke-dasharray="'+circ+'" stroke-dashoffset="'+offset+'" transform="rotate(-90,32,32)" style="transition:stroke-dashoffset 1s"/><text x="32" y="36" text-anchor="middle" fill="rgba(255,255,255,.9)" font-size="15" font-weight="800">'+pct+'%</text></svg>'+
     '<div><div style="font-weight:700;font-size:14px">学习进度</div><div style="font-size:12px;color:rgba(255,255,255,.35);margin-top:1px">'+done+'/'+total+' 个节点已完成</div></div></div>';
 }
+
+// ===== 理论可视化 =====
+function showTheoryViz() {
+  document.getElementById('bc').innerHTML = '📐 <span>理论可视化</span>';
+  
+  // Collect all theories from sidebar data
+  var theories = [];
+  if (typeof SIDEBAR !== 'undefined') {
+    SIDEBAR.forEach(function(cat) {
+      if (!cat.subs) return;
+      cat.subs.forEach(function(sub) {
+        if (!sub.topics) return;
+        sub.topics.forEach(function(t) {
+          if (t.name && t.path) {
+            theories.push({name: t.name, module: cat.name, sub: sub.name, count: t.count || 0});
+          }
+        });
+      });
+    });
+  }
+  // Also collect from KNOWLEDGE if available
+  if (typeof KNOWLEDGE !== 'undefined') {
+    Object.keys(KNOWLEDGE).forEach(function(k) {
+      if (!theories.find(function(t){return t.name===k;})) {
+        var kn = KNOWLEDGE[k];
+        theories.push({name: k, module: kn.module||'', sub: '', count: 0, overview: kn.overview||''});
+      }
+    });
+  }
+  
+  // Deduplicate by name
+  var seen = {};
+  theories = theories.filter(function(t) {
+    if (seen[t.name]) return false;
+    seen[t.name] = true;
+    return true;
+  });
+  
+  // Sort by count desc
+  theories.sort(function(a,b){return b.count-a.count;});
+  
+  var h = '';
+  h += '<div class="hero" style="margin-bottom:14px"><h1>📐 理论可视化</h1><p class="desc">点击任意理论，AI 自动生成实现机制流程图 · ' + theories.length + ' 个理论 · 已生成的可缓存复用</p></div>';
+  
+  // Search box
+  h += '<div class="pcard" style="padding:8px 12px;margin-bottom:12px"><input type="text" id="tvisSearch" placeholder="搜索理论名称..." style="width:100%;border:none;outline:none;background:transparent;color:rgba(255,255,255,.8);font-size:13px" oninput="window._tvisFilter()"></div>';
+  
+  // Theory grid
+  h += '<div class="tvis-grid" id="tvisGrid">';
+  theories.forEach(function(t, i) {
+    var modIcons = {'国际贸易理论':'📐','国际贸易政策':'🚢','国际金融':'💰','跨国公司与国际化':'🏢','中国对外经济':'🇨🇳','国际商务管理':'🛒','新兴议题':'🆕'};
+    var ico = modIcons[t.module] || '📌';
+    var cached = localStorage.getItem('r434_tvis_' + t.name);
+    h += '<div class="tvis-card" data-name="' + t.name.replace(/'/g,"\\'") + '" data-idx="' + i + '" onclick="window._tvisGen(\'' + t.name.replace(/'/g,"\\'") + '\')" id="tvis_card_' + i + '">';
+    h += '<div class="tvis-card-top"><span class="tvis-card-mod">' + ico + ' ' + (t.sub||t.module||'') + '</span>';
+    if (t.count>0) h += '<span class="tvis-card-count">' + t.count + '题</span>';
+    h += '</div>';
+    h += '<div class="tvis-card-name">' + t.name + '</div>';
+    if (cached) h += '<div class="tvis-card-cached">📊 已缓存</div>';
+    h += '</div>';
+    
+    // Diagram container (initially hidden)
+    h += '<div class="tvis-diag" id="tvis_diag_' + i + '" style="display:none">';
+    h += '<div class="tvis-diag-hdr"><span>' + t.name + ' — 机制流程图</span>';
+    h += '<div style="display:flex;gap:6px">';
+    h += '<button class="tvis-btn-sm" onclick="event.stopPropagation();window._tvisRegen(\'' + t.name.replace(/'/g,"\\'") + '\',' + i + ')">🔄 重生成</button>';
+    h += '<button class="tvis-btn-sm" onclick="event.stopPropagation();window._tvisClose(' + i + ')">✕ 收起</button>';
+    h += '</div></div>';
+    h += '<div class="tvis-body" id="tvis_body_' + i + '"></div>';
+    h += '</div>';
+  });
+  h += '</div>';
+  
+  document.getElementById('ct').innerHTML = h;
+  document.getElementById('ct').scrollTop = 0;
+  
+  // Initialize mermaid
+  if (typeof mermaid !== 'undefined') {
+    mermaid.initialize({
+      startOnLoad: false,
+      theme: 'dark',
+      themeVariables: {
+        primaryColor: 'rgba(94,92,230,.15)',
+        primaryBorderColor: 'rgba(94,92,230,.3)',
+        primaryTextColor: 'rgba(255,255,255,.85)',
+        lineColor: 'rgba(255,255,255,.15)',
+        fontSize: '13px'
+      },
+      flowchart: { useMaxWidth: true, htmlLabels: true }
+    });
+  }
+}
+
+// Filter theories by search
+window._tvisFilter = function() {
+  var q = (document.getElementById('tvisSearch')||{}).value||'';
+  q = q.toLowerCase();
+  var cards = document.querySelectorAll('.tvis-card');
+  cards.forEach(function(c) {
+    var name = (c.getAttribute('data-name')||'').toLowerCase();
+    c.style.display = (!q || name.indexOf(q)>=0) ? '' : 'none';
+  });
+};
+
+// Generate visualization for a theory
+window._tvisGen = function(name) {
+  var cards = document.querySelectorAll('.tvis-card');
+  var idx = -1;
+  cards.forEach(function(c, i) { if (c.getAttribute('data-name') === name) idx = i; });
+  if (idx < 0) return;
+  
+  // Highlight active card
+  cards.forEach(function(c) { c.classList.remove('tvis-active'); });
+  var card = document.getElementById('tvis_card_' + idx);
+  if (card) card.classList.add('tvis-active');
+  
+  // Scroll to diagram
+  var diag = document.getElementById('tvis_diag_' + idx);
+  var body = document.getElementById('tvis_body_' + idx);
+  if (!diag || !body) return;
+  
+  // Check cache
+  var cached = localStorage.getItem('r434_tvis_' + name);
+  if (cached) {
+    diag.style.display = 'block';
+    body.innerHTML = cached;
+    if (typeof mermaid !== 'undefined') { try { mermaid.run({ nodes: [body] }); } catch(e) {} }
+    setTimeout(function() { diag.scrollIntoView({behavior:'smooth',block:'center'}); }, 100);
+    return;
+  }
+  
+  // Show loading
+  diag.style.display = 'block';
+  body.innerHTML = '<div class="tvis-loading"><span class="tvis-spin">⏳</span> AI 正在生成「' + name + '」的机制流程图...</div>';
+  diag.scrollIntoView({behavior:'smooth',block:'center'});
+  
+  // Get overview from KNOWLEDGE
+  var overview = '';
+  if (typeof KNOWLEDGE !== 'undefined' && KNOWLEDGE[name]) {
+    overview = KNOWLEDGE[name].overview || '';
+  }
+  
+  // Build AI prompt
+  var sysMsg = '你是人大434国际商务专业课的可视化专家。请用 Mermaid 语法生成一个流程图，展示给定理论的实现机制。\n\n要求：\n1. 使用 `flowchart TD` 或 `graph TD` 语法\n2. 节点用中文，简洁明了\n3. 层次结构：前提/假设 → 核心机制 → 传导路径 → 结论/效应\n4. 使用 `classDef` 区分不同层次（前提用蓝色系，机制用紫色系，结论用绿色系）\n5. 每个节点不超过15个字\n6. 只输出 Mermaid 代码块，格式为 ```mermaid\\n...\\n```\n7. 不要任何其他文字说明';
+  var userMsg = '请画出以下理论的实现机制流程图：\n\n理论名称：' + name + '\n' + (overview ? '理论概述：' + overview : '');
+  
+  // Call AI
+  var apiKey = getAPIKey();
+  if (!apiKey) {
+    getAPIKey(function(k) {
+      if (!k) { body.innerHTML = '<div class="tvis-error">API Key 未就绪，请登录后重试</div>'; return; }
+      doGenerate(k);
+    });
+    return;
+  }
+  doGenerate(apiKey);
+  
+  function doGenerate(key) {
+  fetch(DS_URL, {
+    method: 'POST',
+    headers: {Authorization: 'Bearer ' + key, 'Content-Type': 'application/json'},
+    body: JSON.stringify({model: 'mimo-v2.5', messages: [{role:'system',content:sysMsg},{role:'user',content:userMsg}], temperature:0.3, max_tokens:2048})
+  }).then(function(r) {
+    if (!r.ok) throw Error('HTTP ' + r.status);
+    return r.json();
+  }).then(function(data) {
+    var content = '';
+    if (data.choices && data.choices[0] && data.choices[0].message) {
+      content = data.choices[0].message.content || '';
+    }
+    // Extract mermaid code block
+    var match = content.match(/```mermaid\s*([\s\S]*?)```/);
+    var mmd = match ? match[1].trim() : content.trim();
+    // Clean up
+    mmd = mmd.replace(/^mermaid\s*/i, '').trim();
+    
+    if (!mmd || mmd.length < 10) {
+      body.innerHTML = '<div class="tvis-error">AI 未能生成有效的流程图，请点击「重生成」重试</div>';
+      return;
+    }
+    
+    // Wrap in mermaid div
+    var html = '<div class="mermaid">' + mmd + '</div>';
+    
+    // Cache
+    try { localStorage.setItem('r434_tvis_' + name, html); } catch(e) {}
+    
+    body.innerHTML = html;
+    if (typeof mermaid !== 'undefined') {
+      try { mermaid.run({ nodes: [body] }); } catch(e) { console.log('Mermaid render error:', e); }
+    }
+  }).catch(function(err) {
+    body.innerHTML = '<div class="tvis-error">生成失败：' + err.message + ' · <a href="javascript:void(0)" onclick="window._tvisRegen(\'' + name.replace(/'/g,"\\'") + '\',' + idx + ')" style="color:var(--pu);text-decoration:underline">重试</a></div>';
+  });
+  } // end doGenerate
+};
+
+// Regenerate
+window._tvisRegen = function(name, idx) {
+  try { localStorage.removeItem('r434_tvis_' + name); } catch(e) {}
+  var body = document.getElementById('tvis_body_' + idx);
+  if (body) body.innerHTML = '';
+  window._tvisGen(name);
+};
+
+// Close diagram
+window._tvisClose = function(idx) {
+  var diag = document.getElementById('tvis_diag_' + idx);
+  if (diag) diag.style.display = 'none';
+  var card = document.getElementById('tvis_card_' + idx);
+  if (card) card.classList.remove('tvis-active');
+};
 
 function capLaunch(actionId, capabilityCode) {
   if (capabilityCode) {
