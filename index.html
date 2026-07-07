@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<!-- v2.1 · 2026-07-07 13:08 · modular -->
+<!-- v2.1 · 2026-07-07 13:09 · modular -->
 <html lang="zh-CN">
 <head>
 <meta charset="UTF-8">
@@ -7421,14 +7421,24 @@ function tvisParseRender(content, q) {
 function tvisU(id, content, type) {
   var el = document.getElementById(id); if (!el) return;
   if (!content) { el.innerHTML = '<em style="color:rgba(255,255,255,.15)">—</em>'; return; }
-  if (type === 'list') {
-    var items = content.split('\n').filter(function(l){return l.trim()}).map(function(l){return l.replace(/^[-•·]\s*/,'')});
-    el.innerHTML = '<ul style="padding-left:0;list-style:none">'+items.map(function(i){return '<li style="margin:4px 0;padding-left:12px;position:relative"><span style="position:absolute;left:0;top:8px;width:4px;height:4px;border-radius:50%;background:var(--pu);opacity:.45"></span>'+i+'</li>'}).join('')+'</ul>';
-  } else if (type === 'tags') {
+  if (type === 'tags') {
     var tags = content.split('\n').filter(function(l){return l.trim()}).map(function(l){return l.replace(/^[-•·]\s*/,'')});
     el.innerHTML = '<div style="display:flex;flex-wrap:wrap;gap:5px">'+tags.map(function(t){var tn=t.split(/[（(]/)[0].trim();return '<span class="tviz-tag" onclick="tvisAsk(\'画出 '+tn+' 的完整机制流程图\')">'+t+'</span>'}).join('')+'</div>';
   } else {
-    el.innerHTML = content.split('\n').filter(function(l){return l.trim()}).map(function(l){return l.replace(/^[-•·]\s*/,'')}).join('<br>');
+    // Use renderMarkdown for proper formatting
+    el.innerHTML = renderMarkdown(content);
+    // Style list items if any
+    var lis = el.querySelectorAll('li');
+    lis.forEach(function(li) {
+      li.style.cssText = 'margin:4px 0;padding-left:12px;position:relative;list-style:none;line-height:1.7';
+      if (!li.querySelector('span')) {
+        var dot = document.createElement('span');
+        dot.style.cssText = 'position:absolute;left:0;top:8px;width:4px;height:4px;border-radius:50%;background:var(--pu);opacity:.45';
+        li.insertBefore(dot, li.firstChild);
+      }
+    });
+    var uls = el.querySelectorAll('ul');
+    uls.forEach(function(ul) { ul.style.paddingLeft = '0'; });
   }
 }
 
