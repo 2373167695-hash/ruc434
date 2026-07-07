@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<!-- v2.1 · 2026-07-07 12:57 · modular -->
+<!-- v2.1 · 2026-07-07 13:03 · modular -->
 <html lang="zh-CN">
 <head>
 <meta charset="UTF-8">
@@ -670,52 +670,50 @@ body.sb-collapsed .sidebar.open ~ .sidebar-backdrop{display:block}
 .tmap-wrap::-webkit-scrollbar-thumb:hover { background: rgba(255,255,255,.2); }
 
 /* ===== 理论可视化 — 工作台 ===== */
-.tviz-body { display: flex; gap: 16px; margin-bottom: 14px; min-height: calc(100vh - 320px); }
+.tviz-body { display: flex; gap: 12px; flex: 1; min-height: 0; }
 .tviz-canvas-wrap {
-  flex: 1; overflow: auto; background: rgba(255,255,255,.015);
+  flex: 1; overflow: auto; min-height: 0;
+  background: rgba(255,255,255,.015);
   border: 1px solid rgba(255,255,255,.06); border-radius: var(--radius);
-  padding: 24px; display: flex; align-items: flex-start; justify-content: center;
+  padding: 20px; position: relative;
 }
-.tviz-canvas-wrap .mermaid svg { max-width: none; height: auto; min-width: 600px; }
+.tviz-canvas-wrap .mermaid { display: flex; justify-content: center; }
+.tviz-canvas-wrap .mermaid svg { max-width: none; height: auto; min-width: 700px; }
 .tviz-canvas-wrap .mermaid svg .node rect,
 .tviz-canvas-wrap .mermaid svg .node circle,
-.tviz-canvas-wrap .mermaid svg .node ellipse,
 .tviz-canvas-wrap .mermaid svg .node polygon {
   filter: drop-shadow(0 2px 6px rgba(0,0,0,.25)); stroke-width: 1.5px;
 }
 .tviz-canvas-wrap .mermaid svg .edgePath .path { stroke-width: 2px; stroke-linecap: round; }
-.tviz-canvas-wrap .mermaid svg .cluster rect { rx: 12px; ry: 12px; stroke-width: 1px; stroke-dasharray: 6 4; }
-.tviz-placeholder { text-align: center; padding: 60px 20px; }
-.tviz-sidebar {
-  width: 290px; flex-shrink: 0; display: flex; flex-direction: column; gap: 12px;
-  overflow-y: auto; max-height: calc(100vh - 320px);
-}
+.tviz-canvas-wrap .mermaid svg .node text { font-size: 13px !important; }
+.tviz-placeholder { position: absolute; inset: 0; display: flex; flex-direction: column; align-items: center; justify-content: center; }
+.tviz-sidebar { width: 270px; flex-shrink: 0; display: flex; flex-direction: column; gap: 10px; overflow-y: auto; }
 .tviz-tag {
-  font-size: 11px; padding: 4px 10px; border-radius: 20px;
+  font-size: 10px; padding: 3px 8px; border-radius: 16px;
   background: rgba(94,92,230,.08); border: .5px solid rgba(94,92,230,.15);
-  color: rgba(255,255,255,.55); cursor: pointer; transition: var(--transition);
+  color: rgba(255,255,255,.5); cursor: pointer; transition: var(--transition);
   white-space: nowrap; font-family: inherit;
 }
 .tviz-tag:hover { background: rgba(94,92,230,.18); border-color: rgba(94,92,230,.3); color: var(--t); }
-.tviz-footer { display: flex; gap: 10px; align-items: flex-end; padding: 14px 0; flex-shrink: 0; }
-.tviz-chips { display: flex; gap: 5px; flex-wrap: wrap; flex: 1; }
+.tviz-footer { display: flex; gap: 8px; align-items: center; padding: 10px 0 0; flex-shrink: 0; }
+.tviz-chips { display: flex; gap: 4px; flex-wrap: wrap; flex: 1; }
 .tviz-chip {
-  font-size: 11px; padding: 5px 12px; border-radius: 20px;
+  font-size: 10px; padding: 4px 10px; border-radius: 16px;
   background: rgba(94,92,230,.06); border: .5px solid rgba(94,92,230,.1);
-  color: rgba(255,255,255,.4); cursor: pointer; white-space: nowrap;
+  color: rgba(255,255,255,.35); cursor: pointer; white-space: nowrap;
   transition: var(--transition); font-family: inherit;
 }
-.tviz-chip:hover { background: rgba(94,92,230,.15); color: rgba(255,255,255,.7); border-color: rgba(94,92,230,.2); }
+.tviz-chip:hover { background: rgba(94,92,230,.15); color: rgba(255,255,255,.65); border-color: rgba(94,92,230,.2); }
 .tviz-input {
-  flex: 1; min-width: 200px; background: rgba(255,255,255,.04);
-  border: .5px solid rgba(255,255,255,.1); border-radius: 14px;
-  padding: 10px 14px; font-size: 14px; color: var(--t); outline: none;
+  flex: 1; min-width: 140px; background: rgba(255,255,255,.04);
+  border: .5px solid rgba(255,255,255,.1); border-radius: 12px;
+  padding: 8px 12px; font-size: 13px; color: var(--t); outline: none;
   font-family: inherit; transition: var(--transition);
 }
-.tviz-input::placeholder { color: rgba(255,255,255,.2); }
+.tviz-input::placeholder { color: rgba(255,255,255,.18); }
 .tviz-input:focus { border-color: rgba(94,92,230,.3); background: rgba(94,92,230,.04); }
 .tviz-btn {
-  padding: 10px 22px; border-radius: 14px; font-size: 14px; font-weight: 600;
+  padding: 8px 18px; border-radius: 12px; font-size: 13px; font-weight: 600;
   background: rgba(94,92,230,.15); border: .5px solid rgba(94,92,230,.25);
   color: var(--t); cursor: pointer; transition: var(--transition); flex-shrink: 0; font-family: inherit;
 }
@@ -723,8 +721,8 @@ body.sb-collapsed .sidebar.open ~ .sidebar-backdrop{display:block}
 .tviz-btn:disabled { opacity: .25; cursor: not-allowed; transform: none; }
 @media (max-width: 768px) {
   .tviz-body { flex-direction: column; }
-  .tviz-sidebar { width: 100%; max-height: 220px; }
-  .tviz-canvas-wrap { min-height: 320px; padding: 16px; }
+  .tviz-sidebar { width: 100%; max-height: 200px; }
+  .tviz-canvas-wrap { min-height: 300px; padding: 12px; }
   .tviz-footer { flex-wrap: wrap; }
   .tviz-input { min-width: 0; }
 }
@@ -7252,13 +7250,17 @@ var tvisCurMmd = '';
 
 function showTheoryViz() {
   var h = '';
-  h += '<div class="hero" style="margin-bottom:12px"><h1>📐 理论可视化工作台</h1><p class="desc" id="tvis-hero-desc">输入理论名称，AI 自动生成实现机制的完整框架图</p></div>';
+  // Thin status bar instead of hero
+  h += '<div style="display:flex;align-items:center;gap:10px;margin-bottom:10px;padding:8px 16px;background:rgba(255,255,255,.03);backdrop-filter:blur(8px) saturate(180%);-webkit-backdrop-filter:blur(8px) saturate(180%);border-radius:14px;border:.5px solid rgba(255,255,255,.08)">';
+  h += '<span style="font-size:18px">📐</span><span style="font-weight:700;font-size:14px">理论可视化工作台</span>';
+  h += '<span style="font-size:11px;color:var(--ts);flex:1" id="tvis-hero-desc">输入理论名称，AI 生成完整框架图</span>';
+  h += '</div>';
   
-  // Workbench body
+  // Workbench body — fills remaining height
   h += '<div class="tviz-body">';
-  // Canvas
+  // Canvas — large fixed viewport
   h += '<div class="tviz-canvas-wrap" id="tvizCanvas">';
-  h += '<div class="tviz-placeholder" id="tvizPlaceholder"><div style="font-size:48px;margin-bottom:12px;opacity:.3">📊</div><div style="font-size:14px;color:var(--ts);line-height:1.8">输入理论名称，AI 自动生成<br>实现机制的完整框架图</div></div>';
+  h += '<div class="tviz-placeholder" id="tvizPlaceholder"><div style="font-size:40px;margin-bottom:8px;opacity:.25">📊</div><div style="font-size:13px;color:var(--ts)">输入理论名称，AI 生成实现机制流程图</div></div>';
   h += '<div class="tviz-canvas-display" id="tvizCanvasDisplay" style="display:none"></div>';
   h += '</div>';
   // Sidebar
@@ -7268,27 +7270,27 @@ function showTheoryViz() {
   h += sideSec('关联理论', 'tvizRelated', '', true);
   h += sideSec('考点提示', 'tvizExam', '—');
   h += sideSec('真题链接', 'tvizQuestions', '—');
-  h += '<div class="pcard" style="padding:14px 16px"><div style="font-size:10px;font-weight:700;color:rgba(255,255,255,.3);margin-bottom:10px;letter-spacing:.8px;text-transform:uppercase">我的笔记</div><textarea id="tvizNote" placeholder="在这里写自己的理解..." style="width:100%;min-height:50px;background:rgba(255,255,255,.03);border:.5px solid var(--bdr);border-radius:12px;padding:10px 12px;font-size:12px;color:var(--ts);resize:vertical;font-family:inherit;outline:none;line-height:1.6;transition:var(--transition)" onfocus="this.style.borderColor=\'rgba(94,92,230,.3)\'" onblur="this.style.borderColor=\'var(--bdr)\'"></textarea></div>';
+  h += '<div class="pcard" style="padding:10px 14px"><div style="font-size:10px;font-weight:700;color:rgba(255,255,255,.3);margin-bottom:8px;letter-spacing:.8px">我的笔记</div><textarea id="tvizNote" placeholder="在这里写自己的理解..." style="width:100%;min-height:44px;background:rgba(255,255,255,.03);border:.5px solid var(--bdr);border-radius:10px;padding:8px 10px;font-size:12px;color:var(--ts);resize:vertical;font-family:inherit;outline:none;line-height:1.5;transition:var(--transition)" onfocus="this.style.borderColor=\'rgba(94,92,230,.3)\'" onblur="this.style.borderColor=\'var(--bdr)\'"></textarea></div>';
   h += '</div>';
   h += '</div>';
   
-  // Bottom input
+  // Bottom input — compact
   h += '<div class="tviz-footer">';
   h += '<div class="tviz-chips">';
   var chips = [
-    {t:'比较优势理论',q:'画出 比较优势理论 的完整机制流程图，包含前提假设、核心逻辑和现实应用'},
-    {t:'H-O理论',q:'画出 H-O理论 的完整机制流程图，包含四大定理的内在联系'},
-    {t:'利率平价理论',q:'画出 利率平价理论 的完整机制流程图，包含抛补和非抛补两种套利机制'},
-    {t:'产品生命周期',q:'画出 产品生命周期理论 三阶段的完整机制流程图'},
-    {t:'关税效应分析',q:'画出 关税局部均衡分析的机制流程图，包含小国和大国情形'},
-    {t:'垄断优势理论',q:'画出 垄断优势理论 的完整框架图'},
-    {t:'技术差距论',q:'画出 技术差距论 的完整机制流程图，标注四个时滞'},
-    {t:'PPP vs IRP',q:'画出 购买力平价与利率平价理论的对比框架图'}
+    {t:'比较优势理论',q:'画出比较优势理论的完整机制流程图'},
+    {t:'H-O理论',q:'画出H-O理论的完整机制流程图，包含四大定理'},
+    {t:'利率平价',q:'画出利率平价理论的完整机制流程图'},
+    {t:'产品生命周期',q:'画出产品生命周期理论三阶段的完整流程图'},
+    {t:'关税效应',q:'画出关税局部均衡分析的完整机制流程图'},
+    {t:'垄断优势',q:'画出垄断优势理论的完整框架图'},
+    {t:'技术差距论',q:'画出技术差距论的完整机制流程图'},
+    {t:'PPPvsIRP',q:'画出购买力平价与利率平价理论的对比图'}
   ];
   chips.forEach(function(c){h += '<span class="tviz-chip" onclick="tvisAsk(\''+c.q.replace(/'/g,"\\'")+'\')">'+c.t+'</span>';});
   h += '</div>';
-  h += '<input type="text" id="tvizInput" class="tviz-input" placeholder="输入理论名称或描述你想要的可视化内容..." onkeydown="if(event.key===\'Enter\')tvisGen()">';
-  h += '<button class="tviz-btn" id="tvizBtn" onclick="tvisGen()">生成图表</button>';
+  h += '<input type="text" id="tvizInput" class="tviz-input" placeholder="输入理论名称..." onkeydown="if(event.key===\'Enter\')tvisGen()">';
+  h += '<button class="tviz-btn" id="tvizBtn" onclick="tvisGen()">生成</button>';
   h += '</div>';
   
   document.getElementById('ct').innerHTML = h;
