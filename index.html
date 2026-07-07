@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<!-- v2.1 · 2026-07-07 12:54 · modular -->
+<!-- v2.1 · 2026-07-07 12:56 · modular -->
 <html lang="zh-CN">
 <head>
 <meta charset="UTF-8">
@@ -7362,8 +7362,16 @@ function tvisParseRender(content, q) {
     tvisCurMmd = mmd;
     disp.innerHTML = '<div class="mermaid" id="tvizMmd"></div>';
     document.getElementById('tvizMmd').textContent = mmd;
-    try { mermaid.run({nodes:[document.getElementById('tvizMmd')]}); } catch(e) {
-      disp.innerHTML = '<div style="padding:16px;color:rgba(255,69,58,.7);font-size:12px">渲染失败：'+e.message+'<br><pre style="margin-top:8px;font-size:10px;color:var(--ts);max-height:150px;overflow:auto">'+mmd.replace(/</g,'&lt;')+'</pre></div>';
+    try { mermaid.run({nodes:[document.getElementById('tvizMmd')]}); }
+    catch(e) {
+      var errorId = 'tviz-err-' + Date.now();
+      disp.innerHTML =
+        '<div class="pcard" style="padding:16px;margin-bottom:12px;background:rgba(255,69,58,.04);border:.5px solid rgba(255,69,58,.15)">'+
+        '<div style="color:rgba(255,69,58,.7);font-size:13px;font-weight:600;margin-bottom:8px">⚠️ Mermaid 渲染失败</div>'+
+        '<div style="color:var(--ts);font-size:12px;margin-bottom:10px;line-height:1.6">'+e.message+'</div>'+
+        '<button class="tviz-btn" style="padding:6px 14px;font-size:12px" onclick="document.getElementById(\''+errorId+'\').style.display=document.getElementById(\''+errorId+'\').style.display===\'none\'?\'block\':\'none\'">显示/隐藏源代码</button>'+
+        '<pre id="'+errorId+'" style="display:none;margin-top:12px;padding:12px;background:rgba(0,0,0,.3);border-radius:10px;font-size:10.5px;color:rgba(255,255,255,.55);max-height:300px;overflow:auto;white-space:pre-wrap;line-height:1.5;font-family:ui-monospace,SF Mono,monospace">'+mmd.replace(/</g,'&lt;')+'</pre>'+
+        '</div>';
     }
   } else {
     disp.innerHTML = '<div class="pcard" style="padding:24px;text-align:center;color:var(--ts)">AI 未生成图表，请重试</div>';
