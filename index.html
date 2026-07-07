@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<!-- v2.1 · 2026-07-07 13:19 · modular -->
+<!-- v2.1 · 2026-07-07 13:25 · modular -->
 <html lang="zh-CN">
 <head>
 <meta charset="UTF-8">
@@ -7356,7 +7356,7 @@ function tvisGen() {
     document.getElementById(id).innerHTML = '<em style="color:rgba(255,255,255,.15)">生成中...</em>';
   });
   
-  var sys = '你是人大434逻辑框架图专家。你必须生成一个有明确结构层次的框架图，而不是简单的流程线。\n\n## 框架结构要求：\n1. 使用 flowchart TB，通过 subgraph 将内容划分为3-5个并列的逻辑模块\n2. 每个 subgraph 是一个独立的知识板块（如「前提假设」「核心机制」「传导路径」「政策含义」）\n3. subgraph 内部用小流程图展示该板块的逻辑\n4. subgraph 之间用虚线箭头连接，表示板块间的逻辑递进关系\n5. 整体呈现「田」字或「品」字结构，不是一条线\n\n## Mermaid 模板示例：\n```mermaid\nflowchart TB\n  subgraph A[前提假设]\n    direction LR\n    A1[假设1] --> A2[假设2] --> A3[假设3]\n  end\n  subgraph B[核心机制]\n    direction LR\n    B1[机制1] --> B2[机制2] --> B3[机制3]\n  end\n  subgraph C[结论与效应]\n    direction LR\n    C1[结论1] --> C2[结论2]\n  end\n  A -.-> B\n  B -.-> C\n```\n\n## 输出格式：\n```mermaid\nflowchart TB\n  完整框架图\n```\n\n### 核心要点\n- 3-5个要点\n\n### 理论要素\n前提假设：列出\n核心概念：中英文\n\n### 关联理论\n- 2-3个\n\n### 考点提示\n历年考察情况\n\n### 真题链接\n- 年份+题目\n\n## ⚠️ 规则：\n1. 节点文字 ⊆15字，禁止 # & < > \" ( )\n2. subgraph 之间用 -.->  虚线箭头\n3. 每个 subgraph 内部用 direction LR\n4. 不用 classDef';
+  var sys = '你是人大434逻辑框架图专家。你必须生成一个有明确结构层次的框架图，帮助学生理解理论的完整逻辑。\n\n## 框架结构要求：\n1. 使用 flowchart TB，通过 subgraph 将内容划分为3-5个并列的逻辑模块\n2. 每个 subgraph 是一个独立的知识板块（如「前提假设」「核心机制」「传导路径」「政策含义」）\n3. subgraph 内部用小流程图展示该板块的逻辑\n4. subgraph 之间用虚线箭头连接，表示板块间的逻辑递进关系\n5. 整体呈现「田」字或「品」字结构，不是一条线\n6. 节点文字不要过度精简，把意思说清楚（比如不要写\"生产率差异\"，要写\"两国劳动生产率存在差异\"）\n\n## Mermaid 模板示例：\n```mermaid\nflowchart TB\n  subgraph A[前提假设]\n    direction LR\n    A1[两国劳动生产率存在差异] --> A2[劳动是唯一生产要素] --> A3[完全竞争市场无运输成本]\n  end\n  subgraph B[核心机制]\n    direction LR\n    B1[各国专业化生产比较优势产品] --> B2[出口优势产品进口劣势产品] --> B3[贸易后两国消费水平均提升]\n  end\n  subgraph C[结论与效应]\n    direction LR\n    C1[贸易使双方互利共赢] --> C2[全球总产出增加]\n  end\n  A -.-> B\n  B -.-> C\n```\n\n## 输出格式：\n```mermaid\nflowchart TB\n  完整框架图\n```\n\n### 核心要点\n- 3-5个要点\n\n### 理论要素\n前提假设：列出\n核心概念：中英文\n\n### 关联理论\n- 2-3个\n\n### 考点提示\n历年考察情况\n\n### 真题链接\n- 年份+题目\n\n## 规则：\n1. 节点文字把意思说清楚\n2. 不用 classDef\n3. subgraph 之间用 -.-> 虚线箭头';
 
   fetch(DS_URL, {
     method:'POST', headers:{Authorization:'Bearer '+getAPIKey(),'Content-Type':'application/json'},
@@ -7381,18 +7381,12 @@ function tvisParseRender(content, q) {
   var disp = document.getElementById('tvizCanvasDisplay');
   if (mmdM) {
     var mmd = mmdM[1].trim();
-    // Aggressively strip classDef, class, and style lines for clean monochrome output
+    // Strip classDef/class/style lines
     mmd = mmd.split('\n').map(function(line) {
       var t = line.trim();
       if (t.startsWith('classDef ') || t.startsWith('class ') || t.startsWith('style ')) return '';
       return line;
     }).filter(function(l){return l.trim();}).join('\n');
-    // Sanitize: fix special chars in node text only
-    mmd = mmd.split('\n').map(function(line) {
-      return line.replace(/\[([^\]]*)\]/g, function(m, text) {
-        return '[' + text.replace(/[&<>"()]/g, function(c) { return {'&':'＆','<':'＜','>':'＞','"':'＂','(':'（',')':'）'}[c]||c; }) + ']';
-      });
-    }).join('\n');
     tvisCurMmd = mmd;
     disp.innerHTML = '<div class="mermaid" id="tvizMmd"></div>';
     document.getElementById('tvizMmd').textContent = mmd;
