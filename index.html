@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<!-- v2.1 · 2026-07-07 12:16 · modular -->
+<!-- v2.1 · 2026-07-07 12:20 · modular -->
 <html lang="zh-CN">
 <head>
 <meta charset="UTF-8">
@@ -673,12 +673,12 @@ body.sb-collapsed .sidebar.open ~ .sidebar-backdrop{display:block}
 .tvis-chat-wrap {
   display: flex;
   flex-direction: column;
-  height: calc(100vh - 140px);
+  height: calc(100vh - 100px);
   min-height: 500px;
 }
 .tvis-chat-hdr {
   display: flex; justify-content: space-between; align-items: center;
-  padding: 12px 16px;
+  padding: 8px 14px;
   background: rgba(255,255,255,.03); border: 1px solid rgba(255,255,255,.06);
   border-radius: 14px 14px 0 0; flex-shrink: 0;
 }
@@ -689,8 +689,8 @@ body.sb-collapsed .sidebar.open ~ .sidebar-backdrop{display:block}
 }
 .tvis-clear-btn:hover { background: rgba(255,69,58,.1); border-color: rgba(255,69,58,.2); color: rgba(255,69,58,.6); }
 .tvis-chips {
-  display: flex; flex-wrap: wrap; gap: 6px;
-  padding: 10px 16px; border-bottom: 1px solid rgba(255,255,255,.04);
+  display: flex; flex-wrap: wrap; gap: 5px;
+  padding: 8px 14px; border-bottom: 1px solid rgba(255,255,255,.04);
   background: rgba(255,255,255,.01); flex-shrink: 0;
 }
 .tvis-chip {
@@ -701,7 +701,7 @@ body.sb-collapsed .sidebar.open ~ .sidebar-backdrop{display:block}
 }
 .tvis-chip:hover { background: rgba(94,92,230,.16); color: rgba(255,255,255,.8); border-color: rgba(94,92,230,.3); }
 .tvis-chat-body {
-  flex: 1; overflow-y: auto; padding: 14px 16px;
+  flex: 1; overflow-y: auto; padding: 14px 14px;
   background: rgba(255,255,255,.015); border-left: 1px solid rgba(255,255,255,.04);
   border-right: 1px solid rgba(255,255,255,.04);
 }
@@ -709,6 +709,39 @@ body.sb-collapsed .sidebar.open ~ .sidebar-backdrop{display:block}
 .tvis-msg { margin-bottom: 12px; animation: tvisIn .2s ease; }
 @keyframes tvisIn { from{opacity:0;transform:translateY(6px)} to{opacity:1;transform:translateY(0)} }
 .tvis-msg-user { text-align: right; }
+.tvis-msg-user > * {
+  display: inline-block; max-width: 85%;
+  background: linear-gradient(135deg, rgba(94,92,230,.2), rgba(0,122,255,.12));
+  border: 1px solid rgba(94,92,230,.2); border-radius: 14px 14px 4px 14px;
+  padding: 10px 14px; font-size: 13px; color: rgba(255,255,255,.85);
+  line-height: 1.5; text-align: left; word-break: break-word;
+}
+.tvis-msg-bot {
+  background: rgba(255,255,255,.03); border: 1px solid rgba(255,255,255,.08);
+  border-radius: 14px 14px 14px 4px; padding: 14px 16px;
+  font-size: 13px; color: rgba(255,255,255,.8); line-height: 1.7;
+  word-break: break-word; overflow-x: auto;
+}
+.tvis-msg-bot table { font-size: 11px; }
+.tvis-msg-bot pre { margin: 8px 0; }
+.tvis-msg-bot .mermaid-block {
+  margin: 12px 0; padding: 8px 0;
+  display: flex; justify-content: flex-start;
+  overflow-x: auto; overflow-y: visible;
+  min-height: 60px;
+}
+.tvis-msg-bot .mermaid-block svg {
+  min-width: 560px; max-width: none; height: auto;
+}
+.tvis-loading { padding: 12px 16px; color: rgba(255,255,255,.3); font-size: 12px; }
+.tvis-spin { display: inline-block; animation: tSpin 1s linear infinite; margin-right: 4px; }
+@keyframes tSpin { from{transform:rotate(0)} to{transform:rotate(360deg)} }
+.tvis-error { padding: 12px 16px; color: rgba(255,69,58,.6); font-size: 12px; }
+.tvis-input-bar {
+  display: flex; gap: 8px; padding: 10px 14px;
+  background: rgba(255,255,255,.03); border: 1px solid rgba(255,255,255,.06);
+  border-radius: 0 0 14px 14px; flex-shrink: 0; align-items: flex-end;
+}
 .tvis-msg-user > * {
   display: inline-block; max-width: 85%;
   background: linear-gradient(135deg, rgba(94,92,230,.2), rgba(0,122,255,.12));
@@ -7331,9 +7364,9 @@ function showTheoryViz() {
         primaryBorderColor: 'rgba(94,92,230,.3)',
         primaryTextColor: 'rgba(255,255,255,.85)',
         lineColor: 'rgba(255,255,255,.15)',
-        fontSize: '13px'
+        fontSize: '15px'
       },
-      flowchart: { useMaxWidth: true, htmlLabels: true }
+      flowchart: { useMaxWidth: false, htmlLabels: true }
     });
   }
   
