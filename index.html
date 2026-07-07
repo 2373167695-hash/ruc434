@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<!-- v2.1 · 2026-07-07 13:03 · modular -->
+<!-- v2.1 · 2026-07-07 13:08 · modular -->
 <html lang="zh-CN">
 <head>
 <meta charset="UTF-8">
@@ -682,10 +682,30 @@ body.sb-collapsed .sidebar.open ~ .sidebar-backdrop{display:block}
 .tviz-canvas-wrap .mermaid svg .node rect,
 .tviz-canvas-wrap .mermaid svg .node circle,
 .tviz-canvas-wrap .mermaid svg .node polygon {
-  filter: drop-shadow(0 2px 6px rgba(0,0,0,.25)); stroke-width: 1.5px;
+  fill: #1c1c2e !important;
+  stroke: rgba(255,255,255,.35) !important;
+  stroke-width: 1.2px !important;
+  filter: none;
 }
-.tviz-canvas-wrap .mermaid svg .edgePath .path { stroke-width: 2px; stroke-linecap: round; }
-.tviz-canvas-wrap .mermaid svg .node text { font-size: 13px !important; }
+.tviz-canvas-wrap .mermaid svg .edgePath .path {
+  stroke: rgba(255,255,255,.4) !important;
+  stroke-width: 1.5px;
+  stroke-linecap: round;
+  fill: none;
+}
+.tviz-canvas-wrap .mermaid svg .arrowheadPath,
+.tviz-canvas-wrap .mermaid svg marker path {
+  fill: rgba(255,255,255,.4) !important;
+  stroke: rgba(255,255,255,.4) !important;
+}
+.tviz-canvas-wrap .mermaid svg .node text { font-size: 13px !important; fill: rgba(255,255,255,.85) !important; }
+.tviz-canvas-wrap .mermaid svg .edgeLabel,
+.tviz-canvas-wrap .mermaid svg .edgeLabel rect,
+.tviz-canvas-wrap .mermaid svg .edgeLabel foreignObject span {
+  fill: transparent !important;
+  background: transparent !important;
+  color: rgba(255,255,255,.6) !important;
+}
 .tviz-placeholder { position: absolute; inset: 0; display: flex; flex-direction: column; align-items: center; justify-content: center; }
 .tviz-sidebar { width: 270px; flex-shrink: 0; display: flex; flex-direction: column; gap: 10px; overflow-y: auto; }
 .tviz-tag {
@@ -7296,20 +7316,20 @@ function showTheoryViz() {
   document.getElementById('ct').innerHTML = h;
   document.getElementById('ct').scrollTop = 0;
   
-  // Init mermaid
+  // Init mermaid — minimal monochrome theme
   if (typeof mermaid !== 'undefined') {
     mermaid.initialize({
       startOnLoad: false, theme: 'base',
       themeVariables: {
         darkMode: true, background: 'transparent',
-        primaryColor: 'rgba(94,92,230,.15)', primaryBorderColor: '#5e5ce6', primaryTextColor: 'rgba(255,255,255,.9)',
-        secondaryColor: 'rgba(0,122,255,.12)', secondaryBorderColor: '#007aff', secondaryTextColor: 'rgba(255,255,255,.75)',
-        tertiaryColor: 'rgba(48,209,88,.1)', tertiaryBorderColor: '#30d158', tertiaryTextColor: 'rgba(255,255,255,.7)',
-        lineColor: 'rgba(255,255,255,.18)', fontSize: '15px',
+        primaryColor: '#1c1c2e', primaryBorderColor: 'rgba(255,255,255,.4)', primaryTextColor: 'rgba(255,255,255,.9)',
+        secondaryColor: '#1c1c2e', secondaryBorderColor: 'rgba(255,255,255,.4)', secondaryTextColor: 'rgba(255,255,255,.9)',
+        tertiaryColor: '#1c1c2e', tertiaryBorderColor: 'rgba(255,255,255,.4)', tertiaryTextColor: 'rgba(255,255,255,.9)',
+        lineColor: 'rgba(255,255,255,.45)', fontSize: '13px',
         fontFamily: '-apple-system,BlinkMacSystemFont,"PingFang SC","Microsoft YaHei",sans-serif',
-        nodeBorder: 'rgba(255,255,255,.15)', clusterBkg: 'rgba(255,255,255,.03)', clusterBorder: 'rgba(255,255,255,.1)',
-        titleColor: 'rgba(255,255,255,.5)', edgeLabelBackground: '#0a0a1a', nodeTextColor: 'rgba(255,255,255,.85)',
-        mainBkg: 'rgba(255,255,255,.04)', textColor: 'rgba(255,255,255,.55)'
+        nodeBorder: 'rgba(255,255,255,.4)', clusterBkg: 'transparent', clusterBorder: 'rgba(255,255,255,.15)',
+        titleColor: 'rgba(255,255,255,.5)', edgeLabelBackground: '#0a0a1a', nodeTextColor: 'rgba(255,255,255,.9)',
+        mainBkg: '#1c1c2e', textColor: 'rgba(255,255,255,.9)'
       },
       flowchart: { useMaxWidth: false, htmlLabels: true, curve: 'basis', padding: 20, nodeSpacing: 60, rankSpacing: 80 }
     });
@@ -7361,10 +7381,14 @@ function tvisParseRender(content, q) {
   var disp = document.getElementById('tvizCanvasDisplay');
   if (mmdM) {
     var mmd = mmdM[1].trim();
-    // Sanitize: fix common AI mistakes in node text, preserve classDef/style lines
+    // Aggressively strip classDef, class, and style lines for clean monochrome output
     mmd = mmd.split('\n').map(function(line) {
-      if (line.trim().startsWith('classDef ') || line.trim().startsWith('class ') || line.trim().startsWith('style ')) return line;
-      // In non-style lines, replace special chars in node brackets
+      var t = line.trim();
+      if (t.startsWith('classDef ') || t.startsWith('class ') || t.startsWith('style ')) return '';
+      return line;
+    }).filter(function(l){return l.trim();}).join('\n');
+    // Sanitize: fix special chars in node text only
+    mmd = mmd.split('\n').map(function(line) {
       return line.replace(/\[([^\]]*)\]/g, function(m, text) {
         return '[' + text.replace(/[&<>"()]/g, function(c) { return {'&':'＆','<':'＜','>':'＞','"':'＂','(':'（',')':'）'}[c]||c; }) + ']';
       });
