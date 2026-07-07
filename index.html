@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<!-- v2.1 · 2026-07-07 13:15 · modular -->
+<!-- v2.1 · 2026-07-07 13:19 · modular -->
 <html lang="zh-CN">
 <head>
 <meta charset="UTF-8">
@@ -678,7 +678,7 @@ body.sb-collapsed .sidebar.open ~ .sidebar-backdrop{display:block}
   padding: 20px; position: relative;
 }
 .tviz-canvas-wrap .mermaid { display: flex; justify-content: center; }
-.tviz-canvas-wrap .mermaid svg { max-width: none; height: 100%; min-height: 400px; }
+.tviz-canvas-wrap .mermaid svg { max-width: none; height: auto; width: 100%; }
 .tviz-canvas-wrap .mermaid svg .node rect,
 .tviz-canvas-wrap .mermaid svg .node circle,
 .tviz-canvas-wrap .mermaid svg .node polygon {
@@ -7356,7 +7356,7 @@ function tvisGen() {
     document.getElementById(id).innerHTML = '<em style="color:rgba(255,255,255,.15)">生成中...</em>';
   });
   
-  var sys = '你是人大434的逻辑框架图专家。你生成的图是帮助学生理解理论的逻辑，而不是堆砌知识点。\n\n## 核心原则：\n1. 图展示的是「逻辑推导过程」——前提→推理→结论，每步都有因果关系\n2. 横向展开（flowchart LR），充分利用宽屏空间\n3. 树状分支结构，不是一条直线往下\n4. 每个节点是逻辑判断或推理步骤（≤15字），不是知识点罗列\n5. 连线标注因果关系：如「导致」「因此」「取决于」「当...时」\n\n## 输出格式：\n```mermaid\nflowchart LR\n  ...逻辑框架图...\n```\n\n### 核心要点\n- 要点1\n- 要点2\n- 要点3\n\n### 理论要素\n前提假设：列出3-5个\n核心概念：列出3-5个中英文\n\n### 关联理论\n- 理论A（说明关联）\n- 理论B\n\n### 考点提示\n详细说明历年考察情况\n\n### 真题链接\n- 201X年简答：具体题目\n\n## ⚠️ Mermaid 语法规则：\n1. 用 flowchart LR（横向）\n2. 节点ID只用字母数字如A,B,N1\n3. 节点文字禁止 # & < > " ( )，用全角中文（）\n4. 不用 classDef（会自动清理）\n5. subgraph 用中文标题\n6. 确保所有括号闭合';
+  var sys = '你是人大434逻辑框架图专家。你必须生成一个有明确结构层次的框架图，而不是简单的流程线。\n\n## 框架结构要求：\n1. 使用 flowchart TB，通过 subgraph 将内容划分为3-5个并列的逻辑模块\n2. 每个 subgraph 是一个独立的知识板块（如「前提假设」「核心机制」「传导路径」「政策含义」）\n3. subgraph 内部用小流程图展示该板块的逻辑\n4. subgraph 之间用虚线箭头连接，表示板块间的逻辑递进关系\n5. 整体呈现「田」字或「品」字结构，不是一条线\n\n## Mermaid 模板示例：\n```mermaid\nflowchart TB\n  subgraph A[前提假设]\n    direction LR\n    A1[假设1] --> A2[假设2] --> A3[假设3]\n  end\n  subgraph B[核心机制]\n    direction LR\n    B1[机制1] --> B2[机制2] --> B3[机制3]\n  end\n  subgraph C[结论与效应]\n    direction LR\n    C1[结论1] --> C2[结论2]\n  end\n  A -.-> B\n  B -.-> C\n```\n\n## 输出格式：\n```mermaid\nflowchart TB\n  完整框架图\n```\n\n### 核心要点\n- 3-5个要点\n\n### 理论要素\n前提假设：列出\n核心概念：中英文\n\n### 关联理论\n- 2-3个\n\n### 考点提示\n历年考察情况\n\n### 真题链接\n- 年份+题目\n\n## ⚠️ 规则：\n1. 节点文字 ⊆15字，禁止 # & < > \" ( )\n2. subgraph 之间用 -.->  虚线箭头\n3. 每个 subgraph 内部用 direction LR\n4. 不用 classDef';
 
   fetch(DS_URL, {
     method:'POST', headers:{Authorization:'Bearer '+getAPIKey(),'Content-Type':'application/json'},
