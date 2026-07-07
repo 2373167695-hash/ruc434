@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<!-- v2.1 · 2026-07-07 12:20 · modular -->
+<!-- v2.1 · 2026-07-07 12:54 · modular -->
 <html lang="zh-CN">
 <head>
 <meta charset="UTF-8">
@@ -669,119 +669,65 @@ body.sb-collapsed .sidebar.open ~ .sidebar-backdrop{display:block}
 .tmap-wrap::-webkit-scrollbar-thumb { background: rgba(255,255,255,.1); border-radius: 3px; }
 .tmap-wrap::-webkit-scrollbar-thumb:hover { background: rgba(255,255,255,.2); }
 
-/* ===== 理论可视化 — AI对话式 ===== */
-.tvis-chat-wrap {
-  display: flex;
-  flex-direction: column;
-  height: calc(100vh - 100px);
-  min-height: 500px;
+/* ===== 理论可视化 — 工作台 ===== */
+.tviz-body { display: flex; gap: 16px; margin-bottom: 14px; min-height: calc(100vh - 320px); }
+.tviz-canvas-wrap {
+  flex: 1; overflow: auto; background: rgba(255,255,255,.015);
+  border: 1px solid rgba(255,255,255,.06); border-radius: var(--radius);
+  padding: 24px; display: flex; align-items: flex-start; justify-content: center;
 }
-.tvis-chat-hdr {
-  display: flex; justify-content: space-between; align-items: center;
-  padding: 8px 14px;
-  background: rgba(255,255,255,.03); border: 1px solid rgba(255,255,255,.06);
-  border-radius: 14px 14px 0 0; flex-shrink: 0;
+.tviz-canvas-wrap .mermaid svg { max-width: none; height: auto; min-width: 600px; }
+.tviz-canvas-wrap .mermaid svg .node rect,
+.tviz-canvas-wrap .mermaid svg .node circle,
+.tviz-canvas-wrap .mermaid svg .node ellipse,
+.tviz-canvas-wrap .mermaid svg .node polygon {
+  filter: drop-shadow(0 2px 6px rgba(0,0,0,.25)); stroke-width: 1.5px;
 }
-.tvis-clear-btn {
-  font-size: 11px; padding: 5px 12px; border-radius: 7px;
-  background: rgba(255,255,255,.05); border: 1px solid rgba(255,255,255,.08);
-  color: rgba(255,255,255,.4); cursor: pointer; transition: all .15s;
+.tviz-canvas-wrap .mermaid svg .edgePath .path { stroke-width: 2px; stroke-linecap: round; }
+.tviz-canvas-wrap .mermaid svg .cluster rect { rx: 12px; ry: 12px; stroke-width: 1px; stroke-dasharray: 6 4; }
+.tviz-placeholder { text-align: center; padding: 60px 20px; }
+.tviz-sidebar {
+  width: 290px; flex-shrink: 0; display: flex; flex-direction: column; gap: 12px;
+  overflow-y: auto; max-height: calc(100vh - 320px);
 }
-.tvis-clear-btn:hover { background: rgba(255,69,58,.1); border-color: rgba(255,69,58,.2); color: rgba(255,69,58,.6); }
-.tvis-chips {
-  display: flex; flex-wrap: wrap; gap: 5px;
-  padding: 8px 14px; border-bottom: 1px solid rgba(255,255,255,.04);
-  background: rgba(255,255,255,.01); flex-shrink: 0;
-}
-.tvis-chip {
+.tviz-tag {
   font-size: 11px; padding: 4px 10px; border-radius: 20px;
-  background: rgba(94,92,230,.08); border: 1px solid rgba(94,92,230,.15);
-  color: rgba(255,255,255,.55); cursor: pointer; transition: all .15s;
-  white-space: nowrap; user-select: none;
+  background: rgba(94,92,230,.08); border: .5px solid rgba(94,92,230,.15);
+  color: rgba(255,255,255,.55); cursor: pointer; transition: var(--transition);
+  white-space: nowrap; font-family: inherit;
 }
-.tvis-chip:hover { background: rgba(94,92,230,.16); color: rgba(255,255,255,.8); border-color: rgba(94,92,230,.3); }
-.tvis-chat-body {
-  flex: 1; overflow-y: auto; padding: 14px 14px;
-  background: rgba(255,255,255,.015); border-left: 1px solid rgba(255,255,255,.04);
-  border-right: 1px solid rgba(255,255,255,.04);
+.tviz-tag:hover { background: rgba(94,92,230,.18); border-color: rgba(94,92,230,.3); color: var(--t); }
+.tviz-footer { display: flex; gap: 10px; align-items: flex-end; padding: 14px 0; flex-shrink: 0; }
+.tviz-chips { display: flex; gap: 5px; flex-wrap: wrap; flex: 1; }
+.tviz-chip {
+  font-size: 11px; padding: 5px 12px; border-radius: 20px;
+  background: rgba(94,92,230,.06); border: .5px solid rgba(94,92,230,.1);
+  color: rgba(255,255,255,.4); cursor: pointer; white-space: nowrap;
+  transition: var(--transition); font-family: inherit;
 }
-.tvis-welcome { text-align: center; padding: 30px 20px; margin-bottom: 10px; }
-.tvis-msg { margin-bottom: 12px; animation: tvisIn .2s ease; }
-@keyframes tvisIn { from{opacity:0;transform:translateY(6px)} to{opacity:1;transform:translateY(0)} }
-.tvis-msg-user { text-align: right; }
-.tvis-msg-user > * {
-  display: inline-block; max-width: 85%;
-  background: linear-gradient(135deg, rgba(94,92,230,.2), rgba(0,122,255,.12));
-  border: 1px solid rgba(94,92,230,.2); border-radius: 14px 14px 4px 14px;
-  padding: 10px 14px; font-size: 13px; color: rgba(255,255,255,.85);
-  line-height: 1.5; text-align: left; word-break: break-word;
+.tviz-chip:hover { background: rgba(94,92,230,.15); color: rgba(255,255,255,.7); border-color: rgba(94,92,230,.2); }
+.tviz-input {
+  flex: 1; min-width: 200px; background: rgba(255,255,255,.04);
+  border: .5px solid rgba(255,255,255,.1); border-radius: 14px;
+  padding: 10px 14px; font-size: 14px; color: var(--t); outline: none;
+  font-family: inherit; transition: var(--transition);
 }
-.tvis-msg-bot {
-  background: rgba(255,255,255,.03); border: 1px solid rgba(255,255,255,.08);
-  border-radius: 14px 14px 14px 4px; padding: 14px 16px;
-  font-size: 13px; color: rgba(255,255,255,.8); line-height: 1.7;
-  word-break: break-word; overflow-x: auto;
+.tviz-input::placeholder { color: rgba(255,255,255,.2); }
+.tviz-input:focus { border-color: rgba(94,92,230,.3); background: rgba(94,92,230,.04); }
+.tviz-btn {
+  padding: 10px 22px; border-radius: 14px; font-size: 14px; font-weight: 600;
+  background: rgba(94,92,230,.15); border: .5px solid rgba(94,92,230,.25);
+  color: var(--t); cursor: pointer; transition: var(--transition); flex-shrink: 0; font-family: inherit;
 }
-.tvis-msg-bot table { font-size: 11px; }
-.tvis-msg-bot pre { margin: 8px 0; }
-.tvis-msg-bot .mermaid-block {
-  margin: 12px 0; padding: 8px 0;
-  display: flex; justify-content: flex-start;
-  overflow-x: auto; overflow-y: visible;
-  min-height: 60px;
+.tviz-btn:hover { background: rgba(94,92,230,.28); transform: translateY(-1px); }
+.tviz-btn:disabled { opacity: .25; cursor: not-allowed; transform: none; }
+@media (max-width: 768px) {
+  .tviz-body { flex-direction: column; }
+  .tviz-sidebar { width: 100%; max-height: 220px; }
+  .tviz-canvas-wrap { min-height: 320px; padding: 16px; }
+  .tviz-footer { flex-wrap: wrap; }
+  .tviz-input { min-width: 0; }
 }
-.tvis-msg-bot .mermaid-block svg {
-  min-width: 560px; max-width: none; height: auto;
-}
-.tvis-loading { padding: 12px 16px; color: rgba(255,255,255,.3); font-size: 12px; }
-.tvis-spin { display: inline-block; animation: tSpin 1s linear infinite; margin-right: 4px; }
-@keyframes tSpin { from{transform:rotate(0)} to{transform:rotate(360deg)} }
-.tvis-error { padding: 12px 16px; color: rgba(255,69,58,.6); font-size: 12px; }
-.tvis-input-bar {
-  display: flex; gap: 8px; padding: 10px 14px;
-  background: rgba(255,255,255,.03); border: 1px solid rgba(255,255,255,.06);
-  border-radius: 0 0 14px 14px; flex-shrink: 0; align-items: flex-end;
-}
-.tvis-msg-user > * {
-  display: inline-block; max-width: 85%;
-  background: linear-gradient(135deg, rgba(94,92,230,.2), rgba(0,122,255,.12));
-  border: 1px solid rgba(94,92,230,.2); border-radius: 14px 14px 4px 14px;
-  padding: 10px 14px; font-size: 13px; color: rgba(255,255,255,.85);
-  line-height: 1.5; text-align: left; word-break: break-word;
-}
-.tvis-msg-bot {
-  background: rgba(255,255,255,.03); border: 1px solid rgba(255,255,255,.08);
-  border-radius: 14px 14px 14px 4px; padding: 12px 16px;
-  font-size: 13px; color: rgba(255,255,255,.8); line-height: 1.7;
-  word-break: break-word;
-}
-.tvis-msg-bot table { font-size: 11px; }
-.tvis-msg-bot pre { margin: 8px 0; }
-.tvis-msg-bot .mermaid-block { margin: 10px 0; display: flex; justify-content: center; overflow-x: auto; }
-.tvis-msg-bot .mermaid-block svg { max-width: 100%; height: auto; }
-.tvis-loading { padding: 12px 16px; color: rgba(255,255,255,.3); font-size: 12px; }
-.tvis-spin { display: inline-block; animation: tSpin 1s linear infinite; margin-right: 4px; }
-@keyframes tSpin { from{transform:rotate(0)} to{transform:rotate(360deg)} }
-.tvis-error { padding: 12px 16px; color: rgba(255,69,58,.6); font-size: 12px; }
-.tvis-input-bar {
-  display: flex; gap: 8px; padding: 10px 14px;
-  background: rgba(255,255,255,.03); border: 1px solid rgba(255,255,255,.06);
-  border-radius: 0 0 14px 14px; flex-shrink: 0; align-items: flex-end;
-}
-.tvis-textarea {
-  flex: 1; min-height: 38px; max-height: 100px;
-  background: rgba(255,255,255,.04); border: 1px solid rgba(255,255,255,.1);
-  border-radius: 10px; padding: 8px 12px; font-size: 13px; color: rgba(255,255,255,.8);
-  resize: none; outline: none; font-family: inherit; line-height: 1.4;
-}
-.tvis-textarea:focus { border-color: rgba(94,92,230,.3); background: rgba(94,92,230,.04); }
-.tvis-send-btn {
-  flex-shrink: 0; padding: 8px 18px; border-radius: 10px;
-  background: rgba(94,92,230,.15); border: 1px solid rgba(94,92,230,.25);
-  color: rgba(255,255,255,.8); font-size: 13px; font-weight: 600;
-  cursor: pointer; transition: all .15s;
-}
-.tvis-send-btn:hover { background: rgba(94,92,230,.25); }
 </style>
 
 </head>
@@ -7300,55 +7246,49 @@ function progressBar(pct, done, total) {
     '<div><div style="font-weight:700;font-size:14px">学习进度</div><div style="font-size:12px;color:rgba(255,255,255,.35);margin-top:1px">'+done+'/'+total+' 个节点已完成</div></div></div>';
 }
 
-// ===== 理论可视化 — AI对话式图表生成 =====
-var tvisHistory = [];
+// ===== 理论可视化 — 工作台 =====
+var tvisCurTheory = '';
+var tvisCurMmd = '';
 
 function showTheoryViz() {
-  tvisHistory = [];
-  try {
-    var old = JSON.parse(localStorage.getItem('r434_tvis_chat') || '[]');
-    if (Array.isArray(old)) tvisHistory = old.slice(-20);
-  } catch(e) {}
-  
   var h = '';
-  h += '<div class="tvis-chat-wrap" id="tvisChatWrap">';
-  // Header
-  h += '<div class="tvis-chat-hdr">';
-  h += '<div style="display:flex;align-items:center;gap:8px"><span style="font-size:18px">📐</span><span style="font-weight:700;font-size:15px">理论可视化</span><span style="font-size:10px;color:rgba(255,255,255,.25)">AI对话式 · 用图表解释理论</span></div>';
-  h += '<button class="tvis-clear-btn" onclick="clearTVisChat()">清空对话</button>';
+  h += '<div class="hero" style="margin-bottom:12px"><h1>📐 理论可视化工作台</h1><p class="desc" id="tvis-hero-desc">输入理论名称，AI 自动生成实现机制的完整框架图</p></div>';
+  
+  // Workbench body
+  h += '<div class="tviz-body">';
+  // Canvas
+  h += '<div class="tviz-canvas-wrap" id="tvizCanvas">';
+  h += '<div class="tviz-placeholder" id="tvizPlaceholder"><div style="font-size:48px;margin-bottom:12px;opacity:.3">📊</div><div style="font-size:14px;color:var(--ts);line-height:1.8">输入理论名称，AI 自动生成<br>实现机制的完整框架图</div></div>';
+  h += '<div class="tviz-canvas-display" id="tvizCanvasDisplay" style="display:none"></div>';
+  h += '</div>';
+  // Sidebar
+  h += '<div class="tviz-sidebar" id="tvizSidebar">';
+  h += sideSec('核心要点', 'tvizKeypoints', '生成图表后自动出现');
+  h += sideSec('理论要素', 'tvizElements', '—');
+  h += sideSec('关联理论', 'tvizRelated', '', true);
+  h += sideSec('考点提示', 'tvizExam', '—');
+  h += sideSec('真题链接', 'tvizQuestions', '—');
+  h += '<div class="pcard" style="padding:14px 16px"><div style="font-size:10px;font-weight:700;color:rgba(255,255,255,.3);margin-bottom:10px;letter-spacing:.8px;text-transform:uppercase">我的笔记</div><textarea id="tvizNote" placeholder="在这里写自己的理解..." style="width:100%;min-height:50px;background:rgba(255,255,255,.03);border:.5px solid var(--bdr);border-radius:12px;padding:10px 12px;font-size:12px;color:var(--ts);resize:vertical;font-family:inherit;outline:none;line-height:1.6;transition:var(--transition)" onfocus="this.style.borderColor=\'rgba(94,92,230,.3)\'" onblur="this.style.borderColor=\'var(--bdr)\'"></textarea></div>';
+  h += '</div>';
   h += '</div>';
   
-  // Quick chips
-  h += '<div class="tvis-chips" id="tvisChips">';
-  var chips = ['比较优势理论','H-O理论','利率平价理论','产品生命周期','垄断优势理论','关税效应分析','购买力平价','技术差距论'];
-  chips.forEach(function(c) {
-    h += '<span class="tvis-chip" onclick="tvisQuickAsk(\'' + c + '\')">' + c + '</span>';
-  });
+  // Bottom input
+  h += '<div class="tviz-footer">';
+  h += '<div class="tviz-chips">';
+  var chips = [
+    {t:'比较优势理论',q:'画出 比较优势理论 的完整机制流程图，包含前提假设、核心逻辑和现实应用'},
+    {t:'H-O理论',q:'画出 H-O理论 的完整机制流程图，包含四大定理的内在联系'},
+    {t:'利率平价理论',q:'画出 利率平价理论 的完整机制流程图，包含抛补和非抛补两种套利机制'},
+    {t:'产品生命周期',q:'画出 产品生命周期理论 三阶段的完整机制流程图'},
+    {t:'关税效应分析',q:'画出 关税局部均衡分析的机制流程图，包含小国和大国情形'},
+    {t:'垄断优势理论',q:'画出 垄断优势理论 的完整框架图'},
+    {t:'技术差距论',q:'画出 技术差距论 的完整机制流程图，标注四个时滞'},
+    {t:'PPP vs IRP',q:'画出 购买力平价与利率平价理论的对比框架图'}
+  ];
+  chips.forEach(function(c){h += '<span class="tviz-chip" onclick="tvisAsk(\''+c.q.replace(/'/g,"\\'")+'\')">'+c.t+'</span>';});
   h += '</div>';
-  
-  // Chat body
-  h += '<div class="tvis-chat-body" id="tvisBody">';
-  // Welcome
-  h += '<div class="tvis-welcome">';
-  h += '<div style="font-size:32px;margin-bottom:6px">📐</div>';
-  h += '<div style="font-weight:700;font-size:14px;margin-bottom:4px">理论可视化助手</div>';
-  h += '<div style="font-size:12px;color:rgba(255,255,255,.35);line-height:1.6">我可以为任何434国际商务理论生成流程图、框架图、对比图。<br>直接输入理论名称，或追问理论间的关联，我会用图表回答你。</div>';
-  h += '</div>';
-  // History
-  tvisHistory.forEach(function(msg) {
-    if (msg.role === 'assistant') {
-      h += '<div class="tvis-msg tvis-msg-bot">' + renderMarkdown(msg.content) + '</div>';
-    } else {
-      h += '<div class="tvis-msg tvis-msg-user">' + msg.content + '</div>';
-    }
-  });
-  h += '</div>';
-  
-  // Input bar
-  h += '<div class="tvis-input-bar">';
-  h += '<textarea id="tvisInput" class="tvis-textarea" placeholder="输入理论名称或问题，例如：画出利率平价理论的机制流程图" rows="2" onkeydown="if(event.key===\'Enter\' && !event.shiftKey){event.preventDefault();sendTVisMessage()}"></textarea>';
-  h += '<button class="tvis-send-btn" onclick="sendTVisMessage()">发送</button>';
-  h += '</div>';
+  h += '<input type="text" id="tvizInput" class="tviz-input" placeholder="输入理论名称或描述你想要的可视化内容..." onkeydown="if(event.key===\'Enter\')tvisGen()">';
+  h += '<button class="tviz-btn" id="tvizBtn" onclick="tvisGen()">生成图表</button>';
   h += '</div>';
   
   document.getElementById('ct').innerHTML = h;
@@ -7357,129 +7297,109 @@ function showTheoryViz() {
   // Init mermaid
   if (typeof mermaid !== 'undefined') {
     mermaid.initialize({
-      startOnLoad: false,
-      theme: 'dark',
+      startOnLoad: false, theme: 'base',
       themeVariables: {
-        primaryColor: 'rgba(94,92,230,.15)',
-        primaryBorderColor: 'rgba(94,92,230,.3)',
-        primaryTextColor: 'rgba(255,255,255,.85)',
-        lineColor: 'rgba(255,255,255,.15)',
-        fontSize: '15px'
+        darkMode: true, background: 'transparent',
+        primaryColor: 'rgba(94,92,230,.15)', primaryBorderColor: '#5e5ce6', primaryTextColor: 'rgba(255,255,255,.9)',
+        secondaryColor: 'rgba(0,122,255,.12)', secondaryBorderColor: '#007aff', secondaryTextColor: 'rgba(255,255,255,.75)',
+        tertiaryColor: 'rgba(48,209,88,.1)', tertiaryBorderColor: '#30d158', tertiaryTextColor: 'rgba(255,255,255,.7)',
+        lineColor: 'rgba(255,255,255,.18)', fontSize: '15px',
+        fontFamily: '-apple-system,BlinkMacSystemFont,"PingFang SC","Microsoft YaHei",sans-serif',
+        nodeBorder: 'rgba(255,255,255,.15)', clusterBkg: 'rgba(255,255,255,.03)', clusterBorder: 'rgba(255,255,255,.1)',
+        titleColor: 'rgba(255,255,255,.5)', edgeLabelBackground: '#0a0a1a', nodeTextColor: 'rgba(255,255,255,.85)',
+        mainBkg: 'rgba(255,255,255,.04)', textColor: 'rgba(255,255,255,.55)'
       },
-      flowchart: { useMaxWidth: false, htmlLabels: true }
+      flowchart: { useMaxWidth: false, htmlLabels: true, curve: 'basis', padding: 20, nodeSpacing: 60, rankSpacing: 80 }
     });
   }
-  
-  // Render any existing mermaid blocks from history
-  setTimeout(function() { renderMermaidBlocks(document.getElementById('tvisBody')); }, 200);
-  
-  // Focus input
-  setTimeout(function() {
-    var inp = document.getElementById('tvisInput');
-    if (inp) inp.focus();
-  }, 300);
 }
 
-function tvisQuickAsk(text) {
-  var inp = document.getElementById('tvisInput');
-  if (inp) inp.value = '画出' + text + '的机制流程图';
-  sendTVisMessage();
+function sideSec(title, id, placeholder, isTags) {
+  return '<div class="pcard" style="padding:14px 16px"><div style="font-size:10px;font-weight:700;color:rgba(255,255,255,.3);margin-bottom:10px;letter-spacing:.8px;text-transform:uppercase">'+title+'</div><div id="'+id+'" style="font-size:12px;line-height:1.8;color:var(--ts)">'+(placeholder&&!isTags?'<em style="color:rgba(255,255,255,.15)">'+placeholder+'</em>':'')+'</div></div>';
 }
 
-function sendTVisMessage() {
-  var input = document.getElementById('tvisInput');
-  if (!input) return;
-  var q = input.value.trim();
+function tvisAsk(q) { document.getElementById('tvizInput').value = q; tvisGen(); }
+
+function tvisGen() {
+  var q = document.getElementById('tvizInput').value.trim();
   if (!q) return;
-  input.value = '';
+  var btn = document.getElementById('tvizBtn'); btn.disabled = true; btn.textContent = '生成中...';
   
-  var body = document.getElementById('tvisBody');
-  if (!body) return;
+  document.getElementById('tvizPlaceholder').style.display = 'none';
+  var disp = document.getElementById('tvizCanvasDisplay');
+  disp.style.display = 'block';
+  disp.innerHTML = '<div style="padding:24px;color:var(--ts);font-size:14px;text-align:center"><span style="display:inline-block;animation:spin 1s linear infinite">⏳</span> AI 正在分析并生成可视化...</div>';
   
-  // Add user message
-  body.innerHTML += '<div class="tvis-msg tvis-msg-user">' + q + '</div>';
+  ['tvizKeypoints','tvizElements','tvizRelated','tvizExam','tvizQuestions'].forEach(function(id) {
+    document.getElementById(id).innerHTML = '<em style="color:rgba(255,255,255,.15)">生成中...</em>';
+  });
   
-  // Loading
-  var loadId = 'tvis-load-' + Date.now();
-  body.innerHTML += '<div id="' + loadId + '" class="tvis-loading"><span class="tvis-spin">⏳</span> 思考中...</div>';
-  body.scrollTop = body.scrollHeight;
-  
-  tvisHistory.push({role: 'user', content: q});
-  
-  // Build system prompt for visualization AI
-  var sys = '你是人大434国际商务理论的「可视化专家」。你的核心能力是用图表解释理论。\n\n## 你必须遵循的规则：\n1. 每次回答涉及理论机制、逻辑、流程时，必须包含一个 Mermaid 图表（flowchart 或 graph）\n2. 图表代码放在 ```mermaid 代码块中\n3. 图表要包含：前提/假设 → 核心机制 → 传导路径 → 结论/效应\n4. 用 classDef 区分节点层次（前提蓝色、机制紫色、结论绿色）\n5. 如果用户追问理论对比，用两个并排的图表或一个对比表\n6. 每个节点文字简洁（≤15字），用中文\n7. 图表之外也要用文字简要说明\n\n## 图表类型选择：\n- 机制/流程 → flowchart TD\n- 因果链 → graph LR\n- 对比 → 两个独立的 flowchart TD\n\n现在，请根据用户的问题，生成包含 Mermaid 图表的回答。';
-  
-  var msgs = [{role:'system', content:sys}];
-  tvisHistory.slice(-12).forEach(function(h) { msgs.push({role:h.role, content:h.content}); });
-  
-  // Stream call
+  var sys = '你是人大434国际商务的"理论可视化专家"。生成该理论的详细可视化内容。\n\n## 输出格式：\n\n```mermaid\nflowchart TD\n  完整图表（≥20节点）\n```\n\n### 核心要点\n- 要点1\n- 要点2\n- 要点3\n- 要点4\n- 要点5\n\n### 理论要素\n前提假设：列出3-5个\n核心概念：列出3-5个中英文\n分析工具：列出使用的分析工具\n\n### 关联理论\n- 理论A（说明关联）\n- 理论B\n- 理论C\n\n### 考点提示\n详细说明历年考察情况（年份+题型）\n\n### 真题链接\n- 201X年简答：具体题目\n\n## Mermaid 规则：\n1. 节点≥20个\n2. 用 classDef 定义样式：classDef a fill:#2d2b55,stroke:#5e5ce6,color:#a5b4fc\n3. 用 subgraph 分区\n4. 节点文字10-20字\n5. 多种形状：[] () {} [/] [( )]\n6. 连线加文字标签\n7. 颜色只用6位hex';
+
   fetch(DS_URL, {
-    method:'POST',
-    headers:{Authorization:'Bearer '+getAPIKey(),'Content-Type':'application/json'},
-    body:JSON.stringify({model:'mimo-v2.5', messages:msgs, stream:true, temperature:0.3})
-  }).then(function(r) {
-    if (!r.ok) throw Error('HTTP '+r.status);
-    return r.body.getReader();
-  }).then(function(rd) {
-    var b='', t='', d=new TextDecoder();
-    var respId = 'tvis-resp-'+Date.now();
-    var loadEl = document.getElementById(loadId);
-    if (loadEl) { loadEl.id = respId; loadEl.className = 'tvis-msg tvis-msg-bot'; loadEl.innerHTML = ''; }
-    
-    function next() {
-      rd.read().then(function(r) {
-        if (r.done) {
-          var el = document.getElementById(respId);
-          if (el) {
-            el.innerHTML = renderMarkdown(t);
-            renderMermaidBlocks(el);
-          }
-          tvisHistory.push({role:'assistant', content:t});
-          try { localStorage.setItem('r434_tvis_chat', JSON.stringify(tvisHistory.slice(-20))); } catch(e) {}
-          body.scrollTop = body.scrollHeight;
-          return;
-        }
-        b += d.decode(r.value, {stream:true});
-        var ls = b.split('\n'); b = ls.pop()||'';
-        ls.forEach(function(l) {
-          if (l.startsWith('data: ')) {
-            var dd = l.substring(6);
-            if (dd=='[DONE]') return;
-            try {
-              var p = JSON.parse(dd);
-              if (p.choices&&p.choices[0].delta) {
-                var x = p.choices[0].delta.content||'';
-                if (x) {
-                  t += x;
-                  var el = document.getElementById(respId);
-                  if (el) {
-                    el.innerHTML = renderMarkdown(t);
-                    renderMermaidBlocks(el);
-                  }
-                  body.scrollTop = body.scrollHeight;
-                }
-              }
-            } catch(e) {}
-          }
-        });
-        next();
-      });
-    }
-    next();
-  }).catch(function(err) {
-    var loadEl = document.getElementById(loadId);
-    if (loadEl) loadEl.innerHTML = '<div class="tvis-error">请求失败：'+err.message+'</div>';
+    method:'POST', headers:{Authorization:'Bearer '+getAPIKey(),'Content-Type':'application/json'},
+    body:JSON.stringify({model:'mimo-v2.5',messages:[{role:'system',content:sys},{role:'user',content:q}],temperature:0.3,max_tokens:4096})
+  }).then(function(r){if(!r.ok)throw Error('HTTP '+r.status);return r.json()})
+  .then(function(d){
+    var c = d.choices&&d.choices[0]&&d.choices[0].message?d.choices[0].message.content||'':'';
+    tvisParseRender(c, q);
+    btn.disabled = false; btn.textContent = '生成图表';
+  }).catch(function(e){
+    disp.innerHTML = '<div style="padding:16px;color:rgba(255,69,58,.7);font-size:12px;text-align:center">请求失败：'+e.message+'</div>';
+    btn.disabled = false; btn.textContent = '重试';
   });
 }
 
-function clearTVisChat() {
-  if (!confirm('确定清空可视化对话历史吗？')) return;
-  tvisHistory = [];
-  try { localStorage.removeItem('r434_tvis_chat'); } catch(e) {}
-  showTheoryViz();
+function tvisParseRender(content, q) {
+  var mm = q.match(/(.+?)(?:理论|模型|定理|分析)/);
+  tvisCurTheory = mm?mm[0]:q;
+  document.getElementById('tvis-hero-desc').textContent = '当前：'+tvisCurTheory+' · 点击侧栏关联理论可追问';
+  
+  var mmdM = content.match(/```mermaid\s*([\s\S]*?)```/);
+  var disp = document.getElementById('tvizCanvasDisplay');
+  if (mmdM) {
+    var mmd = mmdM[1].trim();
+    tvisCurMmd = mmd;
+    disp.innerHTML = '<div class="mermaid" id="tvizMmd"></div>';
+    document.getElementById('tvizMmd').textContent = mmd;
+    try { mermaid.run({nodes:[document.getElementById('tvizMmd')]}); } catch(e) {
+      disp.innerHTML = '<div style="padding:16px;color:rgba(255,69,58,.7);font-size:12px">渲染失败：'+e.message+'<br><pre style="margin-top:8px;font-size:10px;color:var(--ts);max-height:150px;overflow:auto">'+mmd.replace(/</g,'&lt;')+'</pre></div>';
+    }
+  } else {
+    disp.innerHTML = '<div class="pcard" style="padding:24px;text-align:center;color:var(--ts)">AI 未生成图表，请重试</div>';
+  }
+  
+  tvisU('tvizKeypoints', extractTSection(content,'核心要点'), 'list');
+  tvisU('tvizElements', extractTSection(content,'理论要素'), 'text');
+  tvisU('tvizRelated', extractTSection(content,'关联理论'), 'tags');
+  tvisU('tvizExam', extractTSection(content,'考点提示'), 'text');
+  tvisU('tvizQuestions', extractTSection(content,'真题链接'), 'text');
 }
 
-// Render all mermaid blocks in a container
+function tvisU(id, content, type) {
+  var el = document.getElementById(id); if (!el) return;
+  if (!content) { el.innerHTML = '<em style="color:rgba(255,255,255,.15)">—</em>'; return; }
+  if (type === 'list') {
+    var items = content.split('\n').filter(function(l){return l.trim()}).map(function(l){return l.replace(/^[-•·]\s*/,'')});
+    el.innerHTML = '<ul style="padding-left:0;list-style:none">'+items.map(function(i){return '<li style="margin:4px 0;padding-left:12px;position:relative"><span style="position:absolute;left:0;top:8px;width:4px;height:4px;border-radius:50%;background:var(--pu);opacity:.45"></span>'+i+'</li>'}).join('')+'</ul>';
+  } else if (type === 'tags') {
+    var tags = content.split('\n').filter(function(l){return l.trim()}).map(function(l){return l.replace(/^[-•·]\s*/,'')});
+    el.innerHTML = '<div style="display:flex;flex-wrap:wrap;gap:5px">'+tags.map(function(t){var tn=t.split(/[（(]/)[0].trim();return '<span class="tviz-tag" onclick="tvisAsk(\'画出 '+tn+' 的完整机制流程图\')">'+t+'</span>'}).join('')+'</div>';
+  } else {
+    el.innerHTML = content.split('\n').filter(function(l){return l.trim()}).map(function(l){return l.replace(/^[-•·]\s*/,'')}).join('<br>');
+  }
+}
+
+function extractTSection(text, label) {
+  var idx = text.indexOf('### '+label);
+  if (idx<0) { idx = text.indexOf('**'+label+'**'); if (idx<0) return ''; }
+  var start = text.indexOf('\n', idx); if (start<0) return '';
+  var sub = text.substring(start+1);
+  var end = sub.indexOf('\n### '); if (end<0) end = sub.indexOf('\n**'); if (end<0) end = sub.length;
+  return sub.substring(0, end).trim();
+}
+
+// Keep renderMermaidBlocks for other parts of the platform
 function renderMermaidBlocks(container) {
   if (!container || typeof mermaid === 'undefined') return;
   var blocks = container.querySelectorAll('.mermaid-block');
@@ -7487,19 +7407,16 @@ function renderMermaidBlocks(container) {
     if (block.getAttribute('data-rendered')) return;
     block.setAttribute('data-rendered', '1');
     var code = block.getAttribute('data-mermaid') || '';
-    if (!code) return;
-    // Decode HTML entities
     code = code.replace(/&quot;/g,'"').replace(/&amp;/g,'&').replace(/&lt;/g,'<').replace(/&gt;/g,'>');
-    // Create mermaid div inside
     var mmdDiv = document.createElement('div');
-    mmdDiv.className = 'mermaid';
-    mmdDiv.textContent = code;
+    mmdDiv.className = 'mermaid'; mmdDiv.textContent = code;
     block.appendChild(mmdDiv);
     try { mermaid.run({ nodes: [mmdDiv] }); } catch(e) {
-      block.innerHTML = '<pre style="font-size:11px;color:rgba(255,255,255,.4);padding:10px">Mermaid 渲染失败: ' + e.message + '</pre>';
+      block.innerHTML = '<pre style="font-size:11px;color:rgba(255,255,255,.4);padding:10px">Mermaid error: '+e.message+'</pre>';
     }
   });
 }
+
 
 
 function capLaunch(actionId, capabilityCode) {
