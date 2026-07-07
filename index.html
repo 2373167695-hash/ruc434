@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<!-- v2.1 · 2026-07-07 12:56 · modular -->
+<!-- v2.1 · 2026-07-07 12:57 · modular -->
 <html lang="zh-CN">
 <head>
 <meta charset="UTF-8">
@@ -7334,7 +7334,7 @@ function tvisGen() {
     document.getElementById(id).innerHTML = '<em style="color:rgba(255,255,255,.15)">生成中...</em>';
   });
   
-  var sys = '你是人大434国际商务的"理论可视化专家"。生成该理论的详细可视化内容。\n\n## 输出格式：\n\n```mermaid\nflowchart TD\n  完整图表（≥20节点）\n```\n\n### 核心要点\n- 要点1\n- 要点2\n- 要点3\n- 要点4\n- 要点5\n\n### 理论要素\n前提假设：列出3-5个\n核心概念：列出3-5个中英文\n分析工具：列出使用的分析工具\n\n### 关联理论\n- 理论A（说明关联）\n- 理论B\n- 理论C\n\n### 考点提示\n详细说明历年考察情况（年份+题型）\n\n### 真题链接\n- 201X年简答：具体题目\n\n## Mermaid 规则：\n1. 节点≥20个\n2. 用 classDef 定义样式：classDef a fill:#2d2b55,stroke:#5e5ce6,color:#a5b4fc\n3. 用 subgraph 分区\n4. 节点文字10-20字\n5. 多种形状：[] () {} [/] [( )]\n6. 连线加文字标签\n7. 颜色只用6位hex';
+  var sys = '你是人大434国际商务的"理论可视化专家"。生成该理论的详细可视化内容。\n\n## 输出格式：\n\n```mermaid\nflowchart TD\n  完整图表（≥20节点）\n```\n\n### 核心要点\n- 要点1\n- 要点2\n- 要点3\n- 要点4\n- 要点5\n\n### 理论要素\n前提假设：列出3-5个\n核心概念：列出3-5个中英文\n分析工具：列出使用的分析工具\n\n### 关联理论\n- 理论A（说明关联）\n- 理论B\n- 理论C\n\n### 考点提示\n详细说明历年考察情况（年份+题型）\n\n### 真题链接\n- 201X年简答：具体题目\n\n## ⚠️ Mermaid 语法必须遵守（否则渲染失败）：\n1. 节点ID只能用英文字母和数字，如 A,B,C,N1,N2\n2. 节点文字用方括号包裹：A[技术创新国率先研发新产品]\n3. 节点文字中禁止使用 # & < > " ( ) 等特殊符号，改用中文全角括号（）\n4. classDef 只定义在文件开头，class 语句放在最后\n5. 示例 classDef：classDef a fill:#2d2b55,stroke:#5e5ce6,color:#a5b4fc\n6. 示例 class：class A,B,C a\n7. 颜色只用6位hex如#5e5ce6，不要用8位hex\n8. subgraph 标题用中文，不加引号\n9. 确保所有括号配对闭合';
 
   fetch(DS_URL, {
     method:'POST', headers:{Authorization:'Bearer '+getAPIKey(),'Content-Type':'application/json'},
@@ -7359,6 +7359,14 @@ function tvisParseRender(content, q) {
   var disp = document.getElementById('tvizCanvasDisplay');
   if (mmdM) {
     var mmd = mmdM[1].trim();
+    // Sanitize: fix common AI mistakes in node text, preserve classDef/style lines
+    mmd = mmd.split('\n').map(function(line) {
+      if (line.trim().startsWith('classDef ') || line.trim().startsWith('class ') || line.trim().startsWith('style ')) return line;
+      // In non-style lines, replace special chars in node brackets
+      return line.replace(/\[([^\]]*)\]/g, function(m, text) {
+        return '[' + text.replace(/[&<>"()]/g, function(c) { return {'&':'＆','<':'＜','>':'＞','"':'＂','(':'（',')':'）'}[c]||c; }) + ']';
+      });
+    }).join('\n');
     tvisCurMmd = mmd;
     disp.innerHTML = '<div class="mermaid" id="tvizMmd"></div>';
     document.getElementById('tvizMmd').textContent = mmd;
