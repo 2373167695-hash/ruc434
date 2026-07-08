@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<!-- v2.1 · 2026-07-08 13:33 · modular -->
+<!-- v2.1 · 2026-07-08 13:43 · modular -->
 <html lang="zh-CN">
 <head>
 <meta charset="UTF-8">
@@ -679,20 +679,69 @@ body.sb-collapsed .sidebar.open ~ .sidebar-backdrop{display:block}
   border: 1px solid rgba(255,255,255,.1); border-radius: var(--radius);
   padding: 24px 32px; position: relative;
 }
-/* Markdown tree (flat) */
-.mktree { font-size: 14px; line-height: 1.8; }
-.mkt-line { display: flex; align-items: center; gap: 8px; padding: 3px 0; }
-.mkt-line:hover { background: rgba(255,255,255,.03); border-radius: 6px; }
-.mkt-dot { width: 6px; height: 6px; border-radius: 50%; flex-shrink: 0; }
-.mkt-line.lv1 .mkt-dot { background: var(--pu); width: 12px; height: 12px; }
-.mkt-line.lv2 .mkt-dot { background: rgba(94,92,230,.5); width: 9px; height: 9px; }
-.mkt-line.lv3 .mkt-dot { background: rgba(255,255,255,.3); }
-.mkt-line.lv4 .mkt-dot, .mkt-line.lv5 .mkt-dot { background: rgba(255,255,255,.15); }
-.mkt-line.lv1 .mkt-txt { font-size: 22px; font-weight: 800; color: var(--t); letter-spacing: -.3px; }
-.mkt-line.lv2 .mkt-txt { font-size: 16px; font-weight: 700; color: rgba(255,255,255,.85); }
-.mkt-line.lv3 .mkt-txt { font-size: 14px; font-weight: 500; color: rgba(255,255,255,.7); }
-.mkt-line.lv4 .mkt-txt, .mkt-line.lv5 .mkt-txt { font-size: 13px; color: rgba(255,255,255,.55); }
-.mkt-line strong { color: var(--pu); }
+/* Mermaid diagram styles */
+.tviz-canvas-wrap .mermaid { display: flex; justify-content: center; }
+.tviz-canvas-wrap .mermaid svg { max-width: none; height: auto; width: 100%; }
+.tviz-canvas-wrap .mermaid svg .node rect,
+.tviz-canvas-wrap .mermaid svg .node circle,
+.tviz-canvas-wrap .mermaid svg .node polygon {
+  fill: #1c1c2e !important;
+  stroke: rgba(255,255,255,.35) !important;
+  stroke-width: 1.2px !important;
+  filter: none;
+}
+.tviz-canvas-wrap .mermaid svg .edgePath .path {
+  stroke: rgba(255,255,255,.4) !important;
+  stroke-width: 1.5px;
+  stroke-linecap: round;
+  fill: none;
+}
+.tviz-canvas-wrap .mermaid svg .arrowheadPath,
+.tviz-canvas-wrap .mermaid svg marker path {
+  fill: rgba(255,255,255,.4) !important;
+  stroke: rgba(255,255,255,.4) !important;
+}
+.tviz-canvas-wrap .mermaid svg .node text { font-size: 13px !important; fill: rgba(255,255,255,.85) !important; }
+.tviz-canvas-wrap .mermaid svg .edgeLabel,
+.tviz-canvas-wrap .mermaid svg .edgeLabel rect,
+.tviz-canvas-wrap .mermaid svg .edgeLabel foreignObject span {
+  fill: transparent !important;
+  background: transparent !important;
+  color: rgba(255,255,255,.6) !important;
+}
+.tviz-placeholder { position: absolute; inset: 0; display: flex; flex-direction: column; align-items: center; justify-content: center; }
+.tviz-sidebar { width: 270px; flex-shrink: 0; display: flex; flex-direction: column; gap: 10px; overflow-y: auto; }
+.tviz-tag {
+  font-size: 10px; padding: 3px 8px; border-radius: 16px;
+  background: rgba(94,92,230,.08); border: .5px solid rgba(94,92,230,.15);
+  color: rgba(255,255,255,.5); cursor: pointer; transition: var(--transition);
+  white-space: nowrap; font-family: inherit;
+}
+.tviz-tag:hover { background: rgba(94,92,230,.18); border-color: rgba(94,92,230,.3); color: var(--t); }
+.tviz-footer { display: flex; gap: 8px; align-items: center; padding: 10px 0 0; flex-shrink: 0; }
+.tviz-chips { display: flex; gap: 4px; flex-wrap: wrap; flex: 1; }
+.tviz-chip {
+  font-size: 10px; padding: 4px 10px; border-radius: 16px;
+  background: rgba(94,92,230,.06); border: .5px solid rgba(94,92,230,.1);
+  color: rgba(255,255,255,.35); cursor: pointer; white-space: nowrap;
+  transition: var(--transition); font-family: inherit;
+}
+.tviz-chip:hover { background: rgba(94,92,230,.15); color: rgba(255,255,255,.65); border-color: rgba(94,92,230,.2); }
+.tviz-input {
+  flex: 1; min-width: 140px; background: rgba(255,255,255,.04);
+  border: .5px solid rgba(255,255,255,.1); border-radius: 12px;
+  padding: 8px 12px; font-size: 13px; color: var(--t); outline: none;
+  font-family: inherit; transition: var(--transition);
+}
+.tviz-input::placeholder { color: rgba(255,255,255,.18); }
+.tviz-input:focus { border-color: rgba(94,92,230,.3); background: rgba(94,92,230,.04); }
+.tviz-btn {
+  padding: 8px 18px; border-radius: 12px; font-size: 13px; font-weight: 600;
+  background: rgba(94,92,230,.15); border: .5px solid rgba(94,92,230,.25);
+  color: var(--t); cursor: pointer; transition: var(--transition); flex-shrink: 0; font-family: inherit;
+}
+.tviz-btn:hover { background: rgba(94,92,230,.28); transform: translateY(-1px); }
+.tviz-btn:disabled { opacity: .25; cursor: not-allowed; transform: none; }
 </style>
 
 </head>
@@ -7273,27 +7322,31 @@ function tvisAsk(q) { document.getElementById('tvizInput').value = q; tvisGen();
 function tvisGen() {
   var q = document.getElementById('tvizInput').value.trim();
   if (!q) return;
-  var btn = document.getElementById('tvizBtn'); btn.disabled = true; btn.textContent = '测试中...';
+  var btn = document.getElementById('tvizBtn'); btn.disabled = true; btn.textContent = '生成中...';
   
   document.getElementById('tvizPlaceholder').style.display = 'none';
   var disp = document.getElementById('tvizCanvasDisplay');
   disp.style.display = 'block';
-  disp.style.background = 'rgba(255,255,255,.05)';
-  disp.style.padding = '20px 30px';
-  disp.style.minHeight = '300px';
+  disp.innerHTML = '<div style="padding:24px;color:var(--ts);font-size:14px;text-align:center"><span style="display:inline-block;animation:spin 1s linear infinite">⏳</span> AI 正在分析并生成可视化...</div>';
   
-  // HARDCODED TEST - skip API call entirely
-  disp.innerHTML = '<div style="font-size:22px;font-weight:800;color:#a5b4fc;margin-bottom:16px">✅ 渲染测试成功</div>'+
-    '<div class="mktree">'+
-    '<div class="mkt-line lv1" style="padding-left:0px"><span class="mkt-dot"></span><span class="mkt-txt">比较优势理论</span></div>'+
-    '<div class="mkt-line lv2" style="padding-left:24px;margin-top:4px"><span class="mkt-dot"></span><span class="mkt-txt">前提假设</span></div>'+
-    '<div class="mkt-line lv3" style="padding-left:48px;margin-top:4px"><span class="mkt-dot"></span><span class="mkt-txt">两国劳动生产率差异</span></div>'+
-    '<div class="mkt-line lv3" style="padding-left:48px;margin-top:4px"><span class="mkt-dot"></span><span class="mkt-txt">完全竞争市场</span></div>'+
-    '<div class="mkt-line lv2" style="padding-left:24px;margin-top:8px"><span class="mkt-dot"></span><span class="mkt-txt">核心机制</span></div>'+
-    '<div class="mkt-line lv3" style="padding-left:48px;margin-top:4px"><span class="mkt-dot"></span><span class="mkt-txt">各国专业化生产</span></div>'+
-    '<div class="mkt-line lv3" style="padding-left:48px;margin-top:4px"><span class="mkt-dot"></span><span class="mkt-txt">出口优势产品</span></div>'+
-    '</div>';
-  btn.disabled = false; btn.textContent = '生成图表';
+  ['tvizKeypoints','tvizElements','tvizRelated','tvizExam','tvizQuestions'].forEach(function(id) {
+    document.getElementById(id).innerHTML = '<em style="color:rgba(255,255,255,.15)">生成中...</em>';
+  });
+  
+  var sys = '你是人大434逻辑框架图专家。你只负责生成框架图，侧栏内容会由系统自动填充。\n\n## 框架结构要求：\n1. 使用 flowchart TB，通过 subgraph 将内容划分为3-5个并列的逻辑模块\n2. 每个 subgraph 是一个独立的知识板块（如「前提假设」「核心机制」「传导路径」「政策含义」）\n3. subgraph 内部用小流程图展示该板块的逻辑\n4. subgraph 之间用虚线箭头连接，表示板块间的逻辑递进关系\n5. 节点文字把意思说清楚，不要过度精简\n\n## Mermaid 模板示例：\n```mermaid\nflowchart TB\n  subgraph A[前提假设]\n    direction LR\n    A1[两国劳动生产率存在差异] --> A2[劳动是唯一生产要素] --> A3[完全竞争市场无运输成本]\n  end\n  subgraph B[核心机制]\n    direction LR\n    B1[各国专业化生产比较优势产品] --> B2[出口优势产品进口劣势产品] --> B3[贸易后两国消费水平均提升]\n  end\n  subgraph C[结论与效应]\n    direction LR\n    C1[贸易使双方互利共赢] --> C2[全球总产出增加]\n  end\n  A -.-> B\n  B -.-> C\n```\n\n## 输出格式：\n```mermaid\nflowchart TB\n  完整框架图\n```\n\n不要输出文字说明，只输出 Mermaid 代码块。\n\n## 规则：\n1. 节点文字把意思说清楚\n2. 不用 classDef\n3. subgraph 之间用 -.-> 虚线箭头';
+
+  fetch(DS_URL, {
+    method:'POST', headers:{Authorization:'Bearer '+getAPIKey(),'Content-Type':'application/json'},
+    body:JSON.stringify({model:'mimo-v2.5',messages:[{role:'system',content:sys},{role:'user',content:q}],temperature:0.3,max_tokens:4096})
+  }).then(function(r){if(!r.ok)throw Error('HTTP '+r.status);return r.json()})
+  .then(function(d){
+    var c = d.choices&&d.choices[0]&&d.choices[0].message?d.choices[0].message.content||'':'';
+    tvisParseRender(c, q);
+    btn.disabled = false; btn.textContent = '生成图表';
+  }).catch(function(e){
+    disp.innerHTML = '<div style="padding:16px;color:rgba(255,69,58,.7);font-size:12px;text-align:center">请求失败：'+e.message+'</div>';
+    btn.disabled = false; btn.textContent = '重试';
+  });
 }
 
 function tvisParseRender(content, q) {
@@ -7301,23 +7354,27 @@ function tvisParseRender(content, q) {
   tvisCurTheory = mm?mm[0]:q;
   document.getElementById('tvis-hero-desc').textContent = '当前：'+tvisCurTheory+' · 点击侧栏关联理论可追问';
   
+  var mmdM = content.match(/```mermaid\s*([\s\S]*?)```/);
   var disp = document.getElementById('tvizCanvasDisplay');
-  if (!disp) return;
-  disp.style.display = 'block';
-  disp.style.background = 'rgba(255,255,255,.03)';
-  disp.style.padding = '24px 32px';
-  disp.style.minHeight = '400px';
-  
-  // Debug first — show what AI returned
-  var dbg = '<div style="margin-bottom:16px;padding:10px 14px;background:rgba(94,92,230,.1);border-radius:8px;font-size:11px;color:rgba(255,255,255,.55);font-family:monospace;max-height:180px;overflow:auto;line-height:1.5">🔍 调试：content.length='+content.length+
-    '<br>• 包含 ```mermaid```：'+(content.indexOf('```mermaid')>=0?'是':'否')+
-    '<br>• 包含 ```markdown```：'+(content.indexOf('```markdown')>=0?'是':'否')+
-    '<br>• 包含 # 标题：'+(/^#{1,6}\s/m.test(content)?'是':'否')+
-    '<br>• 原始内容前300字符：<br><pre style="margin-top:6px;white-space:pre-wrap;color:rgba(255,255,255,.4)">'+content.substring(0,300).replace(/</g,'&lt;')+'</pre></div>';
-  disp.innerHTML = dbg;
-  return; // DEBUG MODE - stop here so we can see what AI returns
-
-  // ... rest of code (unreachable while debugging)
+  if (mmdM) {
+    var mmd = mmdM[1].trim();
+    // Strip classDef/class/style lines
+    mmd = mmd.split('\n').map(function(line) {
+      var t = line.trim();
+      if (t.startsWith('classDef ') || t.startsWith('class ') || t.startsWith('style ')) return '';
+      return line;
+    }).filter(function(l){return l.trim();}).join('\n');
+    tvisCurMmd = mmd;
+    disp.innerHTML = '<div class="mermaid" id="tvizMmd"></div>';
+    document.getElementById('tvizMmd').textContent = mmd;
+    try { mermaid.run({nodes:[document.getElementById('tvizMmd')]}); }
+    catch(e) {
+      var errorId = 'tviz-err-' + Date.now();
+      disp.innerHTML = '<div class="pcard" style="padding:16px;background:rgba(255,69,58,.04);border:.5px solid rgba(255,69,58,.15)"><div style="color:rgba(255,69,58,.7);font-size:13px;font-weight:600;margin-bottom:8px">⚠️ Mermaid 渲染失败</div><div style="color:var(--ts);font-size:12px;margin-bottom:10px">'+e.message+'</div><button class="tviz-btn" style="padding:6px 14px;font-size:12px" onclick="document.getElementById(\''+errorId+'\').style.display=document.getElementById(\''+errorId+'\').style.display===\'none\'?\'block\':\'none\'">显示源代码</button><pre id="'+errorId+'" style="display:none;margin-top:12px;padding:12px;background:rgba(0,0,0,.3);border-radius:10px;font-size:10.5px;color:rgba(255,255,255,.55);max-height:300px;overflow:auto;white-space:pre-wrap;line-height:1.5;font-family:ui-monospace,SF Mono,monospace">'+mmd.replace(/</g,'&lt;')+'</pre></div>';
+    }
+  } else {
+    disp.innerHTML = '<div class="pcard" style="padding:24px;text-align:center;color:var(--ts)">AI 未生成图表，请重试</div>';
+  }
   
   // Populate sidebar with real data
   tvisFillRealData(q);
