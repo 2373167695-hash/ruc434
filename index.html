@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<!-- v2.1 · 2026-07-08 13:20 · modular -->
+<!-- v2.1 · 2026-07-08 13:28 · modular -->
 <html lang="zh-CN">
 <head>
 <meta charset="UTF-8">
@@ -7273,32 +7273,27 @@ function tvisAsk(q) { document.getElementById('tvizInput').value = q; tvisGen();
 function tvisGen() {
   var q = document.getElementById('tvizInput').value.trim();
   if (!q) return;
-  var btn = document.getElementById('tvizBtn'); btn.disabled = true; btn.textContent = '生成中...';
+  var btn = document.getElementById('tvizBtn'); btn.disabled = true; btn.textContent = '测试中...';
   
   document.getElementById('tvizPlaceholder').style.display = 'none';
   var disp = document.getElementById('tvizCanvasDisplay');
   disp.style.display = 'block';
-  disp.innerHTML = '<div style="padding:24px;color:var(--ts);font-size:14px;text-align:center"><span style="display:inline-block;animation:spin 1s linear infinite">⏳</span> AI 正在分析并生成可视化...</div>';
+  disp.style.background = 'rgba(255,255,255,.05)';
+  disp.style.padding = '20px 30px';
+  disp.style.minHeight = '300px';
   
-  ['tvizKeypoints','tvizElements','tvizRelated','tvizExam','tvizQuestions'].forEach(function(id) {
-    document.getElementById(id).innerHTML = '<em style="color:rgba(255,255,255,.15)">生成中...</em>';
-  });
-  
-  var sys = '你是人大434逻辑框架图专家。用 Markdown 标题层级生成理论的逻辑框架图，由 markmap 渲染为交互式思维导图。\n\n## 输出格式（严格遵循）：\n\n```markdown\n# 理论名称\n\n## 前提假设\n### 条件一：具体说明\n### 条件二：具体说明\n\n## 核心机制\n### 第一步：具体说明\n### 第二步：具体说明\n\n## 传导路径\n### 环节一→环节二→环节三\n\n## 结论与效应\n### 结论一：具体说明\n### 结论二：具体说明\n\n## 理论评价\n### 优点：...\n### 局限：...\n### 关联理论：...\n```\n\n## 规则：\n1. 只输出 ```markdown 代码块，不要其他文字\n2. 用 # ## ### 表示层级，# 是理论名称\n3. 每个节点写清楚意思，不要缩写\n4. 层级 3-4 层，节点总数 15-25 个\n5. 可以在节点中加粗**关键词**\n6. 关联理论放在最后的 ### 下';
-
-  fetch(DS_URL, {
-    method:'POST', headers:{Authorization:'Bearer '+getAPIKey(),'Content-Type':'application/json'},
-    body:JSON.stringify({model:'mimo-v2.5',messages:[{role:'system',content:sys},{role:'user',content:q}],temperature:0.3,max_tokens:4096})
-  }).then(function(r){if(!r.ok)throw Error('HTTP '+r.status);return r.json()})
-  .then(function(d){
-    var c = d.choices&&d.choices[0]&&d.choices[0].message?d.choices[0].message.content||'':'';
-    tvisParseRender(c, q);
-    btn.disabled = false; btn.textContent = '生成图表';
-  }).catch(function(e){
-    disp.innerHTML = '<div style="padding:16px;color:rgba(255,69,58,.7);font-size:12px;text-align:center">请求失败：'+e.message+'</div>';
-    btn.disabled = false; btn.textContent = '重试';
-  });
-}
+  // HARDCODED TEST - skip API call entirely
+  disp.innerHTML = '<div style="font-size:22px;font-weight:800;color:#a5b4fc;margin-bottom:16px">✅ 渲染测试成功</div>'+
+    '<div class="mktree">'+
+    '<div class="mkt-line lv1" style="padding-left:0px"><span class="mkt-dot"></span><span class="mkt-txt">比较优势理论</span></div>'+
+    '<div class="mkt-line lv2" style="padding-left:24px;margin-top:4px"><span class="mkt-dot"></span><span class="mkt-txt">前提假设</span></div>'+
+    '<div class="mkt-line lv3" style="padding-left:48px;margin-top:4px"><span class="mkt-dot"></span><span class="mkt-txt">两国劳动生产率差异</span></div>'+
+    '<div class="mkt-line lv3" style="padding-left:48px;margin-top:4px"><span class="mkt-dot"></span><span class="mkt-txt">完全竞争市场</span></div>'+
+    '<div class="mkt-line lv2" style="padding-left:24px;margin-top:8px"><span class="mkt-dot"></span><span class="mkt-txt">核心机制</span></div>'+
+    '<div class="mkt-line lv3" style="padding-left:48px;margin-top:4px"><span class="mkt-dot"></span><span class="mkt-txt">各国专业化生产</span></div>'+
+    '<div class="mkt-line lv3" style="padding-left:48px;margin-top:4px"><span class="mkt-dot"></span><span class="mkt-txt">出口优势产品</span></div>'+
+    '</div>';
+  btn.disabled = false; btn.textContent = '生成图表';
 
 function tvisParseRender(content, q) {
   var mm = q.match(/(.+?)(?:理论|模型|定理|分析)/);
@@ -7603,6 +7598,5 @@ function capLaunch(actionId, capabilityCode) {
   </defs>
 </svg>
 
-<!-- v1783517099 -->
 </body>
 </html>
