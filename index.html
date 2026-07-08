@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<!-- v2.1 · 2026-07-08 13:43 · modular -->
+<!-- v2.1 · 2026-07-08 13:44 · modular -->
 <html lang="zh-CN">
 <head>
 <meta charset="UTF-8">
@@ -7311,6 +7311,25 @@ function showTheoryViz() {
   
   document.getElementById('ct').innerHTML = h;
   document.getElementById('ct').scrollTop = 0;
+  
+  // Init mermaid — minimal monochrome theme
+  if (typeof mermaid !== 'undefined') {
+    mermaid.initialize({
+      startOnLoad: false, theme: 'base',
+      themeVariables: {
+        darkMode: true, background: 'transparent',
+        primaryColor: '#1c1c2e', primaryBorderColor: 'rgba(255,255,255,.4)', primaryTextColor: 'rgba(255,255,255,.9)',
+        secondaryColor: '#1c1c2e', secondaryBorderColor: 'rgba(255,255,255,.4)', secondaryTextColor: 'rgba(255,255,255,.9)',
+        tertiaryColor: '#1c1c2e', tertiaryBorderColor: 'rgba(255,255,255,.4)', tertiaryTextColor: 'rgba(255,255,255,.9)',
+        lineColor: 'rgba(255,255,255,.45)', fontSize: '13px',
+        fontFamily: '-apple-system,BlinkMacSystemFont,"PingFang SC","Microsoft YaHei",sans-serif',
+        nodeBorder: 'rgba(255,255,255,.4)', clusterBkg: 'transparent', clusterBorder: 'rgba(255,255,255,.15)',
+        titleColor: 'rgba(255,255,255,.5)', edgeLabelBackground: '#0a0a1a', nodeTextColor: 'rgba(255,255,255,.9)',
+        mainBkg: '#1c1c2e', textColor: 'rgba(255,255,255,.9)'
+      },
+      flowchart: { useMaxWidth: false, htmlLabels: true, curve: 'basis', padding: 20, nodeSpacing: 60, rankSpacing: 80 }
+    });
+  }
 }
 
 function sideSec(title, id, placeholder, isTags) {
