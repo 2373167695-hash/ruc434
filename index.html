@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<!-- v2.1 · 2026-07-07 13:25 · modular -->
+<!-- v2.1 · 2026-07-08 05:23 · modular -->
 <html lang="zh-CN">
 <head>
 <meta charset="UTF-8">
@@ -7356,7 +7356,7 @@ function tvisGen() {
     document.getElementById(id).innerHTML = '<em style="color:rgba(255,255,255,.15)">生成中...</em>';
   });
   
-  var sys = '你是人大434逻辑框架图专家。你必须生成一个有明确结构层次的框架图，帮助学生理解理论的完整逻辑。\n\n## 框架结构要求：\n1. 使用 flowchart TB，通过 subgraph 将内容划分为3-5个并列的逻辑模块\n2. 每个 subgraph 是一个独立的知识板块（如「前提假设」「核心机制」「传导路径」「政策含义」）\n3. subgraph 内部用小流程图展示该板块的逻辑\n4. subgraph 之间用虚线箭头连接，表示板块间的逻辑递进关系\n5. 整体呈现「田」字或「品」字结构，不是一条线\n6. 节点文字不要过度精简，把意思说清楚（比如不要写\"生产率差异\"，要写\"两国劳动生产率存在差异\"）\n\n## Mermaid 模板示例：\n```mermaid\nflowchart TB\n  subgraph A[前提假设]\n    direction LR\n    A1[两国劳动生产率存在差异] --> A2[劳动是唯一生产要素] --> A3[完全竞争市场无运输成本]\n  end\n  subgraph B[核心机制]\n    direction LR\n    B1[各国专业化生产比较优势产品] --> B2[出口优势产品进口劣势产品] --> B3[贸易后两国消费水平均提升]\n  end\n  subgraph C[结论与效应]\n    direction LR\n    C1[贸易使双方互利共赢] --> C2[全球总产出增加]\n  end\n  A -.-> B\n  B -.-> C\n```\n\n## 输出格式：\n```mermaid\nflowchart TB\n  完整框架图\n```\n\n### 核心要点\n- 3-5个要点\n\n### 理论要素\n前提假设：列出\n核心概念：中英文\n\n### 关联理论\n- 2-3个\n\n### 考点提示\n历年考察情况\n\n### 真题链接\n- 年份+题目\n\n## 规则：\n1. 节点文字把意思说清楚\n2. 不用 classDef\n3. subgraph 之间用 -.-> 虚线箭头';
+  var sys = '你是人大434逻辑框架图专家。你只负责生成框架图，侧栏内容会由系统自动填充。\n\n## 框架结构要求：\n1. 使用 flowchart TB，通过 subgraph 将内容划分为3-5个并列的逻辑模块\n2. 每个 subgraph 是一个独立的知识板块（如「前提假设」「核心机制」「传导路径」「政策含义」）\n3. subgraph 内部用小流程图展示该板块的逻辑\n4. subgraph 之间用虚线箭头连接，表示板块间的逻辑递进关系\n5. 节点文字把意思说清楚，不要过度精简\n\n## Mermaid 模板示例：\n```mermaid\nflowchart TB\n  subgraph A[前提假设]\n    direction LR\n    A1[两国劳动生产率存在差异] --> A2[劳动是唯一生产要素] --> A3[完全竞争市场无运输成本]\n  end\n  subgraph B[核心机制]\n    direction LR\n    B1[各国专业化生产比较优势产品] --> B2[出口优势产品进口劣势产品] --> B3[贸易后两国消费水平均提升]\n  end\n  subgraph C[结论与效应]\n    direction LR\n    C1[贸易使双方互利共赢] --> C2[全球总产出增加]\n  end\n  A -.-> B\n  B -.-> C\n```\n\n## 输出格式：\n```mermaid\nflowchart TB\n  完整框架图\n```\n\n不要输出文字说明，只输出 Mermaid 代码块。\n\n## 规则：\n1. 节点文字把意思说清楚\n2. 不用 classDef\n3. subgraph 之间用 -.-> 虚线箭头';
 
   fetch(DS_URL, {
     method:'POST', headers:{Authorization:'Bearer '+getAPIKey(),'Content-Type':'application/json'},
@@ -7410,6 +7410,108 @@ function tvisParseRender(content, q) {
   tvisU('tvizRelated', extractTSection(content,'关联理论'), 'tags');
   tvisU('tvizExam', extractTSection(content,'考点提示'), 'text');
   tvisU('tvizQuestions', extractTSection(content,'真题链接'), 'text');
+  
+  // Overlay with real platform data if available
+  tvisFillRealData(q);
+}
+
+// Fill sidebar with real KNOWLEDGE + DATA
+function tvisFillRealData(query) {
+  var knKey = tvisFindKnKey(query);
+  if (!knKey) return;
+  var kn = KNOWLEDGE[knKey];
+  if (!kn) return;
+  
+  // Core points from knowledge.key
+  if (kn.key && kn.key.length) {
+    tvisU('tvizKeypoints', kn.key.map(function(k){return '- ' + k}).join('\n'), 'list');
+  }
+  
+  // Theory elements from assumptions + overview
+  var elemLines = [];
+  if (kn.assumptions && kn.assumptions.length) {
+    elemLines.push('**前提假设：**');
+    kn.assumptions.slice(0,5).forEach(function(a){elemLines.push('- ' + a)});
+  }
+  if (kn.evaluation_pros && kn.evaluation_pros.length) {
+    elemLines.push('');
+    elemLines.push('**理论优点：**');
+    kn.evaluation_pros.slice(0,3).forEach(function(p){elemLines.push('- ' + p)});
+  }
+  if (kn.evaluation_cons && kn.evaluation_cons.length) {
+    elemLines.push('');
+    elemLines.push('**理论局限：**');
+    kn.evaluation_cons.slice(0,3).forEach(function(c){elemLines.push('- ' + c)});
+  }
+  if (elemLines.length) tvisU('tvizElements', elemLines.join('\n'), 'text');
+  
+  // Related theories - find others in same module
+  var mod = kn.module || '';
+  var related = [];
+  Object.keys(KNOWLEDGE).forEach(function(k) {
+    if (k !== knKey && KNOWLEDGE[k].module === mod) related.push(k);
+  });
+  if (related.length) {
+    tvisU('tvizRelated', related.slice(0,4).map(function(r){return '- ' + r}).join('\n'), 'tags');
+  }
+  
+  // Exam tips
+  if (kn.exam) {
+    tvisU('tvizExam', kn.exam, 'text');
+  }
+  
+  // Real questions from DATA
+  var questions = tvisFindQuestions(knKey, mod);
+  if (questions.length) {
+    var lines = questions.slice(0,6).map(function(q){
+      return '- **' + q.year + '年' + q.type + '**：' + q.question.substring(0,60) + (q.question.length>60?'...':'');
+    });
+    tvisU('tvizQuestions', lines.join('\n'), 'text');
+  }
+}
+
+// Find KNOWLEDGE key from user query
+function tvisFindKnKey(query) {
+  if (!query || typeof KNOWLEDGE === 'undefined') return null;
+  var q = query.replace(/画出|的完整|机制流程图|框架图|对比图/g, '').trim();
+  
+  // Exact match
+  if (KNOWLEDGE[q]) return q;
+  
+  // Try keys containing query or query containing key
+  var best = null, bestLen = 0;
+  Object.keys(KNOWLEDGE).forEach(function(k) {
+    if (k.indexOf(q) >= 0 || q.indexOf(k) >= 0) {
+      if (k.length > bestLen) { bestLen = k.length; best = k; }
+    }
+  });
+  if (best) return best;
+  
+  // Try partial match
+  var parts = q.split(/[，,、\s]+/);
+  for (var i = 0; i < parts.length; i++) {
+    if (parts[i].length < 2) continue;
+    Object.keys(KNOWLEDGE).forEach(function(k) {
+      if (k.indexOf(parts[i]) >= 0 && k.length > bestLen) {
+        bestLen = k.length; best = k;
+      }
+    });
+  }
+  return best;
+}
+
+// Find real exam questions for a knowledge key
+function tvisFindQuestions(knKey, mod) {
+  if (typeof DATA === 'undefined' || typeof TQM === 'undefined') return [];
+  // Direct TQM lookup - find paths that contain the knowledge key
+  var qids = {};
+  Object.keys(TQM).forEach(function(path) {
+    if (path.indexOf(knKey) >= 0 || (mod && path.indexOf(mod.split('/').pop()) >= 0)) {
+      var ids = Array.isArray(TQM[path]) ? TQM[path] : TQM[path].split(',');
+      ids.forEach(function(id) { qids[id] = true; });
+    }
+  });
+  return DATA.filter(function(q) { return qids[q.id]; }).sort(function(a,b){return b.year-a.year;});
 }
 
 function tvisU(id, content, type) {
