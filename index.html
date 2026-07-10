@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<!-- v2.1 · 2026-07-10 02:57 · modular -->
+<!-- v2.1 · 2026-07-10 03:23 · modular -->
 <html lang="zh-CN">
 <head>
 <meta charset="UTF-8">
@@ -191,6 +191,7 @@ body.sb-collapsed .sidebar.open ~ .sidebar-backdrop{display:block}
 .back-btn:hover{background:rgba(0,0,0,.04);color:var(--t)}
 .back-btn.show{display:block}
 .content{flex:1;overflow-y:auto;padding:76px 16px 48px;scroll-behavior:smooth}
+.content.ai-mode{display:flex;flex-direction:column;padding:12px 16px 16px;overflow:hidden}
 .content::-webkit-scrollbar{width:6px}.content::-webkit-scrollbar-thumb{background:rgba(255,255,255,.15);border-radius:3px}.content::-webkit-scrollbar-thumb:hover{background:rgba(255,255,255,.25)}
 .content-fade-in{animation:contentFade .4s cubic-bezier(.23,1,.32,1) both}
 @keyframes contentFade{from{opacity:0;transform:translateY(14px)}to{opacity:1;transform:translateY(0)}}
@@ -365,7 +366,7 @@ body.sb-collapsed .sidebar.open ~ .sidebar-backdrop{display:block}
 @keyframes spin{to{transform:rotate(360deg)}}
 
 /* ===== AI CHAT FULL-PAGE ===== */
-.ai-chat-wrap{position:fixed;top:0;left:0;right:0;bottom:0;display:flex;flex-direction:column;z-index:100;background:transparent;overflow:hidden}
+.ai-chat-wrap{display:flex;flex-direction:column;height:100%}
 .ai-chat-hdr{flex-shrink:0;position:relative;z-index:1;padding:14px 12px;display:flex;justify-content:space-between;align-items:center;
   background:rgba(255,255,255,.06);backdrop-filter:url(#liquid-glass-filter) blur(0.5px) saturate(1.2);-webkit-backdrop-filter:url(#liquid-glass-filter) blur(0.5px) saturate(1.2);
   border-bottom:1px solid rgba(255,255,255,.08)}
@@ -4344,10 +4345,6 @@ function showAI() {
   if (bc) { bc.style.display = ''; bc.innerHTML = '<span>💬 AI 备考助手</span>'; }
   var h = '';
   h += '<div class="ai-chat-wrap">';
-  h += '<div style="display:flex;justify-content:flex-end;gap:6px;margin-bottom:8px">';
-  h += '<button class="ai-chat-hdr-btn" onclick="clearAIChat()">清空历史</button>';
-  h += '<button class="ai-chat-hdr-btn" onclick="closeAIPage()">✕ 关闭</button>';
-  h += '</div>';
   h += '<div id="ai-chat-body" class="ai-chat-body">';
   h += '<div class="ai-welcome"><strong>👋 你好！我是人大434国际商务备考AI助手。</strong><br>';
   h += '我可以帮你：<br>• 解答国际贸易、国际金融、国际商务管理等问题<br>';
@@ -4369,25 +4366,16 @@ function showAI() {
   h += '<textarea id="ai-chat-input" class="ai-chat-textarea" placeholder="输入你的问题... (Enter发送，Shift+Enter换行)" rows="2" onkeydown="if(event.key===\'Enter\' && !event.shiftKey){event.preventDefault();sendAIMessage()}"></textarea>';
   h += '<button class="ai-chat-send" onclick="sendAIMessage()">发送</button>';
   h += '</div></div>';
+  // Render into main content area like all other pages
   var ct = document.getElementById("ct");
-  if (ct) ct.style.display = "none";
-  var existing = document.getElementById('ai-fullpage');
-  if (existing) existing.remove();
-  var div = document.createElement('div');
-  div.id = 'ai-fullpage';
-  div.innerHTML = h;
-  document.body.appendChild(div);
+  if (ct) { ct.innerHTML = h; ct.classList.add('ai-mode'); ct.style.display = ''; }
   var chatBody = document.getElementById('ai-chat-body');
   if (chatBody) chatBody.scrollTop = chatBody.scrollHeight;
 }
 
 function closeAIPage() {
-  var existing = document.getElementById('ai-fullpage');
-  if (existing) existing.remove();
   var ct = document.getElementById("ct");
-  if (ct) ct.style.display = "";
-  var bc = document.getElementById("bc");
-  if (bc) bc.style.display = "";
+  if (ct) { ct.classList.remove('ai-mode'); }
   clearNavStack();
   navigate('', undefined, true);
 }
