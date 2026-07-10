@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<!-- v2.1 · 2026-07-10 02:11 · modular -->
+<!-- v2.1 · 2026-07-10 02:46 · modular -->
 <html lang="zh-CN">
 <head>
 <meta charset="UTF-8">
@@ -371,6 +371,7 @@ body.sb-collapsed .sidebar.open ~ .sidebar-backdrop{display:block}
   border-bottom:1px solid rgba(255,255,255,.08)}
 .ai-chat-hdr h3{font-size:17px;font-weight:700;color:var(--t)}
 .ai-chat-hdr .sub{font-size:11px;color:var(--ts);margin-left:10px}
+.ai-page-pill{display:inline-flex;align-items:center;gap:6px;padding:6px 16px;background:rgba(94,92,230,.12);border:1px solid rgba(94,92,230,.22);border-radius:999px;font-size:14px;font-weight:600;color:var(--t);letter-spacing:.2px;line-height:1}
 .ai-chat-hdr-btns{display:flex;gap:6px}
 .ai-chat-hdr-btn{padding:6px 14px;background:var(--glass-sm-bg);backdrop-filter:var(--glass-sm-blur);-webkit-backdrop-filter:var(--glass-sm-blur);
   border:1px solid var(--glass-sm-border);border-radius:var(--radius);font-size:12px;cursor:pointer;color:var(--ts);font-family:inherit;transition:var(--transition)}
@@ -4343,8 +4344,8 @@ function showAI() {
   if (bc) bc.style.display = "none";
   var h = '';
   h += '<div class="ai-chat-wrap">';
-  h += '<div class="hero" style="padding:18px 24px;margin-bottom:12px;display:flex;justify-content:space-between;align-items:center">';
-  h += '<div><h1 style="margin-bottom:2px">💬 AI 备考助手</h1><div class="desc">MiMo v2.5 · ' + DATA.length + '道真题 · 支持多轮对话</div></div>';
+  h += '<div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:12px;padding:14px 18px;background:var(--glass-hero-bg);backdrop-filter:blur(20px) saturate(180%);-webkit-backdrop-filter:blur(20px) saturate(180%);border-radius:24px;border:1px solid rgba(255,255,255,.18);box-shadow:0 4px 24px rgba(0,0,0,.2)">';
+  h += '<span class="ai-page-pill">💬 AI 备考助手</span>';
   h += '<div style="display:flex;gap:6px">';
   h += '<button class="ai-chat-hdr-btn" onclick="clearAIChat()">清空历史</button>';
   h += '<button class="ai-chat-hdr-btn" onclick="closeAIPage()">✕ 关闭</button>';
