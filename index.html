@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<!-- v2.1 · 2026-07-10 02:46 · modular -->
+<!-- v2.1 · 2026-07-10 02:51 · modular -->
 <html lang="zh-CN">
 <head>
 <meta charset="UTF-8">
@@ -4341,11 +4341,11 @@ function renderMarkdown(text) {
 
 function showAI() {
   var bc = document.getElementById("bc");
-  if (bc) bc.style.display = "none";
+  if (bc) { bc.style.display = ''; bc.innerHTML = '<span>💬 AI 备考助手</span>'; }
   var h = '';
   h += '<div class="ai-chat-wrap">';
-  h += '<div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:12px;padding:14px 18px;background:var(--glass-hero-bg);backdrop-filter:blur(20px) saturate(180%);-webkit-backdrop-filter:blur(20px) saturate(180%);border-radius:24px;border:1px solid rgba(255,255,255,.18);box-shadow:0 4px 24px rgba(0,0,0,.2)">';
-  h += '<span class="ai-page-pill">💬 AI 备考助手</span>';
+  h += '<div class="hero" style="padding:18px 24px;margin-bottom:12px;display:flex;justify-content:space-between;align-items:center">';
+  h += '<div><h1 style="margin-bottom:0">💬 AI 备考助手</h1></div>';
   h += '<div style="display:flex;gap:6px">';
   h += '<button class="ai-chat-hdr-btn" onclick="clearAIChat()">清空历史</button>';
   h += '<button class="ai-chat-hdr-btn" onclick="closeAIPage()">✕ 关闭</button>';
