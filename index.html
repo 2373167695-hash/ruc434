@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<!-- v2.1 · 2026-07-08 13:44 · modular -->
+<!-- v2.1 · 2026-07-10 02:11 · modular -->
 <html lang="zh-CN">
 <head>
 <meta charset="UTF-8">
@@ -9,9 +9,9 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="default">
-<meta name="apple-mobile-web-app-title" content="434备考">
+<meta name="apple-mobile-web-app-title" content="434国际商务备考">
 <meta name="theme-color" content="#0a0a1a">
-<title>人大434备考系统</title>
+<title>人大434国际商务备考系统</title>
 <link rel="manifest" href="manifest.json">
 <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.7/dist/chart.umd.min.js"></script>
 <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/katex.min.css">
@@ -749,7 +749,7 @@ body.sb-collapsed .sidebar.open ~ .sidebar-backdrop{display:block}
 
 <div class="login-overlay" id="loginOverlay">
   <div class="login-card">
-    <h2>📚 人大434备考系统</h2>
+    <h2>📚 人大434国际商务备考系统</h2>
     <p>登录或注册账号</p>
     <input type="text" id="loginUser" class="user" placeholder="用户名" autofocus>
     <input type="password" id="loginPwd" placeholder="密码" onkeydown="if(event.key==='Enter')doLogin()">
@@ -836,7 +836,7 @@ window.addEventListener('unhandledrejection', function(e) {
 });
 </script>
 <div class="sidebar">
-<div class="sidebar-hdr"><h2>📖 人大434备考系统</h2><p id="sidebarInfo">加载中...</p></div>
+<div class="sidebar-hdr"><h2>📖 人大434国际商务备考系统</h2><p id="sidebarInfo">加载中...</p></div>
 <div class="sidebar-nav" id="nav">
   <div class="kn-tree active" id="knTree"></div>
 </div>
@@ -3891,7 +3891,7 @@ function showHome() {recordTrend();var bb=document.getElementById('backBtn');if(
   var ringSvg = '<svg width="'+circle+'" height="'+circle+'" style="display:block;filter:drop-shadow(0 2px 8px rgba(94,92,230,.15))"><circle cx="'+circle/2+'" cy="'+circle/2+'" r="'+r+'" fill="none" stroke="rgba(94,92,230,.08)" stroke-width="'+stroke+'"/><circle cx="'+circle/2+'" cy="'+circle/2+'" r="'+r+'" fill="none" stroke="'+ringColor+'" stroke-width="'+stroke+'" stroke-linecap="round" stroke-dasharray="'+circum+'" stroke-dashoffset="'+offset+'" transform="rotate(-90 '+circle/2+' '+circle/2+')" style="transition:stroke-dashoffset .8s ease-out"/><text x="'+circle/2+'" y="'+circle/2+'" text-anchor="middle" dy=".35em" font-size="22" font-weight="800" fill="var(--t)">'+totalPct+'%</text></svg>';
   h += '<div class="hero"><div style="display:flex;align-items:center;gap:28px;flex-wrap:wrap">'+
     '<div>'+ringSvg+'</div><div style="flex:1;min-width:200px">'+
-    '<h1 style="margin-bottom:4px">📖 人大434国际商务</h1>'+
+    '<h1 style="margin-bottom:4px">📖 人大434国际商务备考系统</h1>'+
     '<div class="desc" style="margin-bottom:12px">2011-2023 · ' + kn + '个知识模块 · AI诊断+模拟考试</div>'+
     '<div class="sts">'+
     '<div class="st">📝 <strong>'+n+'</strong> 道真题</div>'+
@@ -4343,14 +4343,14 @@ function showAI() {
   if (bc) bc.style.display = "none";
   var h = '';
   h += '<div class="ai-chat-wrap">';
-  h += '<div class="ai-chat-hdr"><div style="display:flex;align-items:center">';
-  h += '<h3>💬 AI 备考助手</h3><span class="sub">MiMo v2.5 · ' + DATA.length + '道真题</span></div>';
-  h += '<div class="ai-chat-hdr-btns">';
+  h += '<div class="hero" style="padding:18px 24px;margin-bottom:12px;display:flex;justify-content:space-between;align-items:center">';
+  h += '<div><h1 style="margin-bottom:2px">💬 AI 备考助手</h1><div class="desc">MiMo v2.5 · ' + DATA.length + '道真题 · 支持多轮对话</div></div>';
+  h += '<div style="display:flex;gap:6px">';
   h += '<button class="ai-chat-hdr-btn" onclick="clearAIChat()">清空历史</button>';
   h += '<button class="ai-chat-hdr-btn" onclick="closeAIPage()">✕ 关闭</button>';
   h += '</div></div>';
   h += '<div id="ai-chat-body" class="ai-chat-body">';
-  h += '<div class="ai-welcome"><strong>👋 你好！我是人大434备考AI助手。</strong><br>';
+  h += '<div class="ai-welcome"><strong>👋 你好！我是人大434国际商务备考AI助手。</strong><br>';
   h += '我可以帮你：<br>• 解答国际贸易、国际金融、国际商务管理等问题<br>';
   h += '• 讲解知识点，对比相似理论<br>• 生成模拟题和参考答案<br>';
   h += '• 分析宏观经济热点与考试关联<br><br>';
