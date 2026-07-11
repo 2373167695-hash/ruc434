@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<!-- v2.1 · 2026-07-11 15:22 · modular -->
+<!-- v2.1 · 2026-07-11 15:27 · modular -->
 <html lang="zh-CN">
 <head>
 <meta charset="UTF-8">
@@ -8781,14 +8781,13 @@ function buildAIContext(query) {
     var ragResults = ragRetrieve(query, 10);
     var qaHits = ragResults.filter(function(d) { return d.type === 'qanalysis'; });
     if (qaHits.length > 0) {
-      ctx += '\n=== 相关真题拆解语料（基于检索匹配，回答时参考其答题框架与可背段落） ===\n\n';
+      ctx += '\n=== 相关真题拆解（基于检索匹配，参考答题框架与命题角度） ===\n\n';
       var matchedMods = {};
       qaHits.forEach(function(d) {
         var qa = d.ref;
         ctx += '【' + qa.id + ' ' + (qa.type||'') + '】\n';
         ctx += '核心考点：' + (qa.core_points||[]).join('；') + '\n';
         ctx += '答题框架：' + (qa.framework||[]).join(' → ') + '\n';
-        ctx += '可背段落：' + (qa.memorizable||[]).join(' ') + '\n';
         ctx += '命题角度：' + (qa.proposition||'') + '\n\n';
         if (qa.modules) qa.modules.forEach(function(m) { matchedMods[m] = true; });
       });
