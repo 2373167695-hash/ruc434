@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<!-- v2.1 · 2026-07-11 05:05 · modular -->
+<!-- v2.1 · 2026-07-11 06:58 · modular -->
 <html lang="zh-CN">
 <head>
 <meta charset="UTF-8">
@@ -5392,7 +5392,10 @@ function qCard(q) {
     '<button class="' + (m.done ? "done" : "") + '" onclick="event.stopPropagation();toggleM(\'' + q.id + '\',\'done\')">✅</button>' +
     '</div></div><div class="qb"><div class="qa">' + (q.answer || '<em style="color:#999">暂无答案</em>') + '</div>' +
     (q.knowledge && q.knowledge.length ? '<div style="margin-top:8px;display:flex;flex-wrap:wrap;gap:4px">' + q.knowledge.map(function(k){return '<span class="rt" style="cursor:pointer;font-size:11px" onclick="event.stopPropagation();navigateByKnowledge(\''+k.replace(/'/g,"\\'")+'\')">'+k+'</span>';}).join('') + '</div>' : '') +
-    '<div style="margin-top:12px"><div class="kn-accordion"><div class="kn-acc-hdr" onclick="this.parentElement.classList.toggle(\'open\')"><span class="kn-acc-arrow">▸</span> 🤖 AI批改这道题</div>' +
+    '<div style="margin-top:12px"><div class="kn-accordion"><div class="kn-acc-hdr" onclick="this.parentElement.classList.toggle(\'open\')"><span class="kn-acc-arrow">▸</span> 🔍 深度拆解</div>' +
+    '<div class="kn-acc-body"><div id="diag-' + qid + '" style="font-size:13px;line-height:1.7;display:none"></div>' +
+    '<button class="ai-btn ai-btn-sm" onclick="event.stopPropagation();aiDeepDiagnose(\'' + q.id + '\',\'' + qid + '\')" style="margin-top:8px">开始深度拆解</button></div></div>' +
+    '<div class="kn-accordion"><div class="kn-acc-hdr" onclick="this.parentElement.classList.toggle(\'open\')"><span class="kn-acc-arrow">▸</span> 🤖 AI批改这道题</div>' +
     '<div class="kn-acc-body" id="grade-' + qid + '"><textarea id="ta-' + qid + '" placeholder="在此输入你的作答..." style="width:100%;min-height:60px;border:1px solid var(--bdr);border-radius:8px;padding:10px;font-size:13px;resize:vertical;font-family:inherit"></textarea>' +
     '<button class="ai-btn ai-btn-sm" onclick="event.stopPropagation();aiGradeQuestion(\'' + q.id + '\',\'' + qid + '\')" style="margin-top:8px">提交批改</button>' +
     '<div id="result-' + qid + '" style="margin-top:10px;padding:10px;display:none"></div></div></div>' +
@@ -5435,6 +5438,53 @@ function toggleM(id, type) {
 }
 
 function aiGradeQuestion(qid, qid2) {
+
+function aiDeepDiagnose(qid, qid2) {
+  var q = null; DATA.forEach(function(x) { if (x.id == qid) q = x; });
+  if (!q) return;
+  var result = document.getElementById('diag-' + qid2);
+  result.style.display = 'block';
+  var ld = aiLoading('AI正在深度拆解...'); result.innerHTML = ''; result.appendChild(ld);
+  var ctx = '';
+  var ktags = q.knowledge || [];
+  ktags.forEach(function(k) {
+    var item = KNOWLEDGE[k];
+    if (item) {
+      ctx += '\n【' + k + '】';
+      if (item.key) ctx += '\n核心要点: ' + item.key.slice(0, 5).join('; ');
+      if (item.overview) ctx += '\n概述: ' + item.overview;
+      if (item.exam) ctx += '\n历年考察: ' + item.exam;
+    }
+  });
+  var ragCtx = (typeof buildAIContext === 'function') ? buildAIContext(q.question) : '';
+  var sys = RUC434_STYLE + '\n你是人大434国际商务考研命题研究专家。请对以下真题做深度拆解。\n\n【题目】（' + q.year + '年 第' + q.num + '题 ' + q.type + '）\n' + q.question;
+  if (q.answer) sys += '\n\n【参考答案】\n' + q.answer;
+  sys += '\n\n【关联知识点详情】' + ctx;
+  sys += '\n\n【数据库真题语料】' + ragCtx;
+  sys += '\n\n请用markdown输出，按以下结构：\n\n## 一、命题角度\n这道题表面问什么？实际考察什么？出题人想考察考生的什么能力？（约150字）\n\n## 二、答题模板\n给出这道题的标准答题框架。用【第1步】【第2步】【第3步】标记，每步一句话说清楚。（约200字）\n\n## 三、关联考点\n| 关联知识点 | 关联方式 | 换词重考概率 |\n|-----------|---------|------------|\n列出3-5个关联考点，说明它们如何关联（递进/对比/补充），评估它们被换词重考的可能性（高/中/低）\n\n## 四、得分要点\n| 序号 | 得分点 | 分值估算 |\n|-----|-------|--------|\n逐条列出这道题的得分点，估算每个点的分值\n\n## 五、同类真题\n从数据库中找到2-3道考察思路类似的真题，列出年份和题目。如果找不到就说"暂无明确同类题"。\n\n要求：专业、精准、像命题老师写的';
+  fetch(DS_URL, {
+    method: 'POST',
+    headers: { 'Authorization': 'Bearer ' + getAPIKey(), 'Content-Type': 'application/json' },
+    body: JSON.stringify({ model: 'mimo-v2.5-pro', messages: [{ role: 'user', content: sys }], stream: true, temperature: 0.3, max_tokens: 4096 })
+  }).then(function(r) { if (!r.ok) throw Error('HTTP ' + r.status); return r.body.getReader(); })
+    .then(function(rd) {
+      var b = '', t = '', d = new TextDecoder();
+      function n() { rd.read().then(function(r) {
+        if (r.done) { result.innerHTML = renderMarkdown(t); return; }
+        b += d.decode(r.value, { stream: true }); var ls = b.split('\n'); b = ls.pop() || '';
+        ls.forEach(function(l) {
+          if (l.startsWith('data: ')) {
+            var dd = l.substring(6); if (dd == '[DONE]') return;
+            try { var p = JSON.parse(dd); if (p.choices && p.choices[0].delta) {
+              var x = p.choices[0].delta.content || ''; if (x) { t += x; result.innerHTML = renderMarkdown(t); } } }
+            catch(e) {}
+          }
+        });
+        n();
+      }); }
+      n();
+    }).catch(function(e) { result.innerHTML = '<div style="color:rgba(255,69,58,.7)">请求失败：' + e.message + '</div>'; });
+}
   var q = null; DATA.forEach(function(x) { if (x.id == qid) q = x; });
   if (!q) return;
   var answer = document.getElementById('ta-' + qid2).value.trim();
