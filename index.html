@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<!-- v2.1 · 2026-07-11 06:58 · modular -->
+<!-- v2.1 · 2026-07-11 12:31 · modular -->
 <html lang="zh-CN">
 <head>
 <meta charset="UTF-8">
@@ -5437,8 +5437,6 @@ function toggleM(id, type) {
   }
 }
 
-function aiGradeQuestion(qid, qid2) {
-
 function aiDeepDiagnose(qid, qid2) {
   var q = null; DATA.forEach(function(x) { if (x.id == qid) q = x; });
   if (!q) return;
@@ -5485,6 +5483,8 @@ function aiDeepDiagnose(qid, qid2) {
       n();
     }).catch(function(e) { result.innerHTML = '<div style="color:rgba(255,69,58,.7)">请求失败：' + e.message + '</div>'; });
 }
+
+function aiGradeQuestion(qid, qid2) {
   var q = null; DATA.forEach(function(x) { if (x.id == qid) q = x; });
   if (!q) return;
   var answer = document.getElementById('ta-' + qid2).value.trim();
