@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<!-- v2.1 · 2026-07-11 12:31 · modular -->
+<!-- v2.1 · 2026-07-11 12:36 · modular -->
 <html lang="zh-CN">
 <head>
 <meta charset="UTF-8">
@@ -3805,12 +3805,12 @@ function showExamYear(year) {
 }
 function navigate(p, topicName, skipHistory) {
   if (p === undefined) return;
-  // Clean up AI fullpage if navigating away from it
+  // Clean up AI page state when navigating away
   if (p !== 'aichat') {
     var aip = document.getElementById('ai-fullpage');
     if (aip) { aip.remove(); }
     var ct = document.getElementById('ct');
-    if (ct) ct.style.display = '';
+    if (ct) { ct.style.display = ''; ct.classList.remove('ai-mode'); }
     var bc = document.getElementById('bc');
     if (bc) bc.style.display = '';
   }
