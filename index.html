@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<!-- v2.1 · 2026-07-11 15:30 · modular -->
+<!-- v2.1 · 2026-07-12 07:39 · modular -->
 <html lang="zh-CN">
 <head>
 <meta charset="UTF-8">
@@ -8909,6 +8909,7 @@ function buildNav() {
   knh += '<div class="ni lv0" data-p="allquestions">📝 全部真题</div>';
   knh += '<div class="ni lv0" data-p="wrongbook">📋 错题本</div>';
   knh += '<div class="ni lv0" data-p="answerbank">📝 答题语料库</div>';
+  knh += '<div class="ni lv0" data-p="modcorpus">📖 模块语料</div>';
   knh += '<div class="ni lv0" data-p="stats">📊 学习统计</div>';
   knh += '<div class="ni lv0" data-p="cards">🧠 记忆卡片</div>';
   knh += '<div class="ni lv0" data-p="graph">🕸️ 知识图谱</div>';
@@ -9053,6 +9054,7 @@ function navigate(p, topicName, skipHistory) {
   try {
     if (p === '') { showHome(); }
     else if (p === 'answerbank') { showAnswerBank(); }
+    else if (p === 'modcorpus') { showModuleCorpus(); }
     else if (p === 'stats') { showStats(); }
     else if (p === 'cards') { showCards(); } else if (p === 'hot') { showHotTopic(); }
     else if (p === 'graph') { showGraph(); }
@@ -10301,6 +10303,79 @@ function showAnswerBank() {
 }
 
 
+function showModuleCorpus() {
+  document.getElementById('bc').innerHTML = '<span>📖 模块语料</span>';
+  
+  var h = '<div class="hero"><h1>📖 模块语料</h1>' +
+    '<div class="desc">从123道历年真题答案中提炼：通用答题模板、高频规范话术、命题规律、必背素材。按8大知识模块组织，每条必背段落标注来源真题。</div></div>';
+  
+  if (typeof MODULE_CORPUS === 'undefined' || !MODULE_CORPUS.modules) {
+    h += '<div class="pcard"><div class="pcard-body"><p>💰 语料库数据未加载</p></div></div>';
+  } else {
+    var moduleIcons = {'国际贸易理论':'📐','国际贸易政策':'🛡️','国际金融':'💱','跨国公司与国际化':'🏢','国际商务管理':'📋','中国对外经济':'🇨🇳','新兴议题':'🚀','综合':'🎯'};
+    MODULE_CORPUS.modules.forEach(function(m) {
+      var icon = moduleIcons[m.module] || '📖';
+      h += '<div class="pcard">';
+      h += '<div class="pcard-hdr" style="cursor:pointer" onclick="var b=document.getElementById(\'mc-body-' + m.module.replace(/[^a-zA-Z\u4e00-\u9fa5]/g,'_') + '\');b.style.display=b.style.display===\'none\'?\'block\':\'none\';">';
+      h += '<h3>' + icon + ' ' + m.module + '</h3>';
+      h += '<span style="font-size:12px;color:var(--ts)">' + (m.coverage||'') + '</span>';
+      h += '</div>';
+      h += '<div class="pcard-body" id="mc-body-' + m.module.replace(/[^a-zA-Z\u4e00-\u9fa5]/g,'_') + '">';
+      
+      // 通用模板
+      if (m.templates && m.templates.length) {
+        h += '<div class="pcard-section"><h4>📋 通用答题模板</h4><ol style="padding-left:18px;line-height:1.9">';
+        m.templates.forEach(function(t) { h += '<li style="margin-bottom:6px">' + t + '</li>'; });
+        h += '</ol></div>';
+      }
+      
+      // 高频话术
+      if (m.high_freq_phrases && m.high_freq_phrases.length) {
+        h += '<div class="pcard-section"><h4>💬 高频规范话术</h4><ul style="padding-left:18px;line-height:1.9;list-style-type:disc">';
+        m.high_freq_phrases.forEach(function(p) { h += '<li style="margin-bottom:4px">' + p + '</li>'; });
+        h += '</ul></div>';
+      }
+      
+      // 命题规律
+      if (m.rules && m.rules.length) {
+        h += '<div class="pcard-section"><h4>🎯 命题规律</h4><ul style="padding-left:18px;line-height:1.9;list-style-type:square">';
+        m.rules.forEach(function(r) { h += '<li style="margin-bottom:4px">' + r + '</li>'; });
+        h += '</ul></div>';
+      }
+      
+      // 必背段落
+      if (m.must_memorize && m.must_memorize.length) {
+        h += '<div class="pcard-section"><h4>⭐ 必背段落 / 素材</h4>';
+        m.must_memorize.forEach(function(mm, i) {
+          var src = mm.source || [];
+          var srctag = '';
+          if (src.length) {
+            var links = src.map(function(sid) {
+              return '<span style="cursor:pointer;color:var(--pu);text-decoration:underline" onclick="showExamQ(\'' + sid + '\')">' + sid + '</span>';
+            });
+            srctag = ' <span style="font-size:11px;color:var(--ts)">[来源: ' + links.join(', ') + ']</span>';
+          }
+          h += '<div style="background:rgba(255,255,255,.03);padding:10px 14px;border-radius:8px;margin-bottom:8px;line-height:1.8;font-size:13px">' + (i+1) + '. ' + (mm.text||'') + srctag + '</div>';
+        });
+        h += '</div>';
+      }
+      
+      // 支撑真题
+      if (m.source_questions && m.source_questions.length) {
+        h += '<div class="pcard-section"><h4>📝 支撑真题</h4><div style="display:flex;flex-wrap:wrap;gap:6px">';
+        m.source_questions.forEach(function(sid) {
+          h += '<span style="background:rgba(88,86,214,.08);color:var(--pu);padding:4px 10px;border-radius:14px;font-size:11px;cursor:pointer" onclick="showExamQ(\'' + sid + '\')">' + sid + '</span>';
+        });
+        h += '</div></div>';
+      }
+      
+      h += '</div></div>';
+    });
+  }
+  
+  document.getElementById('ct').innerHTML = h;
+}
+
 function showPredictions() {
   document.getElementById("bc").innerHTML = '<span>🎯 学术热点预测</span>';
   var h = '<div class="hero"><h1>🎯 学术热点与考点预测</h1>' +
@@ -10376,6 +10451,26 @@ function showExamQ(qid) {
   h += '<div class="qc"><div class="qh"><span class="qn">' + q.num + '</span>' +
     '<span class="qtx">' + q.question + '</span></div>';
   h += '<div class="qb open" style="display:block"><div class="qa">' + (q.answer || '暂无答案') + '</div></div></div>';
+  
+  // 深度拆解面板
+  if (typeof Q_ANALYSIS !== 'undefined' && Q_ANALYSIS.questions) {
+    var qaEntry = null;
+    Q_ANALYSIS.questions.forEach(function(x) { if (x.id == qid) qaEntry = x; });
+    if (qaEntry) {
+      h += '<div class="pcard" style="margin-top:16px"><div class="pcard-hdr" onclick="var b=this.nextElementSibling;b.style.display=b.style.display===\'none\'?\'block\':\'none\';this.querySelector(\'span\').textContent=b.style.display===\'none\'?\'▶ 深度拆解\':\'▼ 深度拆解\'" style="cursor:pointer;user-select:none"><h3><span>▶ 深度拆解</span></h3></div>' +
+        '<div class="pcard-body" style="display:none" id="qa-depth-' + qid + '">';
+      h += '<div class="pcard-section"><h4>🎯 核心考点</h4><p>' + (qaEntry.core_points||[]).join('；') + '</p></div>';
+      h += '<div class="pcard-section"><h4>🏷️ 关键词</h4><div style="display:flex;flex-wrap:wrap;gap:6px">';
+      (qaEntry.keywords||[]).forEach(function(kw) { h += '<span style="background:rgba(88,86,214,.1);color:var(--pu);padding:3px 10px;border-radius:12px;font-size:12px">' + kw + '</span>'; });
+      h += '</div></div>';
+      h += '<div class="pcard-section"><h4>📋 答题框架</h4><ol style="padding-left:18px;line-height:2">';
+      (qaEntry.framework||[]).forEach(function(fw) { h += '<li>' + fw + '</li>'; });
+      h += '</ol></div>';
+      h += '<div class="pcard-section"><h4>💡 命题角度</h4><p>' + (qaEntry.proposition||'') + '</p></div>';
+      h += '</div></div>';
+    }
+  }
+  
   h += '<div style="margin-top:16px"><button class="btn btn-r" onclick="navigate(\'predictions\')">← 返回预测</button></div>';
   document.getElementById("ct").innerHTML = h;
 }
