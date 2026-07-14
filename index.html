@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<!-- v2.1 · 2026-07-14 13:29 · modular -->
+<!-- v2.1 · 2026-07-14 13:35 · modular -->
 <html lang="zh-CN">
 <head>
 <meta charset="UTF-8">
@@ -8773,7 +8773,8 @@ function buildAIContext(query) {
 function aiDiagnose(){var div=document.getElementById("aiDiagnosis"),content=document.getElementById("aiDiagnosisContent");div.style.display="block";content.innerHTML="AI正在分析...";var s="浏览知识点"+Object.keys(knowledgeViews).length+"个，已做真题"+Object.values(marks).filter(function(v){return v.done}).length+"道。";callDS([{role:"system",content:"你是考研备考规划专家，擅长分析学习数据。请用中文回复。"},{role:"user",content:"学习数据："+s+"请做学习诊断，500字内，包括进度评价、薄弱模块、优先复习建议、冲刺建议。"}],"aiDiagnosisContent");}
 function aiGenerateQuestion(knowledge){var div=document.getElementById("aiQuestions"),content=document.getElementById("aiQuestionsContent");div.style.display="block";content.innerHTML="生成中...";var ctx=buildAIContext(knowledge);var sys=RUC434_STYLE+"\n你是中国人民大学434国际商务专业考研命题老师。请严格遵循以上写作风格，参考以下真题范例出题。\n\n【命题要求】\n1.题目风格必须100%贴合人大434真题的命题套路\n2.简答题10-15分,论述题20-25分,计算/案例15-20分\n3.必须结合中国经济现实或国际商务案例\n4.参考答案必须按人大434评分标准（知识点覆盖4分+逻辑结构3分+术语准确2分+实际联系1分）\n"+ctx;callDS([{role:"system",content:sys},{role:"user",content:"请为知识点["+knowledge+"]生成3道模拟题(1简答+1论述+1计算/案例),每题附参考答案要点。用【第1题】【第2题】【第3题】编号。"}],"aiQuestionsContent");}
 
-function sendChat(){var inp=document.getElementById("chat-q"),q=inp.value.trim();if(!q)return;inp.value="";var body=document.getElementById("chat-body");body.innerHTML+='<div class="chat-msg user">'+q+'</div>';var ld=document.createElement("div");ld.className="chat-msg assistant";ld.id="c-load";ld.innerHTML='<span class="chat-dot"></span><span class="chat-dot"></span><span class="chat-dot"></span>';body.appendChild(ld);body.scrollTop=body.scrollHeight;chatHistory.push({role:"user",content:q});var md=document.createElement("div");md.className="chat-msg assistant";md.id="c-resp";md.style.display="none";body.appendChild(md);var ctx=buildAIContext(q);var sys=RUC434_STYLE+"\n你是人大434国际商务考研AI助手。你的数据库中已包含完整的历年真题和标准答案，你随时可以引用任何一道真题。请严格遵循以上写作风格，参考数据库中的真题答案、知识点和热点素材回答问题。公式请用$...$包裹。\n"+ctx+"\n\n要求：必须参考数据库中的真实真题和答案来回答；贴合人大434风格、结构化、分点作答、术语中英文对照、结尾有考点提示。";var msgs=[{role:"system",content:sys}];chatHistory.slice(-10).forEach(function(h){msgs.push({role:h.role,content:h.content});});fetch(DS_URL,{method:"POST",headers:{Authorization:"Bearer "+getAPIKey(),"Content-Type":"application/json"},body:JSON.stringify({model:"mimo-v2.5",messages:msgs,stream:true,temperature:0.3})}).then(function(r){if(!r.ok)throw Error("HTTP "+r.status);return r.body.getReader();}).then(function(rd){var b="",t="",d=new TextDecoder(),firstChunk=true;function n(){rd.read().then(function(r){if(r.done){var lx=document.getElementById("c-load");if(lx)lx.remove();md.style.display="";md.innerHTML=renderMarkdown(t);chatHistory.push({role:"assistant",content:t});saveState();return;}b+=d.decode(r.value,{stream:true});var ls=b.split("\n");b=ls.pop()||"";ls.forEach(function(l){if(l.startsWith("data: ")){var dd=l.substring(6);if(dd=="[DONE]")return;try{var p=JSON.parse(dd);if(p.choices&&p.choices[0].delta){var x=p.choices[0].delta.content||"";if(x){if(firstChunk){firstChunk=false;var lx=document.getElementById("c-load");if(lx)lx.remove();md.style.display="";}t+=x;md.innerHTML=renderMarkdown(t);body.scrollTop=body.scrollHeight;}}}catch(e){}}});n();})}n();}).catch(function(err){var lx=document.getElementById("c-load");if(lx)lx.remove();md.style.display="";md.innerHTML="<span style=color:red>AI请求失败："+err.message+"</span>";});}
+function sendChat(){var inp=document.getElementById("chat-q"),q=inp.value.trim();if(!q)return;inp.value="";var body=document.getElementById("chat-body");body.innerHTML+='<div class="chat-msg user">'+q+'</div>';var ld=document.createElement("div");ld.className="chat-msg assistant";ld.id="c-load";ld.innerHTML='<span class="chat-dot"></span><span class="chat-dot"></span><span class="chat-dot"></span>';body.appendChild(ld);body.scrollTop=body.scrollHeight;chatHistory.push({role:"user",content:q});var md=document.createElement("div");md.className="chat-msg assistant";md.id="c-resp";md.style.display="none";body.appendChild(md);var ctx=buildAIContext(q);var sys=RUC434_STYLE+"\n你是人大434国际商务考研AI助手。你的数据库中已包含完整的历年真题和标准答案，你随时可以引用任何一道真题。请严格遵循以上写作风格，参考数据库中的真题答案、知识点和热点素材回答问题。公式请用$...$包裹。\n"+ctx+"\n\n要求：必须参考数据库中的真实真题和答案来回答；贴合人大434风格、结构化、分点作答、术语中英文对照、结尾有考点提示。若用户要求画经济学图形，用以下格式输出：
+";var msgs=[{role:"system",content:sys}];chatHistory.slice(-10).forEach(function(h){msgs.push({role:h.role,content:h.content});});fetch(DS_URL,{method:"POST",headers:{Authorization:"Bearer "+getAPIKey(),"Content-Type":"application/json"},body:JSON.stringify({model:"mimo-v2.5",messages:msgs,stream:true,temperature:0.3})}).then(function(r){if(!r.ok)throw Error("HTTP "+r.status);return r.body.getReader();}).then(function(rd){var b="",t="",d=new TextDecoder(),firstChunk=true;function n(){rd.read().then(function(r){if(r.done){var lx=document.getElementById("c-load");if(lx)lx.remove();md.style.display="";md.innerHTML=renderMarkdown(t);chatHistory.push({role:"assistant",content:t});saveState();return;}b+=d.decode(r.value,{stream:true});var ls=b.split("\n");b=ls.pop()||"";ls.forEach(function(l){if(l.startsWith("data: ")){var dd=l.substring(6);if(dd=="[DONE]")return;try{var p=JSON.parse(dd);if(p.choices&&p.choices[0].delta){var x=p.choices[0].delta.content||"";if(x){if(firstChunk){firstChunk=false;var lx=document.getElementById("c-load");if(lx)lx.remove();md.style.display="";}t+=x;md.innerHTML=renderMarkdown(t);body.scrollTop=body.scrollHeight;}}}catch(e){}}});n();})}n();}).catch(function(err){var lx=document.getElementById("c-load");if(lx)lx.remove();md.style.display="";md.innerHTML="<span style=color:red>AI请求失败："+err.message+"</span>";});}
 
 // ===== STATE =====
 var marks = {};
@@ -9617,7 +9618,8 @@ function sendAIMessage() {
   chatBody.scrollTop = chatBody.scrollHeight;
   chatHistory.push({role: 'user', content: q});
   var ctx = buildAIContext(q);
-  var sys = RUC434_STYLE + "\n你是人大434国际商务考研AI助手。你的数据库中已包含完整的历年真题和标准答案，你随时可以引用任何一道真题。请严格遵循以上写作风格，参考数据库中的真题答案、知识点和热点素材回答问题。公式请用$...$包裹。\n" + ctx + "\n\n要求：必须参考数据库中的真实真题和答案来回答；贴合人大434风格、结构化、分点作答、术语中英文对照、结尾有考点提示。";
+  var sys = RUC434_STYLE + "\n你是人大434国际商务考研AI助手。你的数据库中已包含完整的历年真题和标准答案，你随时可以引用任何一道真题。请严格遵循以上写作风格，参考数据库中的真题答案、知识点和热点素材回答问题。公式请用$...$包裹。\n" + ctx + "\n\n要求：必须参考数据库中的真实真题和答案来回答；贴合人大434风格、结构化、分点作答、术语中英文对照、结尾有考点提示。若用户要求画经济学图形，用以下格式输出：
+";
   var msgs = [{role: 'system', content: sys}];
   chatHistory.slice(-10).forEach(function(h) { msgs.push({role: h.role, content: h.content}); });
   fetch(DS_URL, {
@@ -12888,10 +12890,10 @@ function tvisGen() {
   
   var sys;
   if (isGraph) {
-    sys = '你是经济学图形专家。请输出经济学图形的标注数据，用JSON。\n\n'
+    sys = '你是经济学图形专家。请输出经济学图形的标注数据，用JSON（标准小国关税图结构）。\n\n'
       + '输出格式（严格JSON，不要其他文字）：\n'
-      + '{"mode":"econGraph","type":"tariff","theory":"关税经济效应","labels":{"xAxis":"数量Q","yAxis":"价格P","demand":"D(国内需求)","supply":"S(国内供给)","pw":"Pw(世界价格)","pwPlusT":"Pw+t(含税价格)","q1":"Q1","q2":"Q2","q3":"Q3","q4":"Q4","a":"A消费者剩余\n减少","b":"B无谓损失","c":"C政府\n税收","d":"D无谓损失"},"desc":"简述关税的四大福利效应..."}\n\n'
-      + '规则：type固定"tariff"；labels里的文字不要太长（每个10字以内）；desc用200字简述图形含义。';
+      + '{"mode":"econGraph","labels":{"xAxis":"数量Q","yAxis":"价格P","demand":"D(国内需求)","supply":"S(国内供给)","pa":"Pa(自给自足均衡价)","pt":"Pt=Pa(1+t)","pw":"Pw(世界价格)","qs":"Qs","q1":"Qs\'","q2":"Qd\'","qds":"Qd","m1":"M₁自由贸易进口量","m2":"M₂关税后进口量","a":"a","b":"b","c":"c","d":"d","e":"e"},"desc":"简述关税的四大福利效应(100字)..."}\n\n'
+      + '规则：必须用上述完整schema；labels里的中文字段保留\\n换行；desc用100字简述图形含义。';
   } else {
     sys = '你是人大434逻辑框架图专家。请把理论拆解为3-5个逻辑模块，用JSON输出。\n\n'
       + '输出格式（严格JSON，不要其他文字）：\n'
@@ -13022,53 +13024,117 @@ function renderEconGraphWidget(gid) {
 // Shared drawing function for Canvas economics graphs
 function drawEconCanvas(c, L) {
   var ctx = c.getContext('2d');
-  var W = c.width, H = c.height, mL = 70, mR = 50, mT = 40, mB = 40;
+  var W = c.width, H = c.height;
+  var mL = 80, mR = 50, mT = 50, mB = 90;
   ctx.clearRect(0, 0, W, H);
-  ctx.strokeStyle = '#999'; ctx.lineWidth = 1.5;
+  
+  // 三个价格水平位置（从上到下：Pa, Pt, Pw）
+  var paY = mT + 10;
+  var ptY = mT + (H - mT - mB) * 0.38;
+  var pwY = mT + (H - mT - mB) * 0.66;
+  var p0Y = H - mB - 30;
+  
+  // 四个数量位置
+  var qsX  = mL + 130;  // 自给自足供给
+  var qs1X = mL + 230;  // 关税后国内供给
+  var qd1X = mL + 380;  // 关税后国内需求
+  var qdX  = mL + 480;  // 自给自足需求
+  
+  // 坐标轴
+  ctx.strokeStyle = '#ccc'; ctx.lineWidth = 1.5;
   ctx.beginPath(); ctx.moveTo(mL, mT); ctx.lineTo(mL, H-mB); ctx.lineTo(W-mR, H-mB); ctx.stroke();
   ctx.fillStyle = '#999';
   ctx.beginPath(); ctx.moveTo(mL, mT); ctx.lineTo(mL-5, mT+10); ctx.lineTo(mL+5, mT+10); ctx.fill();
   ctx.beginPath(); ctx.moveTo(W-mR, H-mB); ctx.lineTo(W-mR-10, H-mB-5); ctx.lineTo(W-mR-10, H-mB+5); ctx.fill();
-  ctx.fillStyle = '#999'; ctx.font = '12px sans-serif'; ctx.textAlign = 'center';
-  ctx.fillText(L.xAxis||'Q', W/2, H-6);
-  ctx.save(); ctx.translate(16, H/2); ctx.rotate(-Math.PI/2);
-  ctx.fillText(L.yAxis||'P', 0, 0); ctx.restore();
-  var pwR = 0.38, pw2R = 0.60;
-  var pwY = mT + (H-mT-mB)*(1-pwR), pw2Y = mT + (H-mT-mB)*(1-pw2R);
-  ctx.strokeStyle = '#5e9cff'; ctx.lineWidth = 2;
-  ctx.beginPath(); ctx.moveTo(mL+20, mT+20);
-  ctx.bezierCurveTo(mL+160, mT+40, mL+300, H-mB-30, W-mR-20, H-mB-15); ctx.stroke();
-  ctx.fillStyle = '#5e9cff'; ctx.font = 'bold 13px sans-serif';
-  ctx.fillText(L.demand||'D', W-mR-50, H-mB-30);
-  ctx.strokeStyle = '#ff7b5e'; ctx.lineWidth = 2;
-  ctx.beginPath(); ctx.moveTo(mL+30, H-mB-15);
-  ctx.bezierCurveTo(mL+80, H-mB-50, mL+200, mT+60, W-mR-60, mT+30); ctx.stroke();
-  ctx.fillStyle = '#ff7b5e'; ctx.font = 'bold 13px sans-serif';
-  ctx.fillText(L.supply||'S', mL+6, H-mB-35);
-  ctx.strokeStyle = '#ccc'; ctx.lineWidth = 1; ctx.setLineDash([6,4]);
+  ctx.fillStyle = '#999'; ctx.font = '13px sans-serif'; ctx.textAlign = 'center';
+  ctx.fillText(L.xAxis || '数量 Q', W/2, H-mB+22);
+  ctx.save(); ctx.translate(20, H/2 - 30); ctx.rotate(-Math.PI/2);
+  ctx.fillText(L.yAxis || '价格 P', 0, 0); ctx.restore();
+  
+  // Pa 实线（封闭均衡价）
+  ctx.strokeStyle = 'rgba(255,255,255,.8)'; ctx.lineWidth = 1.2;
+  ctx.beginPath(); ctx.moveTo(mL, paY); ctx.lineTo(W-mR, paY); ctx.stroke();
+  ctx.fillStyle = '#fff'; ctx.font = '12px sans-serif';
+  ctx.fillText(L.pa || 'Pa (自给自足均衡价)', mL + 4, paY - 6);
+  
+  // Pt 虚线（关税价格）
+  ctx.strokeStyle = 'rgba(255,255,255,.7)'; ctx.lineWidth = 1.2; ctx.setLineDash([6,4]);
+  ctx.beginPath(); ctx.moveTo(mL, ptY); ctx.lineTo(W-mR, ptY); ctx.stroke(); ctx.setLineDash([]);
+  ctx.fillText(L.pt || 'Pt = Pa(1+t)', mL + 4, ptY - 6);
+  
+  // Pw 虚线（世界价）
+  ctx.strokeStyle = 'rgba(255,255,255,.7)'; ctx.setLineDash([3,3]);
   ctx.beginPath(); ctx.moveTo(mL, pwY); ctx.lineTo(W-mR, pwY); ctx.stroke(); ctx.setLineDash([]);
-  ctx.fillStyle = '#ccc'; ctx.font = '11px sans-serif';
-  ctx.fillText(L.pw||'Pw', W-mR-90, pwY-6);
-  ctx.strokeStyle = 'rgba(255,255,255,.35)'; ctx.setLineDash([3,3]);
-  ctx.beginPath(); ctx.moveTo(mL, pw2Y); ctx.lineTo(W-mR, pw2Y); ctx.stroke(); ctx.setLineDash([]);
-  ctx.fillText(L.pwPlusT||'Pw+t', W-mR-90, pw2Y-6);
-  var qs = [0.22, 0.42, 0.55, 0.72], qt = [L.q1||'Q1',L.q2||'Q2',L.q3||'Q3',L.q4||'Q4'];
-  ctx.fillStyle = '#999'; ctx.font = '11px sans-serif'; ctx.textAlign = 'center';
-  qs.forEach(function(r,i){ var x=mL+(W-mL-mR)*r; ctx.strokeStyle='#666';ctx.beginPath();ctx.moveTo(x,H-mB);ctx.lineTo(x,H-mB+5);ctx.stroke();ctx.fillText(qt[i],x,H-mB+16); });
-  var x2=mL+(W-mL-mR)*qs[1], x3=mL+(W-mL-mR)*qs[2], x4=mL+(W-mL-mR)*qs[3], x1=mL+(W-mL-mR)*qs[0];
-  ctx.globalAlpha=0.18;
-  ctx.fillStyle='#ff5e5e'; ctx.fillRect(x2,pw2Y,x3-x2,pwY-pw2Y);
-  ctx.fillStyle='#ffb55e'; ctx.fillRect(x3,pw2Y,x4-x3,pwY-pw2Y);
-  ctx.fillStyle='#ff5e5e';
-  ctx.beginPath();ctx.moveTo(x1,pwY);ctx.lineTo(x1,pw2Y);ctx.lineTo(x2,pw2Y);ctx.closePath();ctx.fill();
-  ctx.beginPath();ctx.moveTo(x3,pw2Y);ctx.lineTo(x4,pw2Y);ctx.lineTo(x4,pwY);ctx.closePath();ctx.fill();
-  ctx.globalAlpha=1;
-  ctx.fillStyle='rgba(255,255,255,.7)';ctx.font='bold 10px sans-serif';ctx.textAlign='center';
-  var ym=(pwY+pw2Y)/2;
-  ctx.fillText(L.a||'A',(x1+x2)/2+16,ym);
-  ctx.fillText(L.c||'C',(x3+x4)/2,ym);
-  ctx.fillText(L.b||'B',(x1+x2)/2+36,pwY-8);
-  ctx.fillText(L.d||'D',x4-10,pwY-8);
+  ctx.fillText(L.pw || 'Pw (世界价格)', mL + 4, pwY - 6);
+  
+  // 供给曲线 S（红色，通过 Pa-Qs 和 Pt-Qs1 两点）
+  ctx.strokeStyle = '#ff7b5e'; ctx.lineWidth = 2.5;
+  ctx.beginPath(); ctx.moveTo(mL+20, p0Y); ctx.lineTo(qsX, paY); ctx.lineTo(qs1X, ptY); ctx.stroke();
+  ctx.fillStyle = '#ff7b5e'; ctx.font = 'bold 14px sans-serif';
+  ctx.fillText(L.supply || 'S', mL + 8, H-mB-5);
+  
+  // 需求曲线 D（蓝色，通过 Pa-Qd 和 Pt-Qd1 两点）
+  ctx.strokeStyle = '#5e9cff'; ctx.lineWidth = 2.5;
+  ctx.beginPath(); ctx.moveTo(mL+20, paY - 60); ctx.lineTo(qdX, paY); ctx.lineTo(qd1X, ptY); ctx.stroke();
+  ctx.fillStyle = '#5e9cff'; ctx.font = 'bold 14px sans-serif';
+  ctx.fillText(L.demand || 'D', W-mR-25, ptY - 8);
+  
+  // 福利区域
+  ctx.globalAlpha = 0.18;
+  // a: 区域1-Pa与Pt间,Qs1左侧的小三角(生产者剩余转政府)
+  ctx.fillStyle = '#ff5e5e';
+  ctx.beginPath(); ctx.moveTo(qsX, paY); ctx.lineTo(qsX, ptY); ctx.lineTo(qs1X, ptY); ctx.closePath(); ctx.fill();
+  // b: Pa与Pt间,Qs1到Qs的三角(生产扭曲=无谓损失)
+  ctx.beginPath(); ctx.moveTo(qs1X, ptY); ctx.lineTo(qsX, paY); ctx.lineTo(qs1X, paY); ctx.closePath(); ctx.fill();
+  // c: Pt与Pw间,Qs1到Qd1的矩形(政府关税收入)
+  ctx.fillStyle = '#ffb55e';
+  ctx.fillRect(qs1X, pwY, qd1X-qs1X, ptY-pwY);
+  // e: Pt与Pw间,Qs1左侧三角(生产扭曲=无谓损失下半部分)
+  ctx.fillStyle = '#5e9cff';
+  ctx.beginPath(); ctx.moveTo(qsX, ptY); ctx.lineTo(qsX, pwY); ctx.lineTo(qs1X, pwY); ctx.closePath(); ctx.fill();
+  // d: Pt与Pw间,Qd1右侧三角(消费扭曲=无谓损失)
+  ctx.fillStyle = '#9d5eff';
+  ctx.beginPath(); ctx.moveTo(qd1X, ptY); ctx.lineTo(qd1X, pwY); ctx.lineTo(qd1X+50, pwY); ctx.closePath(); ctx.fill();
+  ctx.globalAlpha = 1;
+  
+  // 福利区域标签
+  ctx.fillStyle = 'rgba(255,255,255,.85)'; ctx.font = 'bold 11px sans-serif'; ctx.textAlign = 'center';
+  ctx.fillText(L.a || 'a', (qsX+qs1X)/2 - 8, (paY+ptY)/2);
+  ctx.fillText(L.b || 'b', (qsX+qs1X)/2 + 6, (paY+ptY)/2);
+  ctx.fillText(L.c || 'c', (qs1X+qd1X)/2, (ptY+pwY)/2 + 3);
+  ctx.fillText(L.e || 'e', (qsX+qs1X)/2 - 4, (ptY+pwY)/2);
+  ctx.fillText(L.d || 'd', qd1X + 18, (ptY+pwY)/2);
+  
+  // X轴下方：数量标签
+  ctx.fillStyle = '#aaa'; ctx.font = '11px sans-serif'; ctx.textAlign = 'center';
+  ctx.fillText(L.qs || 'Qs', qsX, H-mB+18);
+  ctx.fillText(L.q1 || "Qs'", qs1X, H-mB+18);
+  ctx.fillText(L.q2 || "Qd'", qd1X, H-mB+18);
+  ctx.fillText(L.qds || 'Qd', qdX, H-mB+18);
+  
+  // 进口变化标注（M1原进口, M2关税后进口）
+  ctx.strokeStyle = '#5e9cff'; ctx.lineWidth = 1.5;
+  ctx.beginPath();
+  ctx.moveTo(qsX, H-mB+30); ctx.lineTo(qdX, H-mB+30);
+  ctx.moveTo(qsX, H-mB+26); ctx.lineTo(qsX, H-mB+34);
+  ctx.moveTo(qdX, H-mB+26); ctx.lineTo(qdX, H-mB+34);
+  ctx.stroke();
+  ctx.fillStyle = '#5e9cff'; ctx.font = '11px sans-serif';
+  ctx.fillText(L.m1 || 'M₁ 自由贸易进口量', (qsX+qdX)/2, H-mB+44);
+  
+  ctx.strokeStyle = '#ffb55e';
+  ctx.beginPath();
+  ctx.moveTo(qs1X, H-mB+58); ctx.lineTo(qd1X, H-mB+58);
+  ctx.moveTo(qs1X, H-mB+54); ctx.lineTo(qs1X, H-mB+62);
+  ctx.moveTo(qd1X, H-mB+54); ctx.lineTo(qd1X, H-mB+62);
+  ctx.stroke();
+  ctx.fillStyle = '#ffb55e'; ctx.font = '11px sans-serif';
+  ctx.fillText(L.m2 || 'M₂ 关税后进口量', (qs1X+qd1X)/2, H-mB+72);
+  
+  // 失真标签
+  ctx.fillStyle = '#999'; ctx.font = '10px sans-serif';
+  ctx.fillText('生产扭曲', qsX + 30, H-mB-12);
+  ctx.fillText('消费扭曲', qd1X + 18, H-mB-12);
 }
 
 
