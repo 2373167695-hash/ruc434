@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<!-- v2.1 · 2026-07-13 13:20 · modular -->
+<!-- v2.1 · 2026-07-14 03:59 · modular -->
 <html lang="zh-CN">
 <head>
 <meta charset="UTF-8">
@@ -12633,7 +12633,7 @@ function showTheoryViz() {
   h += sideSec('关联理论', 'tvizRelated', '', true);
   h += sideSec('考点提示', 'tvizExam', '—');
   h += sideSec('真题链接', 'tvizQuestions', '—');
-  h += '<div class="pcard" style="padding:10px 14px"><div style="font-size:10px;font-weight:700;color:var(--ts);margin-bottom:8px;letter-spacing:.8px">我的笔记</div><textarea id="tvizNote" placeholder="在这里写自己的理解..." style="width:100%;min-height:44px;background:rgba(255,255,255,.03);border:.5px solid var(--bdr);border-radius:10px;padding:8px 10px;font-size:12px;color:var(--t);resize:vertical;font-family:inherit;outline:none;line-height:1.5;transition:var(--transition)" onfocus="this.style.borderColor=\'rgba(94,92,230,.3)\'" onblur="this.style.borderColor=\'var(--bdr)\'"></textarea></div>';
+  h += '<div class="pcard" style="padding:10px 14px"><div style="font-size:11px;font-weight:700;color:var(--t);margin-bottom:8px;opacity:.6;letter-spacing:.6px">我的笔记</div><textarea id="tvizNote" placeholder="在这里写自己的理解..." style="width:100%;min-height:44px;background:rgba(255,255,255,.03);border:.5px solid var(--bdr);border-radius:10px;padding:8px 10px;font-size:12px;color:var(--t);resize:vertical;font-family:inherit;outline:none;line-height:1.5;transition:var(--transition)" onfocus="this.style.borderColor=\'rgba(94,92,230,.3)\'" onblur="this.style.borderColor=\'var(--bdr)\'"></textarea></div>';
   h += '</div>';
   h += '</div>';
   
@@ -12680,7 +12680,7 @@ function showTheoryViz() {
 }
 
 function sideSec(title, id, placeholder, isTags) {
-  return '<div class="pcard" style="padding:14px 16px"><div style="font-size:10px;font-weight:700;color:var(--ts);margin-bottom:10px;letter-spacing:.8px;text-transform:uppercase">'+title+'</div><div id="'+id+'" style="font-size:12px;line-height:1.8;color:var(--ts)">'+(placeholder&&!isTags?'<em style="opacity:.35">'+placeholder+'</em>':'')+'</div></div>';
+  return '<div class="pcard" style="padding:14px 16px"><div style="font-size:11px;font-weight:700;color:var(--t);margin-bottom:10px;letter-spacing:.6px;text-transform:uppercase;opacity:.6">'+title+'</div><div id="'+id+'" style="font-size:13px;line-height:1.8;color:var(--t)">'+(placeholder&&!isTags?'<em style="opacity:.4">'+placeholder+'</em>':'')+'</div></div>';
 }
 
 function tvisAsk(q) { document.getElementById('tvizInput').value = q; tvisGen(); }
