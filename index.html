@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<!-- v2.1 · 2026-07-14 13:10 · modular -->
+<!-- v2.1 · 2026-07-14 13:12 · modular -->
 <html lang="zh-CN">
 <head>
 <meta charset="UTF-8">
@@ -12016,8 +12016,8 @@ function doAnswerCheck() {
     + '· 术语准确（2分）：专业术语是否正确，是否有中英文对照\n'
     + '· 实际联系（1分）：是否结合中国经济现实或案例\n\n'
     + '输出格式（JSON）：\n'
-    + '{"knowledge":得分,"logic":得分,"terms":得分,"realworld":得分,"total":总分,"strengths":"优点...","weaknesses":"不足...","improvement":"改进建议...","modelAnswer":"参考答案要点..."}\n\n'
-    + '规则：严格按照评分标准给分，不要手软；必须给出具体、可操作的改进建议；参考答案要点要简洁但覆盖关键得分点。只输出JSON，不要其他文字。';
+    + '{"knowledge":得分,"logic":得分,"terms":得分,"realworld":得分,"total":总分,"strengths":"优点...","weaknesses":"不足...","improvement":"改进建议...","modelAnswer":"完整参考答案（按人大434答题规范，定义先行→分点展开→结论，包含中英文术语对照，800字左右）..."}\n\n'
+    + '规则：严格按照评分标准给分，不要手软；必须给出具体、可操作的改进建议；modelAnswer必须是完整的论述型答案，不是要点罗列，结构规范、可直接用于背诵。只输出JSON，不要其他文字。';
   
   // Try to find matching exam question for reference
   var refInfo = '';
@@ -12097,7 +12097,7 @@ function renderAnswerCheckResult(content) {
     h += '<div class="pcard-section"><h4>💡 改进建议</h4><p>' + json.improvement + '</p></div>';
   }
   if (json.modelAnswer) {
-    h += '<div class="pcard-section"><h4>📋 参考答案要点</h4><p>' + json.modelAnswer + '</p></div>';
+    h += '<div class="pcard-section"><h4>📋 完整参考答案</h4><div style="line-height:1.9">' + renderMarkdown(json.modelAnswer) + '</div></div>';
   }
   
   h += '<div style="text-align:center;margin-top:16px"><button class="ai-btn ai-btn-sm" onclick="doAnswerCheck()" style="padding:8px 20px;font-size:12px">重新批改</button></div>';
