@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<!-- v2.1 · 2026-07-14 12:56 · modular -->
+<!-- v2.1 · 2026-07-14 13:05 · modular -->
 <html lang="zh-CN">
 <head>
 <meta charset="UTF-8">
@@ -8919,6 +8919,7 @@ function buildNav() {
   knh += '<div class="ni lv0" data-p="theoryviz">📐 理论可视化</div>';
   knh += '<div class="ni lv0" data-p="outputtrain">✍️ 输出训练</div>';
   knh += '<div class="ni lv0" data-p="mockexam">🎯 AI模考</div>';
+  knh += '<div class="ni lv0" data-p="answercheck">✅ 答案批改</div>';
   knh += '<div class="ni lv0" data-p="macro">📊 宏观数据</div>';
   knh += '<div class="ni lv0" data-p="predictions">🎯 学术预测</div>';
   knh += '<div class="ni lv0" data-p="professors">👨‍🏫 导师研究</div>';
@@ -9063,6 +9064,7 @@ function navigate(p, topicName, skipHistory) {
     else if (p === 'capmap') { showCapabilityMap(); }
     else if (p === 'theoryviz') { showTheoryViz(); }
     else if (p === 'mockexam') { showMockExam(); }
+    else if (p === 'answercheck') { showAnswerCheck(); }
     else if (p === 'allquestions') { showAllQuestions(); }
     else if (p === 'wrongbook') { showWrongBook(); }
     else if (p.indexOf('kn:') === 0) { showKnContent(p.substring(3), topicName || ''); }
@@ -11926,6 +11928,157 @@ function renderMockResult(rr) {
     '<div style="color:var(--ts);font-size:13px">'+(r.comment||'')+'</div></div></div>';});
   h += '<div style="text-align:center;margin-top:20px"><button class="btn btn-gen" onclick="showMockExam()">重新模考</button></div>';
   document.getElementById('ct').innerHTML = h;
+}
+
+
+function showAnswerCheck() {
+  document.getElementById('bc').innerHTML = '<span>✅ 答案批改</span>';
+  
+  var h = '<div class="hero"><h1>✅ AI 答案批改</h1>' +
+    '<div class="desc">输入题目和你的答案，AI 按人大434评分标准（知识点覆盖4分 + 逻辑结构3分 + 术语准确2分 + 实际联系1分）逐项打分，给出改进建议。</div></div>';
+  
+  h += '<div class="pcard"><div class="pcard-body">';
+  
+  // Question input
+  h += '<div class="pcard-section"><h4>📝 题目</h4>';
+  h += '<div style="display:flex;gap:8px;align-items:center;margin-bottom:8px">';
+  h += '<select id="acSelectQ" onchange="var v=this.value;if(v){var q=null;DATA.forEach(function(x){if(x.id==v)q=x});if(q){document.getElementById(\'acQuestion\').value=q.year+\'年 第\'+q.num+\'题 \'+q.type+\'：\'+q.question}}" style="padding:6px 10px;border:1px solid var(--bdr);border-radius:8px;background:rgba(255,255,255,.04);color:var(--t);font-size:12px;max-width:200px">';
+  h += '<option value="">从真题选择...</option>';
+  DATA.forEach(function(q) {
+    h += '<option value="' + q.id + '">' + q.year + '年#' + q.num + ' ' + q.type + '</option>';
+  });
+  h += '</select><span style="font-size:11px;color:#888">或手动输入下方</span></div>';
+  h += '<textarea id="acQuestion" placeholder="在此输入题目..." style="width:100%;min-height:80px;background:rgba(255,255,255,.03);border:1px solid var(--bdr);border-radius:10px;padding:12px;font-size:13px;line-height:1.7;color:var(--t);resize:vertical;font-family:inherit;outline:none"></textarea>';
+  h += '</div>';
+  
+  // Answer input
+  h += '<div class="pcard-section"><h4>✍️ 你的答案</h4>';
+  h += '<textarea id="acAnswer" placeholder="在此输入你的答案..." style="width:100%;min-height:200px;background:rgba(255,255,255,.03);border:1px solid var(--bdr);border-radius:10px;padding:12px;font-size:13px;line-height:1.7;color:var(--t);resize:vertical;font-family:inherit;outline:none"></textarea>';
+  h += '</div>';
+  
+  // Submit
+  h += '<div style="text-align:center;margin-top:16px"><button class="ai-btn" id="acBtn" onclick="doAnswerCheck()" style="padding:12px 32px;font-size:14px;border-radius:20px">🔍 开始批改</button></div>';
+  
+  // Result
+  h += '<div id="acResult" style="display:none;margin-top:16px"></div>';
+  
+  h += '</div></div>';
+  
+  document.getElementById('ct').innerHTML = h;
+}
+
+
+function doAnswerCheck() {
+  var q = document.getElementById('acQuestion').value.trim();
+  var a = document.getElementById('acAnswer').value.trim();
+  var btn = document.getElementById('acBtn');
+  var result = document.getElementById('acResult');
+  
+  if (!q) { result.style.display = 'block'; result.innerHTML = '<div style="padding:12px;color:rgba(255,69,58,.7);font-size:13px">请先输入题目</div>'; return; }
+  if (!a) { result.style.display = 'block'; result.innerHTML = '<div style="padding:12px;color:rgba(255,69,58,.7);font-size:13px">请先输入你的答案</div>'; return; }
+  if (a.length < 20) { result.style.display = 'block'; result.innerHTML = '<div style="padding:12px;color:rgba(255,69,58,.7);font-size:13px">答案太短（不足20字），请输入完整答案</div>'; return; }
+  
+  btn.disabled = true; btn.textContent = 'AI 正在批改...';
+  result.style.display = 'block';
+  result.innerHTML = '<div style="padding:24px;text-align:center;color:#888">⏳ AI 正在逐项评分...</div>';
+  
+  // Build grading prompt
+  var sys = RUC434_STYLE + '\n你是人大434国际商务考研阅卷老师，批改标准严格。请对学生的答案逐项评分（满分10分）。\n\n'
+    + '【评分标准（严格执行）】\n'
+    + '· 知识点覆盖（4分）：是否覆盖了题目要求的所有核心知识点\n'
+    + '· 逻辑结构（3分）：是否有清晰的定义→分析→结论递进结构\n'
+    + '· 术语准确（2分）：专业术语是否正确，是否有中英文对照\n'
+    + '· 实际联系（1分）：是否结合中国经济现实或案例\n\n'
+    + '输出格式（JSON）：\n'
+    + '{"knowledge":得分,"logic":得分,"terms":得分,"realworld":得分,"total":总分,"strengths":"优点...","weaknesses":"不足...","improvement":"改进建议...","modelAnswer":"参考答案要点..."}\n\n'
+    + '规则：严格按照评分标准给分，不要手软；必须给出具体、可操作的改进建议；参考答案要点要简洁但覆盖关键得分点。只输出JSON，不要其他文字。';
+  
+  // Try to find matching exam question for reference
+  var refInfo = '';
+  DATA.forEach(function(x) {
+    if (q.indexOf(x.question) >= 0 || (x.year && q.indexOf(String(x.year)) >= 0 && q.indexOf(String(x.num)) >= 0)) {
+      refInfo += '\n\n【参考：' + x.id + '】\n题目：' + x.question + '\n标准答案：' + (x.answer||'').substring(0,800);
+    }
+  });
+  var userMsg = '【题目】\n' + q + '\n\n【学生答案】\n' + a + refInfo;
+  
+  fetch(DS_URL, {
+    method:'POST', headers:{Authorization:'Bearer '+getAPIKey(),'Content-Type':'application/json'},
+    body:JSON.stringify({model:'mimo-v2.5',messages:[{role:'system',content:sys},{role:'user',content:userMsg}],max_tokens:2048,temperature:0.1})
+  }).then(function(r){if(!r.ok)throw Error('HTTP '+r.status);return r.json()})
+  .then(function(d){
+    var c = d.choices&&d.choices[0]&&d.choices[0].message?d.choices[0].message.content||'':'';
+    renderAnswerCheckResult(c);
+    btn.disabled = false; btn.textContent = '🔍 开始批改';
+  }).catch(function(e){
+    result.innerHTML = '<div style="padding:16px;color:rgba(255,69,58,.7);font-size:13px">批改失败：'+e.message+' <button class="ai-btn ai-btn-sm" onclick="doAnswerCheck()" style="margin-left:8px;padding:4px 12px;font-size:11px">重试</button></div>';
+    btn.disabled = false; btn.textContent = '🔍 开始批改';
+  });
+}
+
+function renderAnswerCheckResult(content) {
+  var result = document.getElementById('acResult');
+  var json = null;
+  try { json = JSON.parse(content); } catch(e) {
+    var m = content.match(/\{[\s\S]*\}/);
+    if (m) { try { json = JSON.parse(m[0]); } catch(e2) {} }
+  }
+  
+  if (!json || json.total === undefined) {
+    result.innerHTML = '<div class="pcard" style="padding:20px;text-align:center"><div style="color:#888;margin-bottom:12px">AI 未返回有效评分</div><button class="ai-btn ai-btn-sm" onclick="doAnswerCheck()" style="padding:6px 16px;font-size:12px">重试</button></div>';
+    return;
+  }
+  
+  var total = json.total || 0;
+  var gradeColor = total >= 8 ? 'var(--gn)' : total >= 5 ? 'var(--or)' : 'var(--r)';
+  var gradeLabel = total >= 8 ? '优秀' : total >= 5 ? '中等' : '需加强';
+  
+  var h = '<div class="pcard"><div class="pcard-body">';
+  
+  // Score overview
+  h += '<div style="text-align:center;margin-bottom:20px">';
+  h += '<div style="font-size:48px;font-weight:800;color:' + gradeColor + ';letter-spacing:-1px">' + total + '<span style="font-size:20px">/10</span></div>';
+  h += '<div style="font-size:14px;color:' + gradeColor + ';font-weight:600;margin-top:4px">' + gradeLabel + '</div>';
+  h += '</div>';
+  
+  // Score breakdown
+  h += '<div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:20px">';
+  var items = [
+    {label:'知识点覆盖',score:json.knowledge||0,max:4},
+    {label:'逻辑结构',score:json.logic||0,max:3},
+    {label:'术语准确',score:json.terms||0,max:2},
+    {label:'实际联系',score:json.realworld||0,max:1}
+  ];
+  items.forEach(function(it) {
+    var pct = Math.round(it.score/it.max*100);
+    var barColor = pct >= 80 ? 'var(--gn)' : pct >= 50 ? 'var(--or)' : 'var(--r)';
+    h += '<div style="background:rgba(255,255,255,.03);padding:12px;border-radius:10px;text-align:center">';
+    h += '<div style="font-size:11px;color:#888;margin-bottom:4px">' + it.label + '</div>';
+    h += '<div style="font-size:18px;font-weight:700;color:var(--t);margin-bottom:4px">' + it.score + '/' + it.max + '</div>';
+    h += '<div style="background:rgba(255,255,255,.06);border-radius:3px;height:4px"><div style="background:' + barColor + ';height:4px;border-radius:3px;width:' + pct + '%"></div></div>';
+    h += '</div>';
+  });
+  h += '</div>';
+  
+  // Feedback
+  if (json.strengths) {
+    h += '<div class="pcard-section"><h4>✅ 优点</h4><p>' + json.strengths + '</p></div>';
+  }
+  if (json.weaknesses) {
+    h += '<div class="pcard-section"><h4>⚠️ 不足</h4><p>' + json.weaknesses + '</p></div>';
+  }
+  if (json.improvement) {
+    h += '<div class="pcard-section"><h4>💡 改进建议</h4><p>' + json.improvement + '</p></div>';
+  }
+  if (json.modelAnswer) {
+    h += '<div class="pcard-section"><h4>📋 参考答案要点</h4><p>' + json.modelAnswer + '</p></div>';
+  }
+  
+  h += '<div style="text-align:center;margin-top:16px"><button class="ai-btn ai-btn-sm" onclick="doAnswerCheck()" style="padding:8px 20px;font-size:12px">重新批改</button></div>';
+  h += '</div></div>';
+  
+  result.innerHTML = h;
+  result.scrollIntoView({behavior:'smooth'});
 }
 
 
