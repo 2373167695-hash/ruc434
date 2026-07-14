@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<!-- v2.1 · 2026-07-14 03:59 · modular -->
+<!-- v2.1 · 2026-07-14 04:06 · modular -->
 <html lang="zh-CN">
 <head>
 <meta charset="UTF-8">
@@ -12616,14 +12616,14 @@ function showTheoryViz() {
   // Thin status bar instead of hero
   h += '<div style="display:flex;align-items:center;gap:10px;margin-bottom:10px;padding:8px 16px;background:rgba(255,255,255,.03);backdrop-filter:blur(8px) saturate(180%);-webkit-backdrop-filter:blur(8px) saturate(180%);border-radius:14px;border:.5px solid rgba(255,255,255,.08)">';
   h += '<span style="font-size:18px">📐</span><span style="font-weight:700;font-size:14px">理论可视化工作台</span>';
-  h += '<span style="font-size:11px;color:var(--ts);flex:1" id="tvis-hero-desc">输入理论名称，AI 生成完整框架图</span>';
+  h += '<span style="font-size:11px;color:#888;flex:1" id="tvis-hero-desc">输入理论名称，AI 生成完整框架图</span>';
   h += '</div>';
   
   // Workbench body — fills remaining height
   h += '<div class="tviz-body">';
   // Canvas — large fixed viewport
   h += '<div class="tviz-canvas-wrap" id="tvizCanvas">';
-  h += '<div class="tviz-placeholder" id="tvizPlaceholder"><div style="font-size:40px;margin-bottom:8px;opacity:.25">📊</div><div style="font-size:13px;color:var(--ts)">输入理论名称，AI 生成实现机制流程图</div></div>';
+  h += '<div class="tviz-placeholder" id="tvizPlaceholder"><div style="font-size:40px;margin-bottom:8px;opacity:.25">📊</div><div style="font-size:13px;color:#888">输入理论名称，AI 生成实现机制流程图</div></div>';
   h += '<div class="tviz-canvas-display" id="tvizCanvasDisplay" style="display:none"></div>';
   h += '</div>';
   // Sidebar
@@ -12633,7 +12633,7 @@ function showTheoryViz() {
   h += sideSec('关联理论', 'tvizRelated', '', true);
   h += sideSec('考点提示', 'tvizExam', '—');
   h += sideSec('真题链接', 'tvizQuestions', '—');
-  h += '<div class="pcard" style="padding:10px 14px"><div style="font-size:11px;font-weight:700;color:var(--t);margin-bottom:8px;opacity:.6;letter-spacing:.6px">我的笔记</div><textarea id="tvizNote" placeholder="在这里写自己的理解..." style="width:100%;min-height:44px;background:rgba(255,255,255,.03);border:.5px solid var(--bdr);border-radius:10px;padding:8px 10px;font-size:12px;color:var(--t);resize:vertical;font-family:inherit;outline:none;line-height:1.5;transition:var(--transition)" onfocus="this.style.borderColor=\'rgba(94,92,230,.3)\'" onblur="this.style.borderColor=\'var(--bdr)\'"></textarea></div>';
+  h += '<div class="pcard" style="padding:10px 14px"><div style="font-size:11px;font-weight:700;color:#aaa;margin-bottom:8px;letter-spacing:.6px">我的笔记</div><textarea id="tvizNote" placeholder="在这里写自己的理解..." style="width:100%;min-height:44px;background:rgba(255,255,255,.03);border:.5px solid var(--bdr);border-radius:10px;padding:8px 10px;font-size:12px;color:#ddd;resize:vertical;font-family:inherit;outline:none;line-height:1.5;transition:var(--transition)" onfocus="this.style.borderColor=\'rgba(94,92,230,.3)\'" onblur="this.style.borderColor=\'var(--bdr)\'"></textarea></div>';
   h += '</div>';
   h += '</div>';
   
@@ -12680,7 +12680,7 @@ function showTheoryViz() {
 }
 
 function sideSec(title, id, placeholder, isTags) {
-  return '<div class="pcard" style="padding:14px 16px"><div style="font-size:11px;font-weight:700;color:var(--t);margin-bottom:10px;letter-spacing:.6px;text-transform:uppercase;opacity:.6">'+title+'</div><div id="'+id+'" style="font-size:13px;line-height:1.8;color:var(--t)">'+(placeholder&&!isTags?'<em style="opacity:.4">'+placeholder+'</em>':'')+'</div></div>';
+  return '<div class="pcard" style="padding:14px 16px"><div style="font-size:11px;font-weight:700;color:#aaa;margin-bottom:10px;letter-spacing:.6px;text-transform:uppercase">'+title+'</div><div id="'+id+'" style="font-size:13px;line-height:1.8;color:#ddd">'+(placeholder&&!isTags?'<em style="color:#777">'+placeholder+'</em>':'')+'</div></div>';
 }
 
 function tvisAsk(q) { document.getElementById('tvizInput').value = q; tvisGen(); }
@@ -12693,10 +12693,10 @@ function tvisGen() {
   document.getElementById('tvizPlaceholder').style.display = 'none';
   var disp = document.getElementById('tvizCanvasDisplay');
   disp.style.display = 'block';
-  disp.innerHTML = '<div style="padding:24px;color:var(--ts);font-size:14px;text-align:center"><span style="display:inline-block;animation:spin 1s linear infinite">⏳</span> AI 正在分析并生成可视化...</div>';
+  disp.innerHTML = '<div style="padding:24px;color:#888;font-size:14px;text-align:center"><span style="display:inline-block;animation:spin 1s linear infinite">⏳</span> AI 正在分析并生成可视化...</div>';
   
   ['tvizKeypoints','tvizElements','tvizRelated','tvizExam','tvizQuestions'].forEach(function(id) {
-    document.getElementById(id).innerHTML = '<em style="color:rgba(255,255,255,.15)">生成中...</em>';
+    document.getElementById(id).innerHTML = '<em style="color:#666">生成中...</em>';
   });
   
   var sys = '你是人大434逻辑框架图专家。你只负责生成框架图，侧栏内容会由系统自动填充。\n\n## 框架结构要求：\n1. 使用 flowchart TB，通过 subgraph 将内容划分为3-5个并列的逻辑模块\n2. 每个 subgraph 是一个独立的知识板块（如「前提假设」「核心机制」「传导路径」「政策含义」）\n3. subgraph 内部用小流程图展示该板块的逻辑\n4. subgraph 之间用虚线箭头连接，表示板块间的逻辑递进关系\n5. 节点文字把意思说清楚，不要过度精简\n\n## Mermaid 模板示例：\n```mermaid\nflowchart TB\n  subgraph A[前提假设]\n    direction LR\n    A1[两国劳动生产率存在差异] --> A2[劳动是唯一生产要素] --> A3[完全竞争市场无运输成本]\n  end\n  subgraph B[核心机制]\n    direction LR\n    B1[各国专业化生产比较优势产品] --> B2[出口优势产品进口劣势产品] --> B3[贸易后两国消费水平均提升]\n  end\n  subgraph C[结论与效应]\n    direction LR\n    C1[贸易使双方互利共赢] --> C2[全球总产出增加]\n  end\n  A -.-> B\n  B -.-> C\n```\n\n## 输出格式：\n```mermaid\nflowchart TB\n  完整框架图\n```\n\n不要输出文字说明，只输出 Mermaid 代码块。\n\n## 规则：\n1. 节点文字把意思说清楚\n2. 不用 classDef\n3. subgraph 之间用 -.-> 虚线箭头';
@@ -12739,7 +12739,7 @@ function tvisParseRender(content, q) {
       disp.innerHTML = '<div class="pcard" style="padding:16px;background:rgba(255,69,58,.04);border:.5px solid rgba(255,69,58,.15)"><div style="color:rgba(255,69,58,.7);font-size:13px;font-weight:600;margin-bottom:8px">⚠️ Mermaid 渲染失败</div><div style="color:var(--ts);font-size:12px;margin-bottom:10px">'+e.message+'</div><button class="tviz-btn" style="padding:6px 14px;font-size:12px" onclick="document.getElementById(\''+errorId+'\').style.display=document.getElementById(\''+errorId+'\').style.display===\'none\'?\'block\':\'none\'">显示源代码</button><pre id="'+errorId+'" style="display:none;margin-top:12px;padding:12px;background:rgba(0,0,0,.3);border-radius:10px;font-size:10.5px;color:rgba(255,255,255,.55);max-height:300px;overflow:auto;white-space:pre-wrap;line-height:1.5;font-family:ui-monospace,SF Mono,monospace">'+mmd.replace(/</g,'&lt;')+'</pre></div>';
     }
   } else {
-    disp.innerHTML = '<div class="pcard" style="padding:24px;text-align:center;color:var(--ts)">AI 未生成图表，请重试</div>';
+    disp.innerHTML = '<div class="pcard" style="padding:24px;text-align:center;color:#888">AI 未生成图表，请重试</div>';
   }
   
   // Populate sidebar with real data
@@ -12863,7 +12863,7 @@ function tvisFindQuestions(knKey, mod) {
 
 function tvisU(id, content, type) {
   var el = document.getElementById(id); if (!el) return;
-  if (!content) { el.innerHTML = '<em style="color:rgba(255,255,255,.15)">—</em>'; return; }
+  if (!content) { el.innerHTML = '<em style="color:#555">—</em>'; return; }
   if (type === 'tags') {
     var tags = content.split('\n').filter(function(l){return l.trim()}).map(function(l){return l.replace(/^[-•·]\s*/,'')});
     el.innerHTML = '<div style="display:flex;flex-wrap:wrap;gap:5px">'+tags.map(function(t){var tn=t.split(/[（(]/)[0].trim();return '<span class="tviz-tag" onclick="tvisAsk(\'画出 '+tn+' 的完整机制流程图\')">'+t+'</span>'}).join('')+'</div>';
