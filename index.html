@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<!-- v2.1 · 2026-07-14 13:05 · modular -->
+<!-- v2.1 · 2026-07-14 13:10 · modular -->
 <html lang="zh-CN">
 <head>
 <meta charset="UTF-8">
@@ -11934,6 +11934,10 @@ function renderMockResult(rr) {
 function showAnswerCheck() {
   document.getElementById('bc').innerHTML = '<span>✅ 答案批改</span>';
   
+  // Load history
+  var ach = [];
+  try { ach = JSON.parse(localStorage.getItem('r434_achistory') || '[]'); } catch(e) {}
+  
   var h = '<div class="hero"><h1>✅ AI 答案批改</h1>' +
     '<div class="desc">输入题目和你的答案，AI 按人大434评分标准（知识点覆盖4分 + 逻辑结构3分 + 术语准确2分 + 实际联系1分）逐项打分，给出改进建议。</div></div>';
   
@@ -11941,13 +11945,27 @@ function showAnswerCheck() {
   
   // Question input
   h += '<div class="pcard-section"><h4>📝 题目</h4>';
-  h += '<div style="display:flex;gap:8px;align-items:center;margin-bottom:8px">';
-  h += '<select id="acSelectQ" onchange="var v=this.value;if(v){var q=null;DATA.forEach(function(x){if(x.id==v)q=x});if(q){document.getElementById(\'acQuestion\').value=q.year+\'年 第\'+q.num+\'题 \'+q.type+\'：\'+q.question}}" style="padding:6px 10px;border:1px solid var(--bdr);border-radius:8px;background:rgba(255,255,255,.04);color:var(--t);font-size:12px;max-width:200px">';
-  h += '<option value="">从真题选择...</option>';
+  h += '<div style="display:flex;gap:8px;align-items:center;margin-bottom:8px;flex-wrap:wrap">';
+  h += '<select id="acSelectQ" onchange="var v=this.value;if(v===\'__clear__\'){localStorage.removeItem(\'r434_achistory\');showAnswerCheck();return;}if(v&&v!==\'__hist__\'){var q=null;DATA.forEach(function(x){if(x.id==v)q=x});if(q){document.getElementById(\'acQuestion\').value=q.year+\'年 第\'+q.num+\'题 \'+q.type+\'：\'+q.question}}" style="padding:6px 10px;border:1px solid var(--bdr);border-radius:8px;background:rgba(255,255,255,.04);color:var(--t);font-size:12px;max-width:200px">';
+  h += '<option value="">真题题库</option>';
   DATA.forEach(function(q) {
     h += '<option value="' + q.id + '">' + q.year + '年#' + q.num + ' ' + q.type + '</option>';
   });
-  h += '</select><span style="font-size:11px;color:#888">或手动输入下方</span></div>';
+  h += '</select>';
+  
+  // History dropdown
+  if (ach.length > 0) {
+    h += '<select onchange="var v=this.value;if(v===\'__clear__\'){localStorage.removeItem(\'r434_achistory\');showAnswerCheck();return;}if(v)document.getElementById(\'acQuestion\').value=v" style="padding:6px 10px;border:1px solid var(--bdr);border-radius:8px;background:rgba(255,255,255,.04);color:var(--t);font-size:12px;max-width:280px">';
+    h += '<option value="">📜 历史记录（' + ach.length + '条）</option>';
+    ach.forEach(function(item, i) {
+      var preview = item.q.replace(/\n/g,' ').substring(0,40);
+      h += '<option value="' + item.q.replace(/"/g,'&quot;').replace(/'/g,"&#39;") + '">' + (i+1) + '. ' + preview + '</option>';
+    });
+    h += '<option value="__clear__" style="color:var(--r)">🗑 清除历史</option>';
+    h += '</select>';
+  }
+  
+  h += '<span style="font-size:11px;color:#888">或手动输入下方</span></div>';
   h += '<textarea id="acQuestion" placeholder="在此输入题目..." style="width:100%;min-height:80px;background:rgba(255,255,255,.03);border:1px solid var(--bdr);border-radius:10px;padding:12px;font-size:13px;line-height:1.7;color:var(--t);resize:vertical;font-family:inherit;outline:none"></textarea>';
   h += '</div>';
   
@@ -11977,6 +11995,14 @@ function doAnswerCheck() {
   if (!q) { result.style.display = 'block'; result.innerHTML = '<div style="padding:12px;color:rgba(255,69,58,.7);font-size:13px">请先输入题目</div>'; return; }
   if (!a) { result.style.display = 'block'; result.innerHTML = '<div style="padding:12px;color:rgba(255,69,58,.7);font-size:13px">请先输入你的答案</div>'; return; }
   if (a.length < 20) { result.style.display = 'block'; result.innerHTML = '<div style="padding:12px;color:rgba(255,69,58,.7);font-size:13px">答案太短（不足20字），请输入完整答案</div>'; return; }
+  
+  // Save question to history (deduped, max 20)
+  var ach = [];
+  try { ach = JSON.parse(localStorage.getItem('r434_achistory') || '[]'); } catch(e) { ach = []; }
+  ach = ach.filter(function(item) { return item.q !== q; });
+  ach.unshift({q: q, t: Date.now()});
+  if (ach.length > 20) ach = ach.slice(0, 20);
+  try { localStorage.setItem('r434_achistory', JSON.stringify(ach)); } catch(e) {}
   
   btn.disabled = true; btn.textContent = 'AI 正在批改...';
   result.style.display = 'block';
