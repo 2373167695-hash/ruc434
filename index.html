@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<!-- v2.1 · 2026-07-14 04:06 · modular -->
+<!-- v2.1 · 2026-07-14 12:56 · modular -->
 <html lang="zh-CN">
 <head>
 <meta charset="UTF-8">
@@ -12699,15 +12699,18 @@ function tvisGen() {
     document.getElementById(id).innerHTML = '<em style="color:#666">生成中...</em>';
   });
   
-  var sys = '你是人大434逻辑框架图专家。你只负责生成框架图，侧栏内容会由系统自动填充。\n\n## 框架结构要求：\n1. 使用 flowchart TB，通过 subgraph 将内容划分为3-5个并列的逻辑模块\n2. 每个 subgraph 是一个独立的知识板块（如「前提假设」「核心机制」「传导路径」「政策含义」）\n3. subgraph 内部用小流程图展示该板块的逻辑\n4. subgraph 之间用虚线箭头连接，表示板块间的逻辑递进关系\n5. 节点文字把意思说清楚，不要过度精简\n\n## Mermaid 模板示例：\n```mermaid\nflowchart TB\n  subgraph A[前提假设]\n    direction LR\n    A1[两国劳动生产率存在差异] --> A2[劳动是唯一生产要素] --> A3[完全竞争市场无运输成本]\n  end\n  subgraph B[核心机制]\n    direction LR\n    B1[各国专业化生产比较优势产品] --> B2[出口优势产品进口劣势产品] --> B3[贸易后两国消费水平均提升]\n  end\n  subgraph C[结论与效应]\n    direction LR\n    C1[贸易使双方互利共赢] --> C2[全球总产出增加]\n  end\n  A -.-> B\n  B -.-> C\n```\n\n## 输出格式：\n```mermaid\nflowchart TB\n  完整框架图\n```\n\n不要输出文字说明，只输出 Mermaid 代码块。\n\n## 规则：\n1. 节点文字把意思说清楚\n2. 不用 classDef\n3. subgraph 之间用 -.-> 虚线箭头';
+  var sys = '你是人大434逻辑框架图专家。请把理论拆解为3-5个逻辑模块，用JSON输出。\n\n'
+    + '输出格式（严格JSON，不要其他文字）：\n'
+    + '{"theory":"理论名","sections":[{"title":"模块标题（如前提假设）","nodes":["节点1文字","节点2文字","节点3文字"]},"..."]}\n\n'
+    + '规则：每个section3-5个节点；节点文字15-25字，把意思说清楚；sections之间是递进关系（假设→机制→推论→政策含义）';
 
   fetch(DS_URL, {
     method:'POST', headers:{Authorization:'Bearer '+getAPIKey(),'Content-Type':'application/json'},
-    body:JSON.stringify({model:'mimo-v2.5',messages:[{role:'system',content:sys},{role:'user',content:q}],temperature:0.3,max_tokens:4096})
+    body:JSON.stringify({model:'mimo-v2.5',messages:[{role:'system',content:sys},{role:'user',content:'请分析理论：'+q}],temperature:0.3,max_tokens:2048})
   }).then(function(r){if(!r.ok)throw Error('HTTP '+r.status);return r.json()})
   .then(function(d){
     var c = d.choices&&d.choices[0]&&d.choices[0].message?d.choices[0].message.content||'':'';
-    tvisParseRender(c, q);
+    tvisBuildRender(c, q);
     btn.disabled = false; btn.textContent = '生成图表';
   }).catch(function(e){
     disp.innerHTML = '<div style="padding:16px;color:rgba(255,69,58,.7);font-size:12px;text-align:center">请求失败：'+e.message+'</div>';
@@ -12715,34 +12718,57 @@ function tvisGen() {
   });
 }
 
-function tvisParseRender(content, q) {
-  var mm = q.match(/(.+?)(?:理论|模型|定理|分析)/);
-  tvisCurTheory = mm?mm[0]:q;
-  document.getElementById('tvis-hero-desc').textContent = '当前：'+tvisCurTheory+' · 点击侧栏关联理论可追问';
-  
-  var mmdM = content.match(/```mermaid\s*([\s\S]*?)```/);
+function tvisBuildRender(content, q) {
   var disp = document.getElementById('tvizCanvasDisplay');
-  if (mmdM) {
-    var mmd = mmdM[1].trim();
-    // Strip classDef/class/style lines
-    mmd = mmd.split('\n').map(function(line) {
-      var t = line.trim();
-      if (t.startsWith('classDef ') || t.startsWith('class ') || t.startsWith('style ')) return '';
-      return line;
-    }).filter(function(l){return l.trim();}).join('\n');
-    tvisCurMmd = mmd;
-    disp.innerHTML = '<div class="mermaid" id="tvizMmd"></div>';
-    document.getElementById('tvizMmd').textContent = mmd;
-    try { mermaid.run({nodes:[document.getElementById('tvizMmd')]}); }
-    catch(e) {
-      var errorId = 'tviz-err-' + Date.now();
-      disp.innerHTML = '<div class="pcard" style="padding:16px;background:rgba(255,69,58,.04);border:.5px solid rgba(255,69,58,.15)"><div style="color:rgba(255,69,58,.7);font-size:13px;font-weight:600;margin-bottom:8px">⚠️ Mermaid 渲染失败</div><div style="color:var(--ts);font-size:12px;margin-bottom:10px">'+e.message+'</div><button class="tviz-btn" style="padding:6px 14px;font-size:12px" onclick="document.getElementById(\''+errorId+'\').style.display=document.getElementById(\''+errorId+'\').style.display===\'none\'?\'block\':\'none\'">显示源代码</button><pre id="'+errorId+'" style="display:none;margin-top:12px;padding:12px;background:rgba(0,0,0,.3);border-radius:10px;font-size:10.5px;color:rgba(255,255,255,.55);max-height:300px;overflow:auto;white-space:pre-wrap;line-height:1.5;font-family:ui-monospace,SF Mono,monospace">'+mmd.replace(/</g,'&lt;')+'</pre></div>';
+  
+  // Parse JSON from AI response
+  var json = null;
+  try { json = JSON.parse(content); } catch(e1) {
+    var m = content.match(/```(?:json)?\s*([\s\S]*?)```/);
+    if (m) { try { json = JSON.parse(m[1]); } catch(e2) {} }
+    if (!json) {
+      var m2 = content.match(/\{[\s\S]*\}/);
+      if (m2) { try { json = JSON.parse(m2[0]); } catch(e3) {} }
     }
-  } else {
-    disp.innerHTML = '<div class="pcard" style="padding:24px;text-align:center;color:#888">AI 未生成图表，请重试</div>';
   }
   
-  // Populate sidebar with real data
+  if (!json || !json.sections || !json.sections.length) {
+    disp.innerHTML = '<div class="pcard" style="padding:24px;text-align:center"><div style="font-size:40px;margin-bottom:8px;opacity:.3">📊</div><div style="color:#888;margin-bottom:8px">AI 未生成有效图表结构</div><button class="tviz-btn" style="padding:6px 16px;font-size:12px" onclick="tvisGen()">重试</button></div>';
+    return;
+  }
+  
+  // Build Mermaid flowchart from JSON
+  tvisCurTheory = json.theory || q;
+  var mmd = 'flowchart TB\n';
+  var secIds = [];
+  
+  json.sections.forEach(function(sec, i) {
+    var sid = 'S' + i;
+    secIds.push(sid);
+    mmd += '  subgraph ' + sid + '["' + (sec.title||'').replace(/"/g,'') + '"]\n';
+    mmd += '    direction LR\n';
+    sec.nodes.forEach(function(node, j) {
+      var nid = sid + '_' + j;
+      var txt = String(node).replace(/"/g,'').replace(/\[/g,'(').replace(/\]/g,')');
+      mmd += '    ' + nid + '["' + txt + '"]\n';
+      if (j > 0) mmd += '    ' + sid + '_' + (j-1) + ' --> ' + nid + '\n';
+    });
+    mmd += '  end\n';
+    if (i > 0) mmd += '  ' + secIds[i-1] + ' -.-> ' + sid + '\n';
+  });
+  
+  tvisCurMmd = mmd;
+  disp.innerHTML = '<div class="mermaid" id="tvizMmd"></div>';
+  document.getElementById('tvizMmd').textContent = mmd;
+  
+  try { mermaid.run({nodes:[document.getElementById('tvizMmd')]}); }
+  catch(e) {
+    disp.innerHTML = '<div class="pcard" style="padding:16px;background:rgba(255,69,58,.04);border:.5px solid rgba(255,69,58,.15)"><div style="color:rgba(255,69,58,.7);font-size:13px;font-weight:600;margin-bottom:8px">⚠️ 渲染失败</div><div style="color:#888;font-size:12px;margin-bottom:10px">'+e.message+'</div><button class="tviz-btn" style="padding:6px 14px;font-size:12px" onclick="tvisGen()">重试</button></div>';
+  }
+  
+  var mm = q.match(/(.+?)(?:理论|模型|定理|分析)/);
+  var name = mm ? mm[0] : q;
+  document.getElementById('tvis-hero-desc').textContent = '当前：' + (tvisCurTheory || name) + ' · ' + json.sections.length + '个模块';
   tvisFillRealData(q);
 }
 
