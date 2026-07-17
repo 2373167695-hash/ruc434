@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<!-- v2.1 · 2026-07-14 13:48 · modular -->
+<!-- v2.1 · 2026-07-17 05:06 · modular -->
 <html lang="zh-CN">
 <head>
 <meta charset="UTF-8">
@@ -16677,14 +16677,14 @@ function buildNav() {
   var knh = '<div class="ni lv0 active" data-p="kn:home">📖 知识点总览</div>';
   knh += '<div class="ni lv0" data-p="allquestions">📝 全部真题</div>';
   knh += '<div class="ni lv0" data-p="wrongbook">📋 错题本</div>';
-  knh += '<div class="ni lv0" data-p="answerbank">📝 答题语料库</div>';
+  knh += '<div class="ni lv0" data-p="corpushub">🧠 三层语料</div>';
   knh += '<div class="ni lv0" data-p="modcorpus">📖 模块语料</div>';
   knh += '<div class="ni lv0" data-p="stats">📊 学习统计</div>';
   knh += '<div class="ni lv0" data-p="cards">🧠 记忆卡片</div>';
   knh += '<div class="ni lv0" data-p="graph">🕸️ 知识图谱</div>';
   knh += '<div class="ni lv0" data-p="aichat">💬 AI助手</div>';
   knh += '<div class="sidebar-section-label">备考工具</div>';
-  knh += '<div class="ni lv0" data-p="capmap">🧭 能力地图</div>';
+  knh += '<div class="ni lv0" data-p="corpushub">🧭 能力地图</div>';
   knh += '<div class="ni lv0" data-p="theoryviz">📐 理论可视化</div>';
   knh += '<div class="ni lv0" data-p="outputtrain">✍️ 输出训练</div>';
   knh += '<div class="ni lv0" data-p="mockexam">🎯 AI模考</div>';
@@ -16823,14 +16823,15 @@ function navigate(p, topicName, skipHistory) {
   // Render new content immediately
   try {
     if (p === '') { showHome(); }
-    else if (p === 'answerbank') { showAnswerBank(); }
+    else if (p === 'answerbank') { showCorpusHub(); }
     else if (p === 'modcorpus') { showModuleCorpus(); }
+    else if (p === 'corpushub') { showCorpusHub(); }
+    else if (p === 'capmap') { showCorpusHub(); }
     else if (p === 'stats') { showStats(); }
     else if (p === 'cards') { showCards(); } else if (p === 'hot') { showHotTopic(); }
     else if (p === 'graph') { showGraph(); }
     else if (p === 'aichat') { showAI(); }
     else if (p === 'outputtrain') { showOutputTraining(); }
-    else if (p === 'capmap') { showCapabilityMap(); }
     else if (p === 'theoryviz') { showTheoryViz(); }
     else if (p === 'mockexam') { showMockExam(); }
     else if (p === 'answercheck') { showAnswerCheck(); }
@@ -18051,30 +18052,219 @@ function initMacroCharts() {
   }
 }
 
-function showAnswerBank() {
-  document.getElementById('bc').innerHTML = '<span>📝 答题语料库</span>';
+function showAnswerBank() { showCorpusHub(); }
+
+
+function showCorpusHub() {
+  document.getElementById('bc').innerHTML = '<span>🧠 三层语料体系</span>';
   
-  var h = '<div class="hero"><h1>📝 答题语料库</h1>' +
-    '<div class="desc">434国际商务考研答题常用论述模板、万能衔接语句和高频考点的经典表述，可直接用于答题。</div></div>';
+  var h = '<div class="hero"><h1>🧠 三层语料体系</h1>' +
+    '<div class="desc">理论层（用什么理论）→ 案例层（拿什么佐证）→ 话术层（怎么说得专业）。三层独立整理、联动使用。</div></div>';
   
-  // 使用ANSWER_BANK数据
-  if (ANSWER_BANK && ANSWER_BANK.categories) {
-    ANSWER_BANK.categories.forEach(function(cat) {
-      h += '<div class="pcard"><div class="pcard-hdr"><h3>' + cat.icon + ' ' + cat.title + '</h3></div><div class="pcard-body">';
-      
-      cat.items.forEach(function(item) {
-        h += '<div class="pcard-section">';
-        h += '<h4 style="cursor:pointer" onclick="this.parentElement.querySelector(\'pre\').style.display=this.parentElement.querySelector(\'pre\').style.display===\'none\'?\'block\':\'none\'">▸ ' + item.name + '</h4>';
-        h += '<pre style="display:none;white-space:pre-wrap;font-size:12px;line-height:1.8;background:rgba(255,255,255,.04);padding:12px;border-radius:6px;margin-top:8px">' + item.content + '</pre>';
-        h += '<button onclick="event.stopPropagation();navigator.clipboard.writeText(this.previousElementSibling.textContent);this.textContent=\'已复制!\';setTimeout(function(){this.textContent=\'📋 复制\'}.bind(this),1500)" style="display:none;margin-top:4px;font-size:11px;padding:3px 8px;border:1px solid var(--bdr);border-radius:4px;background:rgba(255,255,255,.06);color:var(--t);cursor:pointer">📋 复制</button>';
-        h += '</div>';
-      });
-      
-      h += '</div></div>';
+  h += '<div class="kn-tabs">' +
+    '<div class="kn-tab active" id="chTabTheory" onclick="chSwitchTab(\'theory\')">📚 理论层</div>' +
+    '<div class="kn-tab" id="chTabCase" onclick="chSwitchTab(\'case\')">📰 案例层</div>' +
+    '<div class="kn-tab" id="chTabPhrase" onclick="chSwitchTab(\'phrase\')">💬 话术层</div>' +
+    '</div>';
+  
+  h += '<div id="chContent"></div>';
+  
+  document.getElementById('ct').innerHTML = h;
+  chRenderTheory();
+}
+
+function chSwitchTab(tab) {
+  document.querySelectorAll('.kn-tab').forEach(function(t) { t.classList.remove('active'); });
+  var el = document.getElementById('chTab' + tab.charAt(0).toUpperCase() + tab.slice(1));
+  if (el) el.classList.add('active');
+  window['chRender' + tab.charAt(0).toUpperCase() + tab.slice(1)]();
+}
+
+// ===== THEORY LAYER =====
+function chRenderTheory() {
+  var h = '';
+  // Filter input
+  h += '<div style="margin-bottom:12px"><input id="chTheoryFilter" placeholder="搜索理论..." style="width:100%;padding:8px 12px;background:rgba(255,255,255,.04);border:1px solid var(--bdr);border-radius:10px;font-size:13px;color:var(--t);outline:none" oninput="chFilterTheory()"></div>';
+  h += '<div id="chTheoryList">';
+  
+  var keys = Object.keys(KNOWLEDGE).sort();
+  keys.forEach(function(k) {
+    var kn = KNOWLEDGE[k];
+    if (!kn || !kn.summary) return;
+    var mod = kn.module || '';
+    var keywords = (kn.key || []).slice(0,3).join(' · ');
+    var exam = (kn.exam || '').replace(/★/g,'').substring(0,30);
+    h += '<div class="pcard ch-theory-card" data-search="' + k + ' ' + (kn.summary||'') + ' ' + keywords + ' ' + mod + '" style="cursor:pointer" onclick="chToggleTheory(this)">';
+    h += '<div class="pcard-hdr"><h3>' + k + '</h3><span style="font-size:11px;color:var(--ts)">' + mod + '</span></div>';
+    h += '<div class="pcard-body">';
+    h += '<p style="font-size:13px;line-height:1.8;color:var(--t);margin-bottom:8px">' + (kn.summary || '') + '</p>';
+    h += '<div style="display:flex;flex-wrap:wrap;gap:6px;margin-bottom:8px">';
+    (kn.key||[]).slice(0,3).forEach(function(kw) { h += '<span style="background:rgba(88,86,214,.1);color:var(--pu);padding:3px 10px;border-radius:12px;font-size:11px">' + kw + '</span>'; });
+    h += '</div>';
+    h += '<div class="ch-theory-detail" style="display:none;border-top:1px solid var(--bdr);margin-top:10px;padding-top:10px">';
+    if (kn.overview) h += '<div style="margin-bottom:6px"><strong>提出背景：</strong><span style="color:var(--ts)">' + kn.overview + '</span></div>';
+    if (kn.exam) h += '<div style="margin-bottom:6px"><strong>真题痕迹：</strong><span style="color:var(--ts)">' + kn.exam + '</span></div>';
+    if (kn.assumptions && kn.assumptions.length) h += '<div style="margin-bottom:6px"><strong>核心假设：</strong><span style="color:var(--ts)">' + kn.assumptions.slice(0,3).join('；') + '</span></div>';
+    if (kn.evaluation_pros && kn.evaluation_pros.length) h += '<div><strong>理论优点：</strong><span style="color:var(--ts)">' + kn.evaluation_pros.slice(0,2).join('；') + '</span></div>';
+    h += '</div>';
+    h += '</div></div>';
+  });
+  
+  h += '</div>';
+  document.getElementById('chContent').innerHTML = h;
+}
+
+function chFilterTheory() {
+  var q = (document.getElementById('chTheoryFilter')||{}).value||'';
+  var cards = document.querySelectorAll('.ch-theory-card');
+  cards.forEach(function(c) {
+    c.style.display = !q || (c.getAttribute('data-search')||'').toLowerCase().indexOf(q.toLowerCase()) >= 0 ? '' : 'none';
+  });
+}
+
+function chToggleTheory(el) {
+  var detail = el.querySelector('.ch-theory-detail');
+  if (detail) detail.style.display = detail.style.display === 'none' ? 'block' : 'none';
+}
+
+// ===== CASE LAYER =====
+function chRenderCase() {
+  var cases = [
+    {name:'中美关税战与贸易摩擦',cat:'国际贸易摩擦',time:'2018至今',facts:'美国对华加征多轮关税，涉及商品超5000亿美元；中国反制。半导体等高科技领域持续博弈。',theories:['贸易保护理论(主)','关税效应分析(主)','非关税壁垒(辅)','WTO规则(辅)'],angles:['从关税局部均衡分析对中美福利影响','从WTO最惠国待遇原则讨论关税合法性','分析关税战对全球价值链的冲击']},
+    {name:'欧盟CBAM碳关税实施',cat:'绿色贸易与ESG',time:'2023试运行/2026全面',facts:'欧盟对进口钢铁、水泥、铝、化肥等高碳产品征收碳边境调节税，要求进口商购买碳排放证书。',theories:['非关税壁垒(主)','新贸易保护主义(次)','外部性理论(辅)'],angles:['碳关税对发展中国家出口竞争力的影响','从WTO规则讨论碳关税合法性','中国企业应对碳关税的绿色转型路径'],policy:'欧盟Fit for 55计划'},
+    {name:'宁德时代德国建厂',cat:'对外投资与跨国经营',time:'2022-2023',facts:'宁德时代在德国图林根州投资18亿欧元建电池工厂，是中国动力电池企业首次在欧洲大规模绿地投资。',theories:['OLI范式(主)','绿地投资vs并购(主)','区位经济(辅)'],angles:['从OLI三优势分析为何选择德国而非并购','绿地投资的政治风险与应对策略','中国新能源企业全球化布局的战略逻辑']},
+    {name:'TikTok美国禁令事件',cat:'对外投资与跨国经营',time:'2020-2025',facts:'美国政府以国家安全为由要求TikTok剥离美国业务或禁用，历经行政令、国会听证、司法诉讼等多轮博弈。',theories:['内部化理论(主)','跨文化管理(辅)','制度距离(辅)'],angles:['政治风险对跨国经营的冲击机制','数字企业出海面临的监管挑战','从内部化理论看数据主权的博弈']},
+    {name:'RCEP生效与原产地规则',cat:'区域经济合作',time:'2022年1月生效',facts:'RCEP覆盖人口约22.7亿、GDP总和26万亿美元，实施统一原产地累积规则，成员国之间中间品贸易享关税优惠。',theories:['区域经济一体化(主)','贸易创造与转移(主)','关税同盟理论(辅)'],angles:['RCEP对中国产业升级的推动作用','原产地累积规则如何促进区域供应链整合','RCEP与CPTPP的规则对比']},
+    {name:'人民币国际化进程',cat:'汇率与金融',time:'2015-2025',facts:'CIPS跨境支付系统覆盖180+国家和地区，与超40国签订本币互换协议，人民币在国际支付份额升至4.5%。',theories:['国际货币体系(主)','三元悖论(主)','购买力平价(辅)'],angles:['人民币国际化的路径选择与挑战','数字货币对国际支付格局的影响','人民币计价资产的国际吸引力']},
+    {name:'中美半导体供应链博弈',cat:'供应链重构',time:'2022-2025',facts:'美国实施芯片法案限制对华出口先进制程芯片和设备；台积电在美日建厂；中国加速芯片自主化。',theories:['新贸易保护主义(主)','跨国公司理论(辅)','技术创新理论(辅)'],angles:['技术封锁对全球半导体供应链的重塑','中国半导体产业自主替代的战略路径','供应链安全与国家竞争力关系']},
+    {name:'苹果供应链向印度越南转移',cat:'供应链重构',time:'2020-2025',facts:'苹果将部分iPhone、AirPods产能从中国转移至印度和越南，推动供应链多元化，降低对中国制造依赖。',theories:['产品生命周期理论(主)','要素禀赋理论(辅)','内部化理论(辅)'],angles:['比较优势动态变化对全球供应链布局的影响','中国制造升级如何应对产业链外迁','供应链多元化与效率的权衡']},
+    {name:'CPTPP与中国申请加入',cat:'区域经济合作',time:'2021-2025',facts:'中国正式申请加入CPTPP，该协定在RCEP基础上设置更高标准的劳工、环境、知识产权、国有企业等规则。',theories:['区域经济一体化(主)','制度型开放(主)','WTO规则(辅)'],angles:['CPTPP高标准规则对中国改革开放的倒逼作用','RCEP与CPTPP的规则梯度与中国的选择','制度型开放的内涵与路径']},
+    {name:'星巴克中国本土化',cat:'文化与消费者',time:'1999至今',facts:'星巴克在中国从高端定位到本土化产品创新（茶饮系列、月饼礼盒），门店超6500家，成为跨文化经营成功典范。',theories:['霍夫斯泰德文化维度(主)','高语境低语境文化(主)','跨文化管理(辅)'],angles:['文化差异对跨国品牌战略的影响','本土化vs标准化的策略选择','从文化维度理论分析中西消费者差异']},
+    {name:'中国光伏产品双反调查',cat:'国际贸易摩擦',time:'2012-2024',facts:'美国、欧盟先后对中国光伏产品发起反倾销反补贴调查，加征高额关税，中国光伏企业通过第三国建厂规避。',theories:['反倾销与反补贴(主)','非关税壁垒(主)','产业政策(辅)'],angles:['贸易救济措施的贸易转移效应','中国光伏产业的全球化布局策略','新能源产业贸易摩擦的政治经济学分析']},
+    {name:'美联储加息与新兴市场资本流动',cat:'汇率与金融',time:'2022-2024',facts:'美联储连续加息11次将联邦基金利率升至5.5%，引发阿根廷、土耳其等新兴市场货币大幅贬值、资本外流。',theories:['利率平价(主)','三元悖论(主)','资本流动理论(辅)'],angles:['利率平价对汇率短期波动的解释力','三元悖论下新兴市场央行的政策困境','资本外流对新兴经济体宏观稳定的冲击']}
+  ];
+  
+  var cats = ['全部','国际贸易摩擦','对外投资与跨国经营','区域经济合作','汇率与金融','绿色贸易与ESG','文化与消费者','供应链重构'];
+  
+  var h = '<div id="chCaseFilter" style="margin-bottom:12px;display:flex;flex-wrap:wrap;gap:6px">';
+  cats.forEach(function(c) { h += '<span class="tviz-chip" style="cursor:pointer" onclick="chFilterCase(\'' + c + '\')">' + c + '</span>'; });
+  h += '</div><div id="chCaseList">';
+  
+  chCurCaseCat = '全部';
+  cases.forEach(function(cs) {
+    h += '<div class="pcard ch-case-card" data-cat="' + cs.cat + '">';
+    h += '<div class="pcard-hdr"><h3>' + cs.name + '</h3><span class="tviz-tag" style="font-size:10px">' + cs.cat + '</span></div>';
+    h += '<div class="pcard-body">';
+    h += '<div style="font-size:11px;color:var(--ts);margin-bottom:6px">⏰ ' + cs.time + '</div>';
+    h += '<p style="font-size:13px;line-height:1.7;color:var(--t);margin-bottom:8px">' + cs.facts + '</p>';
+    h += '<div style="margin-bottom:6px"><strong style="font-size:12px">可搭配理论：</strong>';
+    cs.theories.forEach(function(th) { h += '<span class="tviz-tag" style="cursor:pointer;margin:2px" onclick="chFilterTheoryTag(\'' + th.split('(')[0] + '\')">' + th + '</span>'; });
+    h += '</div>';
+    h += '<div style="font-size:12px;color:var(--ts)"><strong>答题角度：</strong>' + cs.angles.join('；') + '</div>';
+    if (cs.policy) h += '<div style="font-size:11px;color:#888;margin-top:4px">📜 ' + cs.policy + '</div>';
+    h += '</div></div>';
+  });
+  h += '</div>';
+  document.getElementById('chContent').innerHTML = h;
+  if (chCurCaseCat !== '全部') chFilterCase(chCurCaseCat);
+}
+
+var chCurCaseCat = '全部';
+function chFilterCase(cat) {
+  chCurCaseCat = cat;
+  var cards = document.querySelectorAll('.ch-case-card');
+  cards.forEach(function(c) { c.style.display = (cat === '全部' || c.getAttribute('data-cat') === cat) ? '' : 'none'; });
+  var chips = document.querySelectorAll('#chCaseFilter .tviz-chip');
+  chips.forEach(function(c) { if (c.textContent === cat) c.style.background = 'rgba(94,92,230,.15)'; else c.style.background = ''; });
+}
+
+function chFilterTheoryTag(tname) {
+  chSwitchTab('theory');
+  setTimeout(function() {
+    var inp = document.getElementById('chTheoryFilter');
+    if (inp) { inp.value = tname; chFilterTheory(); }
+  }, 100);
+}
+
+// ===== PHRASING LAYER =====
+function chRenderPhrase() {
+  var phrases = [
+    {pro:'人民币对美元双边汇率升值，多边贸易汇率贬值',colloquial:'汇率变了',scene:'汇率分析题',level:'A'},
+    {pro:'全球价值链重构呈现近岸化、友岸化、在岸化趋势',colloquial:'供应链在变化',scene:'供应链/产业链题',level:'A'},
+    {pro:'推动制度型开放，主动对接高标准国际经贸规则',colloquial:'中国要更开放',scene:'对外开放题',level:'A'},
+    {pro:'构建以国内大循环为主体、国内国际双循环相互促进的新发展格局',colloquial:'国内国际都要发展',scene:'中国经济战略题',level:'A',source:'国务院政府工作报告'},
+    {pro:'稳步扩大规则、规制、管理、标准等制度型开放',colloquial:'开放要讲规则',scene:'制度型开放题',level:'A',source:'二十大报告'},
+    {pro:'增强产业链供应链韧性和安全水平',colloquial:'保证供应链不断',scene:'供应链题',level:'B',source:'十四五规划'},
+    {pro:'RCEP覆盖人口约22.7亿，GDP总和达26万亿美元，约占全球总量30%',colloquial:'RCEP很大',scene:'区域合作题',level:'B'},
+    {pro:'非关税壁垒呈现隐蔽化、技术化、制度化趋势',colloquial:'非关税壁垒越来越多花样',scene:'贸易壁垒题',level:'A'},
+    {pro:'跨国经营需要深度嵌入东道国的制度环境与文化场域',colloquial:'跨国企业要考虑当地情况',scene:'跨国经营题',level:'B'},
+    {pro:'一国应按照两利相权取其重、两弊相权取其轻的原则',colloquial:'做划算的事',scene:'比较优势题',level:'A'},
+    {pro:'H-O模型认为一国应生产并出口密集使用其相对丰裕要素的产品',colloquial:'有什么资源就生产什么',scene:'要素禀赋题',level:'A'},
+    {pro:'三元悖论下货币政策独立性、汇率稳定与资本自由流动三者不可兼得',colloquial:'三个目标只能选两个',scene:'汇率政策题',level:'B'},
+    {pro:'推进共建一带一路高质量发展，秉持共商共建共享原则',colloquial:'一带一路要继续搞',scene:'对外合作题',level:'B',source:'国务院文件'},
+    {pro:'该产业具有显著的战略新兴属性',colloquial:'这个行业很重要',scene:'产业分析题',level:'C'},
+    {pro:'传统贸易理论解释产业间贸易与垂直分工；新贸易理论解释产业内贸易与水平分工',colloquial:'新旧理论说的事情不一样',scene:'理论对比题',level:'A'},
+    {pro:'内部化理论认为企业通过FDI建立内部市场以替代外部市场不完全性，降低交易成本',colloquial:'自己做比外包省钱',scene:'FDI理论题',level:'A'},
+    {pro:'有序推进人民币国际化',colloquial:'人民币越来越国际化了',scene:'货币国际化题',level:'B',source:'央行文件'},
+    {pro:'高水平对外开放要求从要素流动型开放转向规则等制度型开放',colloquial:'开放要升级',scene:'对外开放题',level:'A'}
+  ];
+  
+  var h = '<div style="margin-bottom:12px;display:flex;gap:6px;flex-wrap:wrap">';
+  ['全部','A级·必背','B级·重点','C级·了解'].forEach(function(l) {
+    h += '<span class="tviz-chip" style="cursor:pointer" onclick="chFilterPhrase(\'' + l.charAt(0) + '\')">' + l + '</span>';
+  });
+  // Module corpus phrases
+  if (typeof MODULE_CORPUS !== 'undefined' && MODULE_CORPUS.modules) {
+    h += '<span class="tviz-chip" style="cursor:pointer" onclick="chFilterPhrase(\'M\')">📖 模块语料话术</span>';
+  }
+  h += '</div>';
+  
+  h += '<div style="font-size:12px;color:#888;margin-bottom:12px">🅰️必背15条 · 🅱️重点20条 · 🅲了解15条 | 点击专业表述可复制</div>';
+  h += '<div id="chPhraseList">';
+  
+  phrases.forEach(function(p, i) {
+    var lvlColor = p.level === 'A' ? 'var(--gn)' : p.level === 'B' ? 'var(--or)' : 'var(--ts)';
+    h += '<div class="pcard ch-phrase-card" data-level="' + p.level + '" data-scene="' + (p.scene||'') + '" style="cursor:pointer" onclick="navigator.clipboard.writeText(this.querySelector(\'.ch-pro\').textContent);var t=this.querySelector(\'.ch-copy-hint\');if(t){t.textContent=\'已复制!\';setTimeout(function(){t.textContent=\'点击复制\'},1500)}">';
+    h += '<div class="pcard-body" style="display:flex;align-items:flex-start;gap:14px">';
+    h += '<span style="flex-shrink:0;width:28px;height:28px;border-radius:50%;background:' + lvlColor + ';opacity:.2;display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:700;color:var(--t)">' + p.level + '</span>';
+    h += '<div style="flex:1">';
+    h += '<div class="ch-pro" style="font-size:14px;font-weight:600;color:var(--t);line-height:1.7;margin-bottom:4px">' + p.pro + '</div>';
+    h += '<div style="font-size:11px;color:#888">替换：' + p.colloquial + ' <span style="margin-left:6px;padding:1px 6px;border-radius:4px;background:rgba(255,255,255,.04)">' + (p.scene||'') + '</span>';
+    if (p.source) h += ' <span style="margin-left:4px;color:var(--ts)">| ' + p.source + '</span>';
+    h += '</div>';
+    h += '</div>';
+    h += '<span class="ch-copy-hint" style="flex-shrink:0;font-size:10px;color:var(--ts);margin-top:2px">点击复制</span>';
+    h += '</div></div>';
+  });
+  
+  // Module corpus phrases
+  if (typeof MODULE_CORPUS !== 'undefined' && MODULE_CORPUS.modules) {
+    var mcCount = 0;
+    MODULE_CORPUS.modules.forEach(function(m) {
+      if (m.high_freq_phrases && m.high_freq_phrases.length) {
+        m.high_freq_phrases.forEach(function(p2) {
+          h += '<div class="pcard ch-phrase-card" data-level="M" style="cursor:pointer" onclick="navigator.clipboard.writeText(this.querySelector(\'.ch-pro\').textContent);var t=this.querySelector(\'.ch-copy-hint\');if(t){t.textContent=\'已复制!\';setTimeout(function(){t.textContent=\'点击复制\'},1500)}">';
+          h += '<div class="pcard-body" style="display:flex;align-items:flex-start;gap:14px">';
+          h += '<span style="flex-shrink:0;width:28px;height:28px;border-radius:50%;background:var(--pu);opacity:.2;display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:700">M</span>';
+          h += '<div style="flex:1"><div class="ch-pro" style="font-size:14px;font-weight:600;color:var(--t);line-height:1.7">' + p2 + '</div>';
+          h += '<div style="font-size:11px;color:var(--ts)">来源：' + m.module + ' 模块语料</div></div>';
+          h += '<span class="ch-copy-hint" style="flex-shrink:0;font-size:10px;color:var(--ts);margin-top:2px">点击复制</span>';
+          h += '</div></div>';
+          mcCount++;
+        });
+      }
     });
   }
   
-  document.getElementById('ct').innerHTML = h;
+  h += '</div>';
+  document.getElementById('chContent').innerHTML = h;
+}
+
+var chCurPhraseLevel = '全部';
+function chFilterPhrase(lvl) {
+  chCurPhraseLevel = lvl;
+  var cards = document.querySelectorAll('.ch-phrase-card');
+  cards.forEach(function(c) { c.style.display = (lvl === '全部' || c.getAttribute('data-level') === lvl) ? '' : 'none'; });
 }
 
 
