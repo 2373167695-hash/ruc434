@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<!-- v2.1 · 2026-07-17 05:06 · modular -->
+<!-- v2.1 · 2026-07-17 05:15 · modular -->
 <html lang="zh-CN">
 <head>
 <meta charset="UTF-8">
@@ -18080,12 +18080,54 @@ function chSwitchTab(tab) {
   window['chRender' + tab.charAt(0).toUpperCase() + tab.slice(1)]();
 }
 
+// ===== USER DATA HELPERS =====
+function chLoadUserData(layer) { try { return JSON.parse(localStorage.getItem('r434_ch_'+layer)||'[]'); } catch(e) { return []; } }
+function chSaveUserData(layer, data) { try { localStorage.setItem('r434_ch_'+layer, JSON.stringify(data)); } catch(e) {} }
+function chToggleAdd(layer) { var el=document.getElementById('chAddForm-'+layer); if(el) el.style.display=el.style.display==='none'?'block':'none'; }
+function chSaveUserItem(layer) {
+  var title=(document.getElementById('chAddTitle-'+layer)||{}).value||''; if(!title.trim()) return;
+  var item={}; var ud=chLoadUserData(layer);
+  if(layer==='theory'){ item.title=title; item.summary=(document.getElementById('chAddSummary-'+layer)||{}).value||''; item.keywords=((document.getElementById('chAddKeywords-'+layer)||{}).value||'').split(',').filter(function(k){return k.trim()}); }
+  else if(layer==='case'){ item.title=title; item.cat=(document.getElementById('chAddCat-'+layer)||{}).value||'其他'; item.facts=(document.getElementById('chAddFacts-'+layer)||{}).value||''; item.theories=((document.getElementById('chAddTheories-'+layer)||{}).value||'').split(',').filter(function(t){return t.trim()}); item.angles=((document.getElementById('chAddAngles-'+layer)||{}).value||'').split('\n').filter(function(a){return a.trim()}); }
+  else if(layer==='phrase'){ item.pro=title; item.colloquial=(document.getElementById('chAddColloquial-'+layer)||{}).value||''; item.scene=(document.getElementById('chAddScene-'+layer)||{}).value||''; }
+  ud.unshift(item); chSaveUserData(layer, ud); window['chRender'+layer.charAt(0).toUpperCase()+layer.slice(1)](); }
+function chDeleteUserItem(layer, index) { var ud=chLoadUserData(layer); ud.splice(index,1); chSaveUserData(layer, ud); window['chRender'+layer.charAt(0).toUpperCase()+layer.slice(1)](); }
+function chBuildUserCard(layer, item, index) {
+  var h='<div class="pcard" style="border-left:2px solid var(--pu);margin-bottom:12px">';
+  if(layer==='theory'){
+    h+='<div class="pcard-hdr"><h3>📝 '+item.title+' <span style="font-size:10px;color:var(--pu)">我的</span></h3><span style="font-size:10px;color:var(--r);cursor:pointer" onclick="chDeleteUserItem(\'theory\','+index+')">✕</span></div>';
+    h+='<div class="pcard-body"><p style="font-size:13px;color:var(--t)">'+(item.summary||'')+'</p>';
+    if(item.keywords&&item.keywords.length){ h+='<div style="display:flex;flex-wrap:wrap;gap:4px;margin-top:6px">'; item.keywords.forEach(function(k){ h+='<span style="background:rgba(88,86,214,.1);color:var(--pu);padding:2px 8px;border-radius:10px;font-size:10px">'+k.trim()+'</span>'; }); h+='</div>'; }
+    h+='</div>';
+  } else if(layer==='case'){
+    h+='<div class="pcard-hdr"><h3>📰 '+item.title+' <span style="font-size:10px;color:var(--pu)">我的</span></h3><span style="font-size:10px;color:var(--r);cursor:pointer" onclick="chDeleteUserItem(\'case\','+index+')">✕</span></div>';
+    h+='<div class="pcard-body"><div style="font-size:11px;color:var(--ts)">'+(item.cat||'')+'</div><p style="font-size:13px;color:var(--t);margin:6px 0">'+(item.facts||'')+'</p>';
+    if(item.theories&&item.theories.length) h+='<div style="font-size:12px;color:var(--ts)"><strong>可搭配理论：</strong>'+item.theories.join('、')+'</div>';
+    h+='</div>';
+  } else if(layer==='phrase'){
+    h+='<div class="pcard-body" style="display:flex;align-items:flex-start;gap:14px"><span style="flex-shrink:0;width:28px;height:28px;border-radius:50%;background:var(--pu);opacity:.2;display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:700">我</span>';
+    h+='<div style="flex:1"><div style="font-size:14px;font-weight:600;color:var(--t)">'+(item.pro||'')+'</div><div style="font-size:11px;color:#888">替换：'+(item.colloquial||'')+' <span style="margin-left:6px;padding:1px 6px;border-radius:4px;background:rgba(255,255,255,.06)">'+(item.scene||'')+'</span></div></div>';
+    h+='<span style="font-size:10px;color:var(--r);cursor:pointer" onclick="chDeleteUserItem(\'phrase\','+index+')">✕</span></div>';
+  }
+  h+='</div>'; return h;
+}
+
 // ===== THEORY LAYER =====
 function chRenderTheory() {
   var h = '';
-  // Filter input
-  h += '<div style="margin-bottom:12px"><input id="chTheoryFilter" placeholder="搜索理论..." style="width:100%;padding:8px 12px;background:rgba(255,255,255,.04);border:1px solid var(--bdr);border-radius:10px;font-size:13px;color:var(--t);outline:none" oninput="chFilterTheory()"></div>';
+  var ud = chLoadUserData('theory');
+  h += '<div style="display:flex;gap:8px;margin-bottom:12px"><input id="chTheoryFilter" placeholder="搜索理论..." style="flex:1;padding:8px 12px;background:rgba(255,255,255,.04);border:1px solid var(--bdr);border-radius:10px;font-size:13px;color:var(--t);outline:none" oninput="chFilterTheory()"><button class="ai-btn ai-btn-sm" onclick="chToggleAdd(\'theory\')" style="padding:6px 14px;font-size:12px;white-space:nowrap">➕ 添加</button></div>';
+  h += '<div id="chAddForm-theory" style="display:none;margin-bottom:12px;padding:14px;background:rgba(88,86,214,.06);border:1px solid rgba(88,86,214,.15);border-radius:12px">';
+  h += '<input id="chAddTitle-theory" placeholder="理论名称" style="width:100%;padding:8px;background:rgba(255,255,255,.04);border:1px solid var(--bdr);border-radius:8px;font-size:13px;color:var(--t);margin-bottom:8px;outline:none">';
+  h += '<input id="chAddSummary-theory" placeholder="一句话概括（核心观点）" style="width:100%;padding:8px;background:rgba(255,255,255,.04);border:1px solid var(--bdr);border-radius:8px;font-size:13px;color:var(--t);margin-bottom:8px;outline:none">';
+  h += '<input id="chAddKeywords-theory" placeholder="3个关键词（逗号分隔）" style="width:100%;padding:8px;background:rgba(255,255,255,.04);border:1px solid var(--bdr);border-radius:8px;font-size:13px;color:var(--t);margin-bottom:8px;outline:none">';
+  h += '<div style="display:flex;gap:8px"><button class="ai-btn ai-btn-sm" onclick="chSaveUserItem(\'theory\')" style="padding:6px 16px;font-size:12px">保存</button><button style="padding:6px 16px;font-size:12px;border:1px solid var(--bdr);border-radius:8px;background:transparent;color:var(--ts);cursor:pointer" onclick="chToggleAdd(\'theory\')">取消</button></div></div>';
   h += '<div id="chTheoryList">';
+  
+  // User-added items first
+  ud.forEach(function(item, i) {
+    h += chBuildUserCard('theory', item, i);
+  });
   
   var keys = Object.keys(KNOWLEDGE).sort();
   keys.forEach(function(k) {
@@ -18146,8 +18188,22 @@ function chRenderCase() {
   
   var cats = ['全部','国际贸易摩擦','对外投资与跨国经营','区域经济合作','汇率与金融','绿色贸易与ESG','文化与消费者','供应链重构'];
   
-  var h = '<div id="chCaseFilter" style="margin-bottom:12px;display:flex;flex-wrap:wrap;gap:6px">';
+  var h = '<div style="display:flex;gap:8px;margin-bottom:12px;flex-wrap:wrap" id="chCaseFilter">';
   cats.forEach(function(c) { h += '<span class="tviz-chip" style="cursor:pointer" onclick="chFilterCase(\'' + c + '\')">' + c + '</span>'; });
+  h += '<button class="ai-btn ai-btn-sm" onclick="chToggleAdd(\'case\')" style="padding:6px 14px;font-size:12px">➕ 添加案例</button>';
+  h += '</div>';
+  // Add form
+  h += '<div id="chAddForm-case" style="display:none;margin-bottom:12px;padding:14px;background:rgba(88,86,214,.06);border:1px solid rgba(88,86,214,.15);border-radius:12px">';
+  h += '<input id="chAddTitle-case" placeholder="案例名称" style="width:100%;padding:8px;background:rgba(255,255,255,.04);border:1px solid var(--bdr);border-radius:8px;font-size:13px;color:var(--t);margin-bottom:8px;outline:none">';
+  h += '<select id="chAddCat-case" style="width:100%;padding:8px;background:rgba(255,255,255,.04);border:1px solid var(--bdr);border-radius:8px;font-size:13px;color:var(--t);margin-bottom:8px;outline:none"><option>国际贸易摩擦</option><option>对外投资与跨国经营</option><option>区域经济合作</option><option>汇率与金融</option><option>绿色贸易与ESG</option><option>文化与消费者</option><option>供应链重构</option><option>数字贸易与技术</option><option>其他</option></select>';
+  h += '<input id="chAddFacts-case" placeholder="核心事实（30-50字）" style="width:100%;padding:8px;background:rgba(255,255,255,.04);border:1px solid var(--bdr);border-radius:8px;font-size:13px;color:var(--t);margin-bottom:8px;outline:none">';
+  h += '<input id="chAddTheories-case" placeholder="可搭配理论（逗号分隔）" style="width:100%;padding:8px;background:rgba(255,255,255,.04);border:1px solid var(--bdr);border-radius:8px;font-size:13px;color:var(--t);margin-bottom:8px;outline:none">';
+  h += '<textarea id="chAddAngles-case" placeholder="答题角度（每行一个）" style="width:100%;padding:8px;background:rgba(255,255,255,.04);border:1px solid var(--bdr);border-radius:8px;font-size:13px;color:var(--t);margin-bottom:8px;outline:none;resize:vertical;min-height:60px"></textarea>';
+  h += '<div style="display:flex;gap:8px"><button class="ai-btn ai-btn-sm" onclick="chSaveUserItem(\'case\')" style="padding:6px 16px;font-size:12px">保存</button><button style="padding:6px 16px;font-size:12px;border:1px solid var(--bdr);border-radius:8px;background:transparent;color:var(--ts);cursor:pointer" onclick="chToggleAdd(\'case\')">取消</button></div></div>';
+  h += '<div id="chCaseList">';
+  // User-added cases
+  var ud = chLoadUserData('case');
+  ud.forEach(function(item, i) { h += chBuildUserCard('case', item, i); });
   h += '</div><div id="chCaseList">';
   
   chCurCaseCat = '全部';
@@ -18218,9 +18274,17 @@ function chRenderPhrase() {
     h += '<span class="tviz-chip" style="cursor:pointer" onclick="chFilterPhrase(\'M\')">📖 模块语料话术</span>';
   }
   h += '</div>';
+  h += '<button class="ai-btn ai-btn-sm" onclick="chToggleAdd(' + "'phrase'" + r')" style="padding:6px 14px;font-size:12px;margin-bottom:12px">➕ 添加话术</button>';
+  h += '<div id="chAddForm-phrase" style="display:none;margin-bottom:12px;padding:14px;background:rgba(88,86,214,.06);border:1px solid rgba(88,86,214,.15);border-radius:12px">';
+  h += '<input id="chAddTitle-phrase" placeholder="专业表述" style="width:100%;padding:8px;background:rgba(255,255,255,.04);border:1px solid var(--bdr);border-radius:8px;font-size:13px;color:var(--t);margin-bottom:8px;outline:none">';
+  h += '<input id="chAddColloquial-phrase" placeholder="替换掉的大白话" style="width:100%;padding:8px;background:rgba(255,255,255,.04);border:1px solid var(--bdr);border-radius:8px;font-size:13px;color:var(--t);margin-bottom:8px;outline:none">';
+  h += '<input id="chAddScene-phrase" placeholder="适用场景" style="width:100%;padding:8px;background:rgba(255,255,255,.04);border:1px solid var(--bdr);border-radius:8px;font-size:13px;color:var(--t);margin-bottom:8px;outline:none">';
+  h += '<div style="display:flex;gap:8px"><button class="ai-btn ai-btn-sm" onclick="chSaveUserItem(' + "'phrase'" + r')" style="padding:6px 16px;font-size:12px">保存</button><button style="padding:6px 16px;font-size:12px;border:1px solid var(--bdr);border-radius:8px;background:transparent;color:var(--ts);cursor:pointer" onclick="chToggleAdd(' + "'phrase'" + r')">取消</button></div></div>';
   
   h += '<div style="font-size:12px;color:#888;margin-bottom:12px">🅰️必背15条 · 🅱️重点20条 · 🅲了解15条 | 点击专业表述可复制</div>';
   h += '<div id="chPhraseList">';
+  var ud2 = chLoadUserData('phrase');
+  ud2.forEach(function(item, i) { h += chBuildUserCard('phrase', item, i); });
   
   phrases.forEach(function(p, i) {
     var lvlColor = p.level === 'A' ? 'var(--gn)' : p.level === 'B' ? 'var(--or)' : 'var(--ts)';
