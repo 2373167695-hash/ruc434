@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<!-- v2.1 · 2026-07-20 03:37 · modular -->
+<!-- v2.1 · 2026-07-20 03:40 · modular -->
 <html lang="zh-CN">
 <head>
 <meta charset="UTF-8">
@@ -18285,12 +18285,12 @@ function chRenderPhrase() {
     h += '<span class="tviz-chip" style="cursor:pointer" onclick="chFilterPhrase(\'M\')">📖 模块语料话术</span>';
   }
   h += '</div>';
-  h += '<button class="ai-btn ai-btn-sm" onclick="chToggleAdd(' + "'phrase'" + r')" style="padding:6px 14px;font-size:12px;margin-bottom:12px">➕ 添加话术</button>';
+  h += '<button class="ai-btn ai-btn-sm" onclick="chToggleAdd(\'phrase\')" style="padding:6px 14px;font-size:12px;margin-bottom:12px">➕ 添加话术</button>';
   h += '<div id="chAddForm-phrase" style="display:none;margin-bottom:12px;padding:14px;background:rgba(88,86,214,.06);border:1px solid rgba(88,86,214,.15);border-radius:12px">';
   h += '<input id="chAddTitle-phrase" placeholder="专业表述" style="width:100%;padding:8px;background:rgba(255,255,255,.04);border:1px solid var(--bdr);border-radius:8px;font-size:13px;color:var(--t);margin-bottom:8px;outline:none">';
   h += '<input id="chAddColloquial-phrase" placeholder="替换掉的大白话" style="width:100%;padding:8px;background:rgba(255,255,255,.04);border:1px solid var(--bdr);border-radius:8px;font-size:13px;color:var(--t);margin-bottom:8px;outline:none">';
   h += '<input id="chAddScene-phrase" placeholder="适用场景" style="width:100%;padding:8px;background:rgba(255,255,255,.04);border:1px solid var(--bdr);border-radius:8px;font-size:13px;color:var(--t);margin-bottom:8px;outline:none">';
-  h += '<div style="display:flex;gap:8px"><button class="ai-btn ai-btn-sm" onclick="chSaveUserItem(' + "'phrase'" + r')" style="padding:6px 16px;font-size:12px">保存</button><button style="padding:6px 16px;font-size:12px;border:1px solid var(--bdr);border-radius:8px;background:transparent;color:var(--ts);cursor:pointer" onclick="chToggleAdd(' + "'phrase'" + r')">取消</button></div></div>';
+  h += '<div style="display:flex;gap:8px"><button class="ai-btn ai-btn-sm" onclick="chSaveUserItem(\'phrase\')" style="padding:6px 16px;font-size:12px">保存</button><button style="padding:6px 16px;font-size:12px;border:1px solid var(--bdr);border-radius:8px;background:transparent;color:var(--ts);cursor:pointer" onclick="chToggleAdd(\'phrase\')">取消</button></div></div>';
   
   h += '<div style="font-size:12px;color:#888;margin-bottom:12px">🅰️必背15条 · 🅱️重点20条 · 🅲了解15条 | 点击专业表述可复制</div>';
   h += '<div id="chPhraseList">';
