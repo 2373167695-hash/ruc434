@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<!-- v2.1 · 2026-07-17 05:15 · modular -->
+<!-- v2.1 · 2026-07-20 03:37 · modular -->
 <html lang="zh-CN">
 <head>
 <meta charset="UTF-8">
@@ -16645,6 +16645,12 @@ function loadCloudData(token) {
       chatHistory = data.chat;
       try { localStorage.setItem('r434_chat', JSON.stringify(chatHistory)); } catch(e) {}
     }
+    // Restore corpus (三层语料)
+    if (data.corpus) {
+      try { if (data.corpus.theory) localStorage.setItem('r434_ch_theory', JSON.stringify(data.corpus.theory)); } catch(e) {}
+      try { if (data.corpus.case) localStorage.setItem('r434_ch_case', JSON.stringify(data.corpus.case)); } catch(e) {}
+      try { if (data.corpus.phrase) localStorage.setItem('r434_ch_phrase', JSON.stringify(data.corpus.phrase)); } catch(e) {}
+    }
     // Show sync status
     var ss = document.getElementById('syncStatus');
     if (ss && data._lastSync) { ss.style.display = 'block'; ss.textContent = '已恢复云端数据 · ' + new Date(data._lastSync).toLocaleString(); setTimeout(function(){ss.style.display='none'},3000); }
@@ -16656,10 +16662,15 @@ function syncToCloud() {
   if (!token) return;
   clearTimeout(_syncTimer);
   _syncTimer = setTimeout(function() {
+    // Collect corpus data from localStorage
+    var corpus = {};
+    try { corpus.theory = JSON.parse(localStorage.getItem('r434_ch_theory') || '[]'); } catch(e) { corpus.theory = []; }
+    try { corpus.case = JSON.parse(localStorage.getItem('r434_ch_case') || '[]'); } catch(e) { corpus.case = []; }
+    try { corpus.phrase = JSON.parse(localStorage.getItem('r434_ch_phrase') || '[]'); } catch(e) { corpus.phrase = []; }
     fetch(SYNC_URL + '/sync', {
       method: 'POST',
       headers: {'Authorization': 'Bearer ' + token, 'Content-Type': 'application/json'},
-      body: JSON.stringify({marks: marks, knowledgeViews: knowledgeViews, chatHistory: chatHistory.slice(-20)})
+      body: JSON.stringify({marks: marks, knowledgeViews: knowledgeViews, chatHistory: chatHistory.slice(-20), corpus: corpus})
     }).catch(function() {});
   }, 2000);
 }
