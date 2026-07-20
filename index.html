@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<!-- v2.1 · 2026-07-20 03:57 · modular -->
+<!-- v2.1 · 2026-07-20 04:00 · modular -->
 <html lang="zh-CN">
 <head>
 <meta charset="UTF-8">
@@ -18503,10 +18503,12 @@ function chRenderCase() {
     {name:'CPTPP与中国申请加入',cat:'区域经济合作',time:'2021-2025',facts:'中国正式申请加入CPTPP，该协定在RCEP基础上设置更高标准的劳工、环境、知识产权、国有企业等规则。',theories:['区域经济一体化(主)','制度型开放(主)','WTO规则(辅)'],angles:['CPTPP高标准规则对中国改革开放的倒逼作用','RCEP与CPTPP的规则梯度与中国的选择','制度型开放的内涵与路径']},
     {name:'星巴克中国本土化',cat:'文化与消费者',time:'1999至今',facts:'星巴克在中国从高端定位到本土化产品创新（茶饮系列、月饼礼盒），门店超6500家，成为跨文化经营成功典范。',theories:['霍夫斯泰德文化维度(主)','高语境低语境文化(主)','跨文化管理(辅)'],angles:['文化差异对跨国品牌战略的影响','本土化vs标准化的策略选择','从文化维度理论分析中西消费者差异']},
     {name:'中国光伏产品双反调查',cat:'国际贸易摩擦',time:'2012-2024',facts:'美国、欧盟先后对中国光伏产品发起反倾销反补贴调查，加征高额关税，中国光伏企业通过第三国建厂规避。',theories:['反倾销与反补贴(主)','非关税壁垒(主)','产业政策(辅)'],angles:['贸易救济措施的贸易转移效应','中国光伏产业的全球化布局策略','新能源产业贸易摩擦的政治经济学分析']},
-    {name:'美联储加息与新兴市场资本流动',cat:'汇率与金融',time:'2022-2024',facts:'美联储连续加息11次将联邦基金利率升至5.5%，引发阿根廷、土耳其等新兴市场货币大幅贬值、资本外流。',theories:['利率平价(主)','三元悖论(主)','资本流动理论(辅)'],angles:['利率平价对汇率短期波动的解释力','三元悖论下新兴市场央行的政策困境','资本外流对新兴经济体宏观稳定的冲击']}
+    {name:'美联储加息与新兴市场资本流动',cat:'汇率与金融',time:'2022-2024',facts:'美联储连续加息11次将联邦基金利率升至5.5%，引发阿根廷、土耳其等新兴市场货币大幅贬值、资本外流。',theories:['利率平价(主)','三元悖论(主)','资本流动理论(辅)'],angles:['利率平价对汇率短期波动的解释力','三元悖论下新兴市场央行的政策困境','资本外流对新兴经济体宏观稳定的冲击']},
+    {name:'数字税争端与OECD双支柱',cat:'数字贸易与技术',time:'2019-2026',facts:'法国率先对美国科技企业征收数字服务税，引发美欧数字税争端。OECD推动双支柱方案：支柱一重新分配征税权，支柱二设全球最低企业税15%。',theories:['非关税壁垒(主)','跨国公司理论(辅)','制度型开放(辅)'],angles:['数字税对跨国数字企业的经营影响','从税收主权与国际规则角度分析数字税争议','中国数字企业出海面临的税务合规挑战'],policy:'OECD双支柱框架'},
+    {name:'数据跨境流动与GDPR',cat:'数字贸易与技术',time:'2018至今',facts:'欧盟GDPR对跨境数据传输设置严格限制，违规罚款可达全球营收4%。中国出台《数据出境安全评估办法》，建立数据出境三重路径。全球数据流动规则碎片化加剧。',theories:['非关税壁垒(主)','制度型开放(主)','跨国公司理论(辅)'],angles:['数据本地化要求对跨境电商的影响','从贸易便利化角度分析数据壁垒','中国数据出境规则与RCEP数字贸易章节的衔接'],policy:'GDPR/中国数据出境安全评估办法'}
   ];
   
-  var cats = ['全部','国际贸易摩擦','对外投资与跨国经营','区域经济合作','汇率与金融','绿色贸易与ESG','文化与消费者','供应链重构'];
+  var cats = ['全部','国际贸易摩擦','对外投资与跨国经营','区域经济合作','汇率与金融','数字贸易与技术','绿色贸易与ESG','文化与消费者','供应链重构'];
   
   var h = '<div style="display:flex;gap:8px;margin-bottom:12px;flex-wrap:wrap" id="chCaseFilter">';
   cats.forEach(function(c) { h += '<span class="tviz-chip" style="cursor:pointer" onclick="chFilterCase(\'' + c + '\')">' + c + '</span>'; });
@@ -18515,7 +18517,7 @@ function chRenderCase() {
   // Add form
   h += '<div id="chAddForm-case" style="display:none;margin-bottom:12px;padding:14px;background:rgba(88,86,214,.06);border:1px solid rgba(88,86,214,.15);border-radius:12px">';
   h += '<input id="chAddTitle-case" placeholder="案例名称" style="width:100%;padding:8px;background:rgba(255,255,255,.04);border:1px solid var(--bdr);border-radius:8px;font-size:13px;color:var(--t);margin-bottom:8px;outline:none">';
-  h += '<select id="chAddCat-case" style="width:100%;padding:8px;background:rgba(255,255,255,.04);border:1px solid var(--bdr);border-radius:8px;font-size:13px;color:var(--t);margin-bottom:8px;outline:none"><option>国际贸易摩擦</option><option>对外投资与跨国经营</option><option>区域经济合作</option><option>汇率与金融</option><option>绿色贸易与ESG</option><option>文化与消费者</option><option>供应链重构</option><option>数字贸易与技术</option><option>其他</option></select>';
+  h += '<select id="chAddCat-case" style="width:100%;padding:8px;background:rgba(255,255,255,.04);border:1px solid var(--bdr);border-radius:8px;font-size:13px;color:var(--t);margin-bottom:8px;outline:none"><option>国际贸易摩擦</option><option>对外投资与跨国经营</option><option>区域经济合作</option><option>汇率与金融</option><option>数字贸易与技术</option><option>绿色贸易与ESG</option><option>文化与消费者</option><option>供应链重构</option><option>其他</option></select>';
   h += '<input id="chAddFacts-case" placeholder="核心事实（30-50字）" style="width:100%;padding:8px;background:rgba(255,255,255,.04);border:1px solid var(--bdr);border-radius:8px;font-size:13px;color:var(--t);margin-bottom:8px;outline:none">';
   h += '<input id="chAddTheories-case" placeholder="可搭配理论（逗号分隔）" style="width:100%;padding:8px;background:rgba(255,255,255,.04);border:1px solid var(--bdr);border-radius:8px;font-size:13px;color:var(--t);margin-bottom:8px;outline:none">';
   h += '<textarea id="chAddAngles-case" placeholder="答题角度（每行一个）" style="width:100%;padding:8px;background:rgba(255,255,255,.04);border:1px solid var(--bdr);border-radius:8px;font-size:13px;color:var(--t);margin-bottom:8px;outline:none;resize:vertical;min-height:60px"></textarea>';
