@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<!-- v2.1 · 2026-07-20 04:21 · modular -->
+<!-- v2.1 · 2026-07-21 11:47 · modular -->
 <html lang="zh-CN">
 <head>
 <meta charset="UTF-8">
@@ -744,6 +744,13 @@ body.sb-collapsed .sidebar.open ~ .sidebar-backdrop{display:block}
 }
 .tviz-btn:hover { background: rgba(94,92,230,.28); transform: translateY(-1px); }
 .tviz-btn:disabled { opacity: .25; cursor: not-allowed; transform: none; }
+
+/* 我的语料大纲编辑器 */
+.mc-node { border-radius:6px; transition: background .15s; }
+.mc-node:hover { background: rgba(255,255,255,.03); }
+.mc-node .mc-txt { cursor: text; border-bottom: 1px dashed transparent; }
+.mc-node .mc-txt:hover { border-bottom-color: rgba(255,255,255,.15); }
+.mc-node.drag-over { background: rgba(88,86,214,.1); border: 1px dashed var(--pu); }
 </style>
 
 </head>
@@ -16513,6 +16520,7 @@ function loadCloudData(token) {
       try { if (data.corpus.theory) localStorage.setItem('r434_ch_theory', JSON.stringify(data.corpus.theory)); } catch(e) {}
       try { if (data.corpus.case) localStorage.setItem('r434_ch_case', JSON.stringify(data.corpus.case)); } catch(e) {}
       try { if (data.corpus.phrase) localStorage.setItem('r434_ch_phrase', JSON.stringify(data.corpus.phrase)); } catch(e) {}
+      try { if (data.corpus.mycorpus) localStorage.setItem('r434_mycorpus', JSON.stringify(data.corpus.mycorpus)); } catch(e) {}
     }
     // Show sync status
     var ss = document.getElementById('syncStatus');
@@ -16530,6 +16538,7 @@ function syncToCloud() {
     try { corpus.theory = JSON.parse(localStorage.getItem('r434_ch_theory') || '[]'); } catch(e) { corpus.theory = []; }
     try { corpus.case = JSON.parse(localStorage.getItem('r434_ch_case') || '[]'); } catch(e) { corpus.case = []; }
     try { corpus.phrase = JSON.parse(localStorage.getItem('r434_ch_phrase') || '[]'); } catch(e) { corpus.phrase = []; }
+    try { corpus.mycorpus = JSON.parse(localStorage.getItem('r434_mycorpus') || '[]'); } catch(e) { corpus.mycorpus = []; }
     fetch(SYNC_URL + '/sync', {
       method: 'POST',
       headers: {'Authorization': 'Bearer ' + token, 'Content-Type': 'application/json'},
@@ -16558,7 +16567,7 @@ function buildNav() {
   knh += '<div class="ni lv0" data-p="graph">🕸️ 知识图谱</div>';
   knh += '<div class="ni lv0" data-p="aichat">💬 AI助手</div>';
   knh += '<div class="sidebar-section-label">备考工具</div>';
-  knh += '<div class="ni lv0" data-p="corpushub">🧭 能力地图</div>';
+  knh += '<div class="ni lv0" data-p="mycorpus">📋 我的语料</div>';
   knh += '<div class="ni lv0" data-p="theoryviz">📐 理论可视化</div>';
   knh += '<div class="ni lv0" data-p="outputtrain">✍️ 输出训练</div>';
   knh += '<div class="ni lv0" data-p="mockexam">🎯 AI模考</div>';
@@ -16700,6 +16709,7 @@ function navigate(p, topicName, skipHistory) {
     else if (p === 'answerbank') { showCorpusHub(); }
     else if (p === 'modcorpus') { showModuleCorpus(); }
     else if (p === 'corpushub') { showCorpusHub(); }
+    else if (p === 'mycorpus') { showMyCorpus(); }
     else if (p === 'capmap') { showCorpusHub(); }
     else if (p === 'stats') { showStats(); }
     else if (p === 'cards') { showCards(); } else if (p === 'hot') { showHotTopic(); }
@@ -18205,6 +18215,166 @@ function chFilterPhrase(lvl) {
   chCurPhraseLevel = lvl;
   var cards = document.querySelectorAll('.ch-phrase-card');
   cards.forEach(function(c) { c.style.display = (lvl === '全部' || c.getAttribute('data-level') === lvl) ? '' : 'none'; });
+}
+
+
+// ===== 我的语料 · 可折叠大纲编辑器 =====
+function showMyCorpus() {
+  document.getElementById('bc').innerHTML = '<span>📋 我的语料</span>';
+  var tree = mcLoad();
+  var h = '<div class="hero"><h1>📋 我的语料</h1><div class="desc">可折叠大纲编辑器 —— 点击 ▸ 展开子节点，双击文字编辑，拖拽排序</div></div>';
+  h += '<div style="margin-bottom:12px;display:flex;gap:8px;flex-wrap:wrap">';
+  h += '<button class="ai-btn ai-btn-sm" onclick="mcAddRoot()" style="padding:6px 14px;font-size:12px">➕ 添加一级节点</button>';
+  h += '<button class="ai-btn ai-btn-sm" onclick="mcExportMD()" style="padding:6px 14px;font-size:12px">📤 导出Markdown</button>';
+  h += '<button class="ai-btn ai-btn-sm" onclick="mcImportMD()" style="padding:6px 14px;font-size:12px">📥 导入Markdown</button>';
+  h += '<span style="font-size:11px;color:#888;margin-left:auto">双击编辑 · 拖拽排序 · 自动保存</span>';
+  h += '</div>';
+  h += '<div id="mcTree" style="font-size:14px;line-height:1.9"></div>';
+  document.getElementById('ct').innerHTML = h;
+  mcRender(tree);
+}
+
+var mcData = null;
+function mcLoad() {
+  if (mcData) return mcData;
+  try { mcData = JSON.parse(localStorage.getItem('r434_mycorpus')||'[]'); } catch(e) { mcData = []; }
+  if (!mcData.length) {
+    mcData = [
+      {t:'📚 理论层',c:[{t:'比较优势理论',c:[{t:'概括：一国应专业化生产并出口其具有比较优势的商品'},{t:'关键词：劳动生产率、机会成本、贸易互利'},{t:'真题：★2011简答 ★2014简答'}]}]},
+      {t:'📰 案例层',c:[{t:'国际贸易摩擦',c:[{t:'中美关税战',c:[{t:'事实：美国对华加征多轮关税，涉及超5000亿美元'},{t:'理论：关税效应分析(主)、贸易保护理论(主)'}]}]}]},
+      {t:'💬 话术层',c:[{t:'A级·必背',c:[{t:'制度型开放 → 替换"中国要更开放"'},{t:'全球价值链重构呈现近岸化友岸化趋势 → 替换"供应链在变化"'}]},{t:'B级·重点',c:[{t:'增强产业链供应链韧性和安全水平 → 替换"保证供应链不断"'}]}]}
+    ];
+    mcSave();
+  }
+  return mcData;
+}
+function mcSave() { try { localStorage.setItem('r434_mycorpus',JSON.stringify(mcData)); } catch(e) {} syncToCloud(); }
+
+function mcRender(tree, container) {
+  container = container || document.getElementById('mcTree');
+  if (!container) return;
+  var h = '';
+  (function walk(nodes, depth) {
+    nodes.forEach(function(n, i) {
+      var hasKids = n.c && n.c.length;
+      var id = 'mcn-' + depth + '-' + i;
+      n._id = id;
+      h += '<div class="mc-node" draggable="true" data-id="' + id + '" style="padding-left:' + (depth*24) + 'px;cursor:pointer;position:relative" onclick="mcToggle(\'' + id + '\')">';
+      h += '<span class="mc-arrow" id="' + id + '-arr" style="display:' + (hasKids?'inline':'none') + ';margin-right:4px;font-size:10px;color:#666">▸</span>';
+      h += '<span class="mc-txt" id="' + id + '-txt" ondblclick="mcEdit(\'' + id + '\')">' + n.t + '</span>';
+      h += '<span style="margin-left:8px;font-size:10px;color:var(--pu);cursor:pointer" onclick="event.stopPropagation();mcAddChild(\'' + id + '\')">＋子</span>';
+      h += '<span style="margin-left:4px;font-size:10px;color:var(--r);cursor:pointer" onclick="event.stopPropagation();mcDelete(\'' + id + '\')">✕</span>';
+      h += '<div class="mc-kids" id="' + id + '-kids" style="display:' + (n._ex?'block':'none') + '">';
+      if (hasKids) walk(n.c, depth + 1);
+      h += '</div></div>';
+    });
+  })(tree, 0);
+  container.innerHTML = h;
+}
+
+function mcFind(id) {
+  var parts = id.split('-'), depth = parseInt(parts[1]), idx = parseInt(parts[2]);
+  var nodes = mcData;
+  for (var d=0; d<depth; d++) {
+    var prev = nodes;
+    nodes = prev[d<depth-1?mcData.find(function(x){return x._id===parts[0]+'-'+d+'-'+parseInt(parts[2])}):0].c || prev;
+  }
+  var p = id.split('-');
+  // Walk using _id markers
+  function find(nodes, targetId) {
+    for (var i=0;i<nodes.length;i++) {
+      if (nodes[i]._id===targetId) return {node:nodes[i],parent:nodes,index:i};
+      if (nodes[i].c) { var r=find(nodes[i].c, targetId); if (r) return r; }
+    }
+    return null;
+  }
+  var r = find(mcData, id);
+  if (!r) { // Fallback: use depth/index
+    var ns = mcData;
+    var p2 = id.split('-');
+    for (var j=1; j<p2.length; j+=2) {
+      var d2 = parseInt(p2[j]), i2 = parseInt(p2[j+1]);
+      if (j+2 < p2.length) ns = ns[i2].c;
+      else return {node:ns[i2], parent:ns, index:i2};
+    }
+  }
+  return r;
+}
+
+function mcToggle(id) {
+  var el = document.getElementById(id + '-kids');
+  var arr = document.getElementById(id + '-arr');
+  if (!el) return;
+  var node = mcFind(id); if (node) { node = node.node; node._ex = !node._ex; }
+  el.style.display = el.style.display === 'none' ? 'block' : 'none';
+  if (arr) arr.textContent = el.style.display === 'none' ? '▸' : '▾';
+}
+
+function mcAddRoot() {
+  var name = prompt('新节点名称：');
+  if (!name) return;
+  mcData.push({t:name,c:[],_ex:true});
+  mcSave(); mcRender(mcData);
+}
+
+function mcAddChild(id) {
+  var name = prompt('子节点名称：');
+  if (!name) return;
+  var found = mcFind(id); if (!found) return;
+  found.node.c = found.node.c || [];
+  found.node.c.push({t:name,c:[],_ex:true});
+  mcSave(); mcRender(mcData);
+}
+
+function mcEdit(id) {
+  var found = mcFind(id); if (!found) return;
+  var newText = prompt('编辑节点文字：', found.node.t);
+  if (newText === null) return;
+  found.node.t = newText;
+  document.getElementById(id+'-txt').textContent = newText;
+  mcSave();
+}
+
+function mcDelete(id) {
+  var found = mcFind(id); if (!found) return;
+  if (!confirm('删除「' + found.node.t + '」？')) return;
+  found.parent.splice(found.index, 1);
+  mcSave(); mcRender(mcData);
+}
+
+function mcExportMD() {
+  var md = '';
+  function walk(nodes, depth) {
+    nodes.forEach(function(n) {
+      md += '  '.repeat(depth) + '- ' + n.t + '\n';
+      if (n.c && n.c.length) walk(n.c, depth+1);
+    });
+  }
+  walk(mcData, 0);
+  navigator.clipboard.writeText(md).then(function() {
+    alert('已复制 Markdown 到剪贴板！\n可粘贴到幕布/Obsidian/Notion 等工具。');
+  });
+}
+
+function mcImportMD() {
+  var md = prompt('粘贴 Markdown 大纲（每行以 - 开头，缩进表示层级）：');
+  if (!md) return;
+  var lines = md.split('\n'), stack = [];
+  function getDepth(line) { var m = line.match(/^(\s*)- /); return m ? Math.floor(m[1].length/2) : -1; }
+  lines.forEach(function(line) {
+    var d = getDepth(line);
+    if (d < 0) return;
+    var txt = line.replace(/^\s*- /, '').trim();
+    if (!txt) return;
+    var node = {t:txt,c:[],_ex:true};
+    if (d===0) { mcData.push(node); stack=[node]; }
+    else {
+      while (stack.length > d) stack.pop();
+      var parent = stack[stack.length-1];
+      if (parent) { parent.c = parent.c || []; parent.c.push(node); stack.push(node); }
+    }
+  });
+  mcSave(); mcRender(mcData);
 }
 
 
