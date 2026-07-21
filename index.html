@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<!-- v2.1 · 2026-07-21 11:47 · modular -->
+<!-- v2.1 · 2026-07-21 11:56 · modular -->
 <html lang="zh-CN">
 <head>
 <meta charset="UTF-8">
@@ -19931,6 +19931,71 @@ function showWrongReview() {
 // ===== AI MOCK EXAM =====
 var mockState = {questions:[], answers:[], startTime:0, timerId:null, phase:'ready'};
 
+// ===== 模拟试卷导出 =====
+function mockExportBlank() { mockExportWin(false); }
+function mockExportWithAnswers() { mockExportWin(true); }
+
+function mockExportWin(includeAnswers) {
+  var qs = mockState.questions, tm = Math.floor((Date.now() - (mockState.startTime||Date.now())) / 60000);
+  var typeCount = {简答:0,论述:0,案例:0};
+  qs.forEach(function(q) { typeCount[q.type] = (typeCount[q.type]||0) + 1; });
+
+  var html = '<!DOCTYPE html><html><head><meta charset="UTF-8"><title>人大434模拟试卷</title><style>' +
+    'body{font-family:"PingFang SC","Microsoft YaHei",sans-serif;max-width:800px;margin:0 auto;padding:40px 30px;color:#222;line-height:1.9}' +
+    '.header{text-align:center;border-bottom:3px double #333;padding-bottom:20px;margin-bottom:30px}' +
+    '.header h1{font-size:24px;margin:0 0 8px 0;letter-spacing:2px}' +
+    '.header .info{font-size:14px;color:#666}' +
+    '.header .info span{margin:0 12px}' +
+    '.q-block{margin-bottom:28px;page-break-inside:avoid}' +
+    '.q-block .q-head{font-weight:700;font-size:15px;margin-bottom:8px}' +
+    '.q-block .q-text{font-size:14px;margin-bottom:10px;text-indent:0}' +
+    '.q-block .q-answer{border:1px dashed #ccc;border-radius:6px;padding:12px;min-height:80px;font-size:13px;color:#666;background:#fafafa}' +
+    '.q-block .q-answer-filled{border:1px solid #e0e0e0;border-radius:6px;padding:12px;font-size:13px;background:#fff}' +
+    '.score-tag{display:inline-block;padding:2px 8px;border-radius:4px;font-size:12px;margin-left:6px;color:#fff}' +
+    '.s-简答{background:#007aff}.s-论述{background:#ff9500}.s-案例{background:#5856d6}' +
+    '.footer{text-align:center;margin-top:40px;padding-top:20px;border-top:1px solid #eee;font-size:12px;color:#999}' +
+    '.section-title{font-size:18px;font-weight:700;margin:30px 0 16px;padding-bottom:6px;border-bottom:1px solid #ccc}' +
+    '@media print{body{padding:20px}.q-block{page-break-inside:avoid}}' +
+    '</style></head><body>' +
+    '<div class="header"><h1>中国人民大学 434 国际商务专业基础</h1><h1>模拟考试试题</h1>' +
+    '<div class="info"><span>考试时间：150分钟</span><span>满分：100分</span>' +
+    '<span>题型：简答' + typeCount['简答'] + ' 论述' + typeCount['论述'] + ' 案例' + typeCount['案例'] + '</span></div></div>';
+
+  // 第一部分：试题
+  html += '<div class="section-title">📝 一、试题部分</div>';
+  qs.forEach(function(q, i) {
+    html += '<div class="q-block"><div class="q-head">' + (i+1) + '. 【' + q.type + '】' +
+      '<span class="score-tag s-' + q.type + '">' + q.score + '分</span></div>' +
+      '<div class="q-text">' + q.question + '</div>';
+    if (includeAnswers) {
+      var ans = (mockState.answers||[])[i] || '';
+      html += '<div class="q-answer-filled"><strong>学生答案：</strong>' + (ans || '（未作答）') + '</div>';
+    } else {
+      html += '<div class="q-answer">（请在空白处作答）</div>';
+    }
+    html += '</div>';
+  });
+
+  // 如果带答案，加第二部分：参考答案
+  if (includeAnswers && mockState._grading) {
+    html += '<div class="section-title">📋 二、参考答案与评分</div>';
+    (mockState._grading||[]).forEach(function(g, i) {
+      var q = qs[i];
+      html += '<div class="q-block"><div class="q-head">' + (i+1) + '.【' + q.type + '】' +
+        '<span style="color:' + (g.modelAnswer?'var(--gn)':'#888') + ';margin-left:12px;font-size:13px">得分：' + (g.score||0) + '/' + q.score + '</span></div>' +
+        '<div class="q-text">' + q.question + '</div>' +
+        '<div class="q-answer-filled">' + (g.modelAnswer||g.comment||'（AI未生成参考答案）') + '</div></div>';
+    });
+  }
+
+  html += '<div class="footer">人大434备考系统 · 模拟试卷 · ' + new Date().toLocaleDateString('zh-CN') + '</div></body></html>';
+  
+  var w = window.open('', '_blank', 'width=900,height=700');
+  w.document.write(html); w.document.close();
+  setTimeout(function() { w.print(); }, 500);
+}
+
+
 function showMockExam() {
   var bb = document.getElementById('backBtn'); if (bb) bb.style.display = 'block';
   document.getElementById('bc').innerHTML = '<span>🎯 AI模拟考试</span>';
@@ -19967,7 +20032,8 @@ function renderMockExam() {
   var qs = mockState.questions, m = Math.floor((Date.now()-mockState.startTime)/60000);
   var h = '<div style="position:sticky;top:16px;z-index:10;background:rgba(255,255,255,.85);backdrop-filter:blur(20px);border-radius:16px;padding:12px 20px;margin-bottom:20px;display:flex;justify-content:space-between;align-items:center;border:.5px solid rgba(255,255,255,.4)">' +
     '<div><strong>⏱ <span id="mockTimer">' + m + '分钟</span></strong> | ' + qs.length + '题 | 总分100</div>' +
-    '<button class="btn btn-r" onclick="submitMockExam()" style="padding:8px 20px;font-size:13px">提交批改</button></div>';
+    '<div style="display:flex;gap:8px"><button class="ai-btn ai-btn-sm" onclick="mockExportBlank()" style="padding:8px 14px;font-size:12px">📄 导出试卷</button>' +
+    '<button class="btn btn-r" onclick="submitMockExam()" style="padding:8px 20px;font-size:13px">提交批改</button></div></div>';
   h += '<div id="mockBody">';
   qs.forEach(function(q,i){h += '<div class="pcard"><div class="pcard-hdr"><h3>'+(i+1)+'. '+q.type+'（'+q.score+'分）</h3></div>' +
     '<div class="pcard-body"><div style="font-size:14px;line-height:1.8;margin-bottom:12px">'+q.question+'</div>' +
@@ -19982,13 +20048,18 @@ function submitMockExam() {
   document.getElementById('ct').innerHTML = '<div style="text-align:center;padding:80px 20px"><div class="spinner"></div><p style="margin-top:16px;color:var(--ts)">AI 正在批改试卷...</p></div>';
   var g = '你是人大434考研阅卷老师。请逐题批改以下试卷，每题给出得分和简短评语。\n\n';
   mockState.questions.forEach(function(q,i){g += '第'+(i+1)+'题['+q.type+'('+q.score+'分)]：'+q.question+'\n学生答案：'+(mockState.answers[i]||'(未作答)')+'\n\n';});
-  g += '\nJSON输出：{"results":[{"score":8,"max":10,"comment":"评语"},...],"total":85,"summary":"总体评价(100字内)"}';
+  g += '\nJSON输出：{"results":[{"score":8,"max":10,"comment":"评语","modelAnswer":"完整参考答案(100-200字)"},...],"total":85,"summary":"总体评价(100字内)"}';
   fetch(DS_URL, {method:'POST',headers:{Authorization:'Bearer '+getAPIKey(),'Content-Type':'application/json'},
     body:JSON.stringify({model:'mimo-v2.5',messages:[{role:'system',content:RUC434_STYLE},{role:'user',content:g}],stream:false,temperature:0.3})
   }).then(function(r){return r.json();}).then(function(d){
     var c=d.choices[0].message.content,m2=c.match(/\{[\s\S]*\}/);
-    renderMockResult(m2?JSON.parse(m2[0]):{results:[],total:0,summary:'批改完成'});
-  }).catch(function(e){renderMockResult({results:[],total:0,summary:'批改出错：'+e.message});});
+    var rr = m2?JSON.parse(m2[0]):{results:[],total:0,summary:'批改完成'};
+    mockState._grading = rr.results || []; // save for export
+    renderMockResult(rr);
+  }).catch(function(e){
+    var rr = {results:[],total:0,summary:'批改出错：'+e.message};
+    mockState._grading = []; renderMockResult(rr);
+  });
 }
 
 function renderMockResult(rr) {
@@ -19999,7 +20070,7 @@ function renderMockResult(rr) {
     '<div class="pcard-body"><div style="font-size:14px;line-height:1.8;margin-bottom:8px">'+q.question+'</div>' +
     '<div style="background:rgba(0,0,0,.02);padding:12px;border-radius:10px;font-size:13px;margin-bottom:8px"><strong>你的答案：</strong>'+(mockState.answers[i]||'(未作答)')+'</div>' +
     '<div style="color:var(--ts);font-size:13px">'+(r.comment||'')+'</div></div></div>';});
-  h += '<div style="text-align:center;margin-top:20px"><button class="btn btn-gen" onclick="showMockExam()">重新模考</button></div>';
+  h += '<div style="text-align:center;margin-top:20px;display:flex;gap:12px;justify-content:center"><button class="ai-btn ai-btn-sm" onclick="mockExportWithAnswers()" style="padding:10px 20px;font-size:14px">📄 导出试卷+答案</button><button class="btn btn-gen" onclick="showMockExam()">重新模考</button></div>';
   document.getElementById('ct').innerHTML = h;
 }
 
