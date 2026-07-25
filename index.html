@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<!-- v2.1 · 2026-07-25 13:04 · modular -->
+<!-- v2.1 · 2026-07-25 13:13 · modular -->
 <html lang="zh-CN">
 <head>
 <meta charset="UTF-8">
@@ -9511,6 +9511,87 @@ function _dailyBarHtml() {
   h += '</div></div></div>';
   return h;
 }
+
+/* ---------- v3.4 导航6中心制 + 写作中心tab ---------- */
+(function(){
+  var css = '.nav6-group{margin:2px 0}'
+    + '.nav6-hdr{display:flex;align-items:center;gap:6px;padding:8px 12px;cursor:pointer;font-size:13px;font-weight:700;color:var(--t);border-radius:8px;user-select:none}'
+    + '.nav6-hdr:hover{background:rgba(255,255,255,.05)}'
+    + '.nav6-hdr .nav6-arrow{font-size:10px;color:var(--ts);transition:transform .2s}'
+    + '.nav6-group.open .nav6-arrow{transform:rotate(90deg)}'
+    + '.nav6-hdr .nav6-count{margin-left:auto;font-size:10px;color:var(--ts)}'
+    + '.nav6-items{display:none;padding-left:6px}'
+    + '.nav6-group.open .nav6-items{display:block}'
+    + '.write-tabs{margin-bottom:12px}';
+  var st = document.createElement('style'); st.textContent = css; document.head.appendChild(st);
+
+  var GROUPS = [
+    { name: '🧠 背诵复习', open: true, items: [
+      ['review','🔄 统一复习'], ['cards','🃏 记忆卡片'], ['recite','📔 背诵打卡'], ['wrongbook','📋 错题本'] ] },
+    { name: '✍️ 做题写作', open: false, items: [
+      ['allquestions','📝 全部真题'], ['answercheck','✅ 答案批改'], ['outputtrain','✍️ 输出训练'], ['mockexam','🎯 AI模考'] ] },
+    { name: '📚 语料库', open: false, items: [
+      ['corpushub','🧠 三层语料·前沿包'], ['modcorpus','📖 模块语料'], ['mycorpus','📋 我的语料'] ] },
+    { name: '📡 考情雷达', open: false, items: [
+      ['hot','🔥 热点素材'], ['predictions','🎯 学术预测'], ['macro','📊 宏观数据'], ['professors','👨‍🏫 导师研究'] ] },
+    { name: '📖 学知识', open: false, items: [
+      ['kn:home','📖 知识点总览'], ['graph','🕸️ 知识图谱'], ['theoryviz','📐 理论可视化'] ] }
+  ];
+  var GROUPED_P = {};
+  GROUPS.forEach(function(g){ g.items.forEach(function(it){ GROUPED_P[it[0]] = 1; }); });
+
+  function _nav6(){
+    var tree = document.getElementById('knTree');
+    if (!tree || tree.querySelector('.nav6-group')) return;
+    /* 移除将被编组的原平铺入口与"备考工具"标签 */
+    var nodes = tree.querySelectorAll('.ni[data-p]');
+    for (var i = 0; i < nodes.length; i++) {
+      var p = nodes[i].getAttribute('data-p');
+      if (GROUPED_P[p] && !nodes[i].getAttribute('data-topic')) nodes[i].remove();
+    }
+    var labels = tree.querySelectorAll('.sidebar-section-label');
+    for (var j = 0; j < labels.length; j++) {
+      if (labels[j].textContent.indexOf('备考工具') >= 0) labels[j].remove();
+    }
+    /* 顶部常驻三项 + 五个分组 */
+    var h = '<div class="ni lv0" data-p="">🏠 今日主线</div>'
+      + '<div class="ni lv0" data-p="aichat">💬 AI助手</div>'
+      + '<div class="ni lv0" data-p="stats">📊 学习统计</div>';
+    GROUPS.forEach(function(g){
+      h += '<div class="nav6-group' + (g.open ? ' open' : '') + '">'
+        + '<div class="nav6-hdr" onclick="this.parentElement.classList.toggle(\'open\')"><span class="nav6-arrow">▶</span>' + g.name + '<span class="nav6-count">' + g.items.length + '</span></div>'
+        + '<div class="nav6-items">';
+      g.items.forEach(function(it){
+        h += '<div class="ni lv0" data-p="' + it[0] + '">' + it[1] + '</div>';
+      });
+      h += '</div></div>';
+    });
+    /* 移除原平铺的 aichat/stats/kn:home 等顶部残留(避免重复) */
+    var dup = tree.querySelectorAll('.ni[data-p="aichat"], .ni[data-p="stats"], .ni[data-p="kn:home"]');
+    for (var k = 0; k < dup.length; k++) { if (!dup[k].closest('.nav6-group') ) dup[k].remove(); }
+    tree.insertAdjacentHTML('afterbegin', h);
+  }
+
+  var _ob = buildNav;
+  buildNav = function(){ _ob(); _nav6(); };
+  _nav6();
+
+  /* ---------- 写作中心：三页共享tab条 ---------- */
+  function _writeTabs(active){
+    function b(p, label){ return '<button class="' + (active===p?'on':'') + '" onclick="navigate(\'' + p + '\')">' + label + '</button>'; }
+    return '<div class="cards-tab write-tabs">' + b('answercheck','✅ 单题批改') + b('outputtrain','✍️ 输出训练') + b('mockexam','🎯 AI模考') + '</div>';
+  }
+  function _injectWriteTabs(p){
+    var ct = document.getElementById('ct');
+    if (ct && !ct.querySelector('.write-tabs')) ct.insertAdjacentHTML('afterbegin', _writeTabs(p));
+  }
+  var _oAC = showAnswerCheck;
+  showAnswerCheck = function(){ _oAC(); _injectWriteTabs('answercheck'); };
+  var _oOT = showOutputTraining;
+  showOutputTraining = function(){ _oOT(); _injectWriteTabs('outputtrain'); };
+  var _oME = showMockExam;
+  showMockExam = function(){ _oME(); _injectWriteTabs('mockexam'); };
+})();
 (function() {
   var files = ["per_question.json","module_corpus.json"];
   var vars  = ["Q_ANALYSIS","MODULE_CORPUS"];
