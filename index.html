@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<!-- v2.1 · 2026-07-25 15:57 · modular -->
+<!-- v2.1 · 2026-07-25 16:03 · modular -->
 <html lang="zh-CN">
 <head>
 <meta charset="UTF-8">
@@ -10350,6 +10350,69 @@ function _dailyBarHtml() {
         + '</div>');
     }
   };
+})();
+
+/* ---------- v3.9 桌面端适配: 悬停交互 + 全局键盘快捷键 ---------- */
+(function(){
+  var css =
+    /* 桌面(有鼠标)悬停即现操作条, 无需先点击聚焦 */
+    '@media(hover:hover){'
+    + '.mc-row:hover .mc-ops{display:flex}'
+    + '.mc-mapnode:hover .mc-mapops{display:flex}'
+    + '.mc-mapnode:hover{z-index:30}'
+    + '.rv-kbd-hint{display:flex !important}'
+    + '}'
+    /* 统一复习卡片桌面居中限宽, 提升可读性 */
+    + '.rv-wrap{max-width:760px;margin:0 auto}'
+    + '.rv-kbd-hint{display:none;gap:14px;justify-content:center;margin-top:10px;font-size:11px;color:var(--ts)}'
+    + '.rv-kbd-hint kbd{background:rgba(255,255,255,.08);border:1px solid var(--bdr);border-radius:4px;padding:1px 6px;font-family:inherit}';
+  var st = document.createElement('style'); st.textContent = css; document.head.appendChild(st);
+
+  /* 复习页渲染包装: 限宽 + 快捷键提示 */
+  var _oRv = _rvRender;
+  _rvRender = function(){
+    _oRv();
+    var ct = document.getElementById('ct');
+    if (!ct || curPath !== 'review') return;
+    var kids = ct.children;
+    for (var i = 0; i < kids.length; i++) kids[i].classList.add('rv-wrap');
+    if (_rvItems.length && _rvIdx < _rvItems.length && !ct.querySelector('.rv-kbd-hint')) {
+      ct.insertAdjacentHTML('beforeend',
+        '<div class="rv-kbd-hint rv-wrap"><span><kbd>空格</kbd> 揭开答案</span><span><kbd>1</kbd> 忘了</span><span><kbd>2</kbd> 模糊</span><span><kbd>3</kbd> 记牢</span><span><kbd>S</kbd> 跳过</span></div>');
+    }
+  };
+
+  function _inEditable(t){
+    if (!t) return false;
+    var tag = (t.tagName || '').toLowerCase();
+    return tag === 'input' || tag === 'textarea' || tag === 'select' || t.isContentEditable;
+  }
+
+  document.addEventListener('keydown', function(ev){
+    /* Ctrl/Cmd+Z: 我的语料撤销(接管contenteditable原生undo, 与快照体系一致) */
+    if ((ev.ctrlKey || ev.metaKey) && !ev.shiftKey && (ev.key === 'z' || ev.key === 'Z')) {
+      if (curPath === 'mycorpus') { ev.preventDefault(); mcUndo(); return; }
+    }
+    if (_inEditable(ev.target)) return;
+    /* 统一复习键盘流 */
+    if (curPath === 'review' && _rvItems.length && _rvIdx < _rvItems.length) {
+      if (ev.key === ' ') {
+        ev.preventDefault();
+        var m = document.querySelector('#ct .mask-line');
+        if (m) m.classList.toggle('revealed');
+        return;
+      }
+      if (ev.key === '1') { ev.preventDefault(); _rvGrade(0); return; }
+      if (ev.key === '2') { ev.preventDefault(); _rvGrade(1); return; }
+      if (ev.key === '3') { ev.preventDefault(); _rvGrade(3); return; }
+      if (ev.key === 's' || ev.key === 'S') { ev.preventDefault(); _rvSkip(); return; }
+    }
+    /* 全局 '/' 聚焦搜索(桌面惯例) */
+    if (ev.key === '/') {
+      var gs = document.getElementById('gs');
+      if (gs) { ev.preventDefault(); gs.focus(); }
+    }
+  });
 })();
 (function() {
   var files = ["per_question.json","module_corpus.json"];
