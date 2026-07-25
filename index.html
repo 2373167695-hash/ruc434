@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<!-- v2.1 · 2026-07-25 15:48 · modular -->
+<!-- v2.1 · 2026-07-25 15:57 · modular -->
 <html lang="zh-CN">
 <head>
 <meta charset="UTF-8">
@@ -10145,6 +10145,210 @@ function _dailyBarHtml() {
     _oSMC();
     var d = document.querySelector('#ct .hero .desc');
     if (d && d.innerHTML.indexOf('导图同样可编辑') < 0) d.innerHTML += ' · <b>导图同样可编辑</b>：点节点改字，回车加同级，Tab加子节点';
+  };
+})();
+
+/* ---------- v3.8 我的语料终极打磨: 撤销/搜索/送背诵/AI补要点/层级视觉/双写备份 ---------- */
+(function(){
+  var css = '.mc-hl{background:rgba(251,146,60,.35);border-radius:3px}'
+    + '.mc-toolbar2{display:flex;gap:6px;flex-wrap:wrap;align-items:center;margin-bottom:10px}'
+    + '.mc-toast{position:fixed;left:50%;bottom:60px;transform:translateX(-50%);background:rgba(20,20,40,.95);border:1px solid var(--pu);color:var(--t);padding:8px 18px;border-radius:20px;font-size:13px;z-index:1000;transition:opacity .4s}'
+    + '#mcSearch{flex:1;min-width:140px;background:rgba(255,255,255,.04);border:1px solid var(--bdr);border-radius:16px;padding:7px 14px;font-size:12px;color:var(--t);outline:none;font-family:inherit}';
+  var st = document.createElement('style'); st.textContent = css; document.head.appendChild(st);
+
+  var _mcUndo = [], _mcKw = '';
+  var BULLET_COLORS = ['#a78bfa', '#60a5fa', '#4ade80', '#fbbf24', '#f87171', '#94a3b8'];
+
+  window.mcToast = function(msg){
+    var t = document.createElement('div');
+    t.className = 'mc-toast'; t.textContent = msg;
+    document.body.appendChild(t);
+    setTimeout(function(){ t.style.opacity = '0'; }, 1600);
+    setTimeout(function(){ t.remove(); }, 2100);
+  };
+
+  /* ---- 撤销系统(快照去重, 30步) ---- */
+  window.mcSnap = function(){
+    try {
+      var s = JSON.stringify(mcData);
+      if (_mcUndo.length && _mcUndo[_mcUndo.length - 1] === s) return;
+      _mcUndo.push(s);
+      if (_mcUndo.length > 30) _mcUndo.shift();
+      var b = document.getElementById('mcUndoBtn');
+      if (b) b.style.opacity = '1';
+    } catch(e) {}
+  };
+  window.mcUndo = function(){
+    if (!_mcUndo.length) { mcToast('没有可撤销的操作'); return; }
+    mcData = JSON.parse(_mcUndo.pop());
+    mcSave(); mcRender();
+    if (document.getElementById('mcMap') && document.getElementById('mcMap').style.display !== 'none') mcRenderMap();
+    mcToast('↩ 已撤销');
+    if (!_mcUndo.length) { var b = document.getElementById('mcUndoBtn'); if (b) b.style.opacity = '.4'; }
+  };
+
+  /* 包装全部结构性操作: 先快照 */
+  ['mcAddRoot','mcAddChild','mcDelete','mcIndent','mcOutdent','mcMove','mcDoImport','mcMapAddChild','mcMapAddSib','mcMapDelete'].forEach(function(fn){
+    var orig = window[fn];
+    if (typeof orig !== 'function') return;
+    window[fn] = function(){ mcSnap(); return orig.apply(this, arguments); };
+  });
+  var _oKd = window.mcKeydown;
+  window.mcKeydown = function(ev, el){ if (ev.key==='Enter'||ev.key==='Tab'||ev.key==='Backspace') mcSnap(); _oKd(ev, el); };
+  var _oMKd = window.mcMapKeydown;
+  window.mcMapKeydown = function(ev, el){ if (ev.key==='Enter'||ev.key==='Tab'||ev.key==='Backspace') mcSnap(); _oMKd(ev, el); };
+  window.mcTextSnap = function(){ mcSnap(); };
+
+  /* ---- 双写备份 ---- */
+  var _oSave = mcSave;
+  mcSave = function(){
+    try {
+      var cur = localStorage.getItem('r434_mycorpus');
+      if (cur) localStorage.setItem('r434_mycorpus_bak', cur);
+    } catch(e) {}
+    _oSave();
+  };
+
+  /* ---- 大纲渲染重写: 搜索过滤+高亮+彩色层级+扩展操作 ---- */
+  function _hl(text){
+    var safe = escapeHtml(text || '');
+    if (!_mcKw) return safe;
+    var i = safe.toLowerCase().indexOf(_mcKw.toLowerCase());
+    if (i < 0) return safe;
+    return safe.substring(0, i) + '<span class="mc-hl">' + safe.substring(i, i + _mcKw.length) + '</span>' + safe.substring(i + _mcKw.length);
+  }
+  function _matches(n){
+    if ((n.t || '').toLowerCase().indexOf(_mcKw.toLowerCase()) >= 0) return true;
+    return (n.c || []).some(_matches);
+  }
+  mcRender = function(){
+    var box = document.getElementById('mcTree');
+    if (!box) return;
+    var h = '';
+    (function walk(nodes, depth){
+      nodes.forEach(function(n){
+        if (_mcKw && !_matches(n)) return;
+        var hasKids = n.c && n.c.length;
+        var open = _mcKw ? true : n._ex !== false;
+        var col = BULLET_COLORS[Math.min(depth, BULLET_COLORS.length - 1)];
+        h += '<div class="mc-row" data-uid="' + n._uid + '" style="margin-left:' + (depth*22) + 'px">'
+          + '<span class="mc-bullet" style="color:' + col + '" onclick="mcToggle(\'' + n._uid + '\')">' + (hasKids ? (open ? '▾' : '▸') : '•') + '</span>'
+          + '<div class="mc-text" contenteditable="true" data-uid="' + n._uid + '" onfocus="mcTextSnap()" oninput="mcInput(this)" onkeydown="mcKeydown(event, this)" onblur="mcSave()">' + _hl(n.t) + '</div>'
+          + '<span class="mc-ops">'
+          + '<span class="mc-op" onclick="mcAddChild(\'' + n._uid + '\')" title="添加子节点">＋子</span>'
+          + '<span class="mc-op" onclick="mcMove(\'' + n._uid + '\',-1)">↑</span>'
+          + '<span class="mc-op" onclick="mcMove(\'' + n._uid + '\',1)">↓</span>'
+          + '<span class="mc-op" onclick="mcOutdent(\'' + n._uid + '\')">⇤</span>'
+          + '<span class="mc-op" onclick="mcIndent(\'' + n._uid + '\')">⇥</span>'
+          + '<span class="mc-op" style="color:#fb923c" onclick="mcToRecite(\'' + n._uid + '\')" title="节点及子树转为背诵打卡条目">📔背</span>'
+          + '<span class="mc-op" style="color:#a78bfa" onclick="mcAiExpand(\'' + n._uid + '\')" title="AI生成子要点建议">✨AI</span>'
+          + '<span class="mc-op" style="color:var(--r)" onclick="mcDelete(\'' + n._uid + '\')">✕</span>'
+          + '</span></div>';
+        if (hasKids && open) walk(n.c, depth + 1);
+      });
+    })(mcData, 0);
+    if (_mcKw && !h) h = '<div style="padding:20px;text-align:center;color:var(--ts)">没有匹配「' + escapeHtml(_mcKw) + '」的节点</div>';
+    h += '<div style="padding:8px 4px"><span class="mc-op" onclick="mcAddRoot()">＋ 添加一级节点</span></div>';
+    box.innerHTML = h;
+  };
+
+  window.mcSearch = function(v){ _mcKw = (v || '').trim(); mcRender(); };
+  window.mcExpandAll = function(open){
+    (function walk(nodes){ nodes.forEach(function(n){ n._ex = open; if (n.c) walk(n.c); }); })(mcData);
+    mcSave(); mcRender();
+  };
+
+  /* ---- 送背诵: 节点+子树 → 背诵打卡(进统一复习队列) ---- */
+  window.mcToRecite = function(uid){
+    var f = mcFindU(uid); if (!f) return;
+    var lines = [];
+    (function walk(n, d){
+      lines.push(new Array(d + 1).join('  ') + (d ? '· ' : '') + (n.t || ''));
+      (n.c || []).forEach(function(ch){ walk(ch, d + 1); });
+    })(f.node, 0);
+    var content = lines.join('\n');
+    var today = new Date().toISOString().slice(0,10);
+    var list = _reciteLoad();
+    if (list.some(function(e){ return e.title === f.node.t && e.content === content; })) { mcToast('已在背诵打卡中，无需重复添加'); return; }
+    list.unshift({ id:'rc' + Date.now(), d:today, title:(f.node.t || '语料片段').substring(0, 24), content:content, sm2:{n:0, ef:2.5, interval:1, date:today} });
+    _reciteSave(list);
+    mcToast('📔 已加入背诵打卡，明天进入复习队列');
+  };
+
+  /* ---- AI补要点: 生成候选子节点, 勾选插入 ---- */
+  window.mcAiExpand = function(uid){
+    var f = mcFindU(uid); if (!f || !f.node.t) { mcToast('先给节点写上内容'); return; }
+    function pathOf(nodes, target, trail){
+      for (var i = 0; i < nodes.length; i++) {
+        var t2 = trail.concat(nodes[i].t);
+        if (nodes[i]._uid === target) return t2;
+        if (nodes[i].c) { var r = pathOf(nodes[i].c, target, t2); if (r) return r; }
+      }
+      return null;
+    }
+    var path = (pathOf(mcData, uid, []) || [f.node.t]).join(' > ');
+    var ov = document.createElement('div');
+    ov.id = 'mcAiOv';
+    ov.style.cssText = 'position:fixed;inset:0;background:rgba(0,0,0,.6);z-index:999;display:flex;align-items:center;justify-content:center;padding:20px';
+    ov.innerHTML = '<div class="pcard" style="width:min(560px,94vw);padding:18px;max-height:80vh;overflow:auto">'
+      + '<h4 style="margin:0 0 6px">✨ AI 补要点：' + escapeHtml(f.node.t) + '</h4>'
+      + '<div style="font-size:11px;color:var(--ts);margin-bottom:10px">路径：' + escapeHtml(path) + '</div>'
+      + '<div id="mcAiList" style="font-size:13px;line-height:1.8;color:var(--ts)">⏳ AI 正在生成候选要点…</div>'
+      + '<div style="display:flex;gap:8px;justify-content:flex-end;margin-top:12px">'
+      + '<button class="mc-op" onclick="document.getElementById(\'mcAiOv\').remove()" style="padding:8px 16px">取消</button>'
+      + '<button class="ai-btn ai-btn-sm" id="mcAiInsertBtn" onclick="mcAiInsert(\'' + uid + '\')" style="padding:8px 20px;display:none">插入勾选项</button></div></div>';
+    document.body.appendChild(ov);
+    var sys = RUC434_STYLE + '\n你是人大434国际商务备考辅导老师。学生在语料大纲中有一个节点，请为其生成4-6条可直接背诵的子要点(每条30-60字，包含术语/机制/数据/案例其一)。只输出JSON数组：["要点1","要点2",...]，不要其他文字。';
+    var user = '大纲路径：' + path + '\n目标节点：' + f.node.t + '\n请生成该节点下的子要点。';
+    fetch(DS_URL, {method:'POST', headers:{Authorization:'Bearer '+getAPIKey(),'Content-Type':'application/json'},
+      body:JSON.stringify({model:'mimo-v2.5', messages:[{role:'system',content:sys},{role:'user',content:user}], stream:false, temperature:0.4})
+    }).then(function(r){ if(!r.ok) throw Error('HTTP '+r.status); return r.json(); }).then(function(d){
+      var c = d.choices[0].message.content, m = c.match(/\[[\s\S]*\]/);
+      if (!m) throw Error('AI输出格式异常');
+      var arr = JSON.parse(m[0]).filter(function(x){ return typeof x === 'string' && x.trim(); });
+      if (!arr.length) throw Error('未生成有效要点');
+      var lh = '';
+      arr.forEach(function(x, i){
+        lh += '<label style="display:flex;gap:8px;align-items:flex-start;padding:6px 0;border-bottom:1px dashed rgba(255,255,255,.06);cursor:pointer;color:var(--t)">'
+          + '<input type="checkbox" class="mcAiCk" checked value="' + escapeHtml(x) + '" style="margin-top:5px">'
+          + '<span>' + escapeHtml(x) + '</span></label>';
+      });
+      var box = document.getElementById('mcAiList');
+      if (box) { box.innerHTML = lh; var btn = document.getElementById('mcAiInsertBtn'); if (btn) btn.style.display = 'inline-block'; }
+    }).catch(function(e){
+      var box = document.getElementById('mcAiList');
+      if (box) box.innerHTML = '<span style="color:var(--r)">生成失败：' + escapeHtml(e.message) + '（可能是AI额度/网络问题，稍后重试）</span>';
+    });
+  };
+  window.mcAiInsert = function(uid){
+    var f = mcFindU(uid); if (!f) return;
+    var picked = [];
+    document.querySelectorAll('.mcAiCk:checked').forEach(function(ck){ picked.push(ck.value); });
+    var ov = document.getElementById('mcAiOv'); if (ov) ov.remove();
+    if (!picked.length) return;
+    mcSnap();
+    f.node.c = f.node.c || [];
+    picked.forEach(function(t){ f.node.c.push({t:t, c:[], _ex:true, _uid:'u' + Date.now() + Math.floor(Math.random()*100000)}); });
+    f.node._ex = true;
+    mcSave(); mcRender();
+    mcToast('✨ 已插入 ' + picked.length + ' 条要点(可撤销)');
+  };
+
+  /* ---- 工具栏增强 ---- */
+  var _oSMC2 = showMyCorpus;
+  showMyCorpus = function(){
+    _oSMC2();
+    var ct = document.getElementById('ct');
+    var tree = document.getElementById('mcTree');
+    if (ct && tree && !document.getElementById('mcSearch')) {
+      tree.insertAdjacentHTML('beforebegin',
+        '<div class="mc-toolbar2">'
+        + '<input id="mcSearch" placeholder="🔍 搜索语料，命中高亮并展开…" oninput="mcSearch(this.value)">'
+        + '<span class="mc-op" id="mcUndoBtn" style="opacity:.4;padding:7px 14px" onclick="mcUndo()">↩ 撤销</span>'
+        + '<span class="mc-op" style="padding:7px 12px" onclick="mcExpandAll(true)">⊞ 全展开</span>'
+        + '<span class="mc-op" style="padding:7px 12px" onclick="mcExpandAll(false)">⊟ 全折叠</span>'
+        + '</div>');
+    }
   };
 })();
 (function() {
