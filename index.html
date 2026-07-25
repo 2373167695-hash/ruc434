@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<!-- v2.1 · 2026-07-25 15:39 · modular -->
+<!-- v2.1 · 2026-07-25 15:48 · modular -->
 <html lang="zh-CN">
 <head>
 <meta charset="UTF-8">
@@ -10015,6 +10015,136 @@ function _dailyBarHtml() {
     document.getElementById('ct').innerHTML = h;
     _mcView = 'outline';
     mcRender();
+  };
+})();
+
+/* ---------- v3.7 导图视图可编辑化(XMind交互: 原地改字/加子/加同级/删除/折叠) ---------- */
+(function(){
+  var css = '.mc-mapnode{white-space:nowrap;overflow:visible;max-width:none;display:flex;align-items:center;gap:6px}'
+    + '.mc-maptext{outline:none;max-width:200px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}'
+    + '.mc-mapnode:focus-within{z-index:30;background:rgba(94,92,230,.30);border-color:var(--pu)}'
+    + '.mc-mapnode:focus-within .mc-maptext{max-width:360px;overflow:auto;text-overflow:clip}'
+    + '.mc-maptext:empty:before{content:"输入…";color:rgba(255,255,255,.3)}'
+    + '.mc-maptoggle{font-size:10px;color:var(--ts);cursor:pointer;flex:0 0 auto;user-select:none}'
+    + '.mc-mapops{display:none;position:absolute;left:0;top:100%;margin-top:3px;gap:3px;z-index:40}'
+    + '.mc-mapnode:focus-within .mc-mapops{display:flex}'
+    + '.mc-mapop{padding:2px 8px;font-size:11px;background:rgba(20,20,40,.95);border:1px solid var(--bdr);border-radius:5px;color:var(--t);cursor:pointer;white-space:nowrap}'
+    + '.mc-mapop:hover{border-color:var(--pu)}';
+  var st = document.createElement('style'); st.textContent = css; document.head.appendChild(st);
+
+  window.mcMapFocus = function(uid){
+    var el = document.querySelector('.mc-maptext[data-uid="' + uid + '"]');
+    if (!el) return;
+    el.focus();
+    try {
+      var range = document.createRange();
+      range.selectNodeContents(el); range.collapse(false);
+      var sel = window.getSelection(); sel.removeAllRanges(); sel.addRange(range);
+    } catch(e) {}
+  };
+
+  window.mcMapInput = function(el){
+    var f = mcFindU(el.getAttribute('data-uid'));
+    if (f) f.node.t = el.textContent;
+  };
+
+  window.mcMapAddChild = function(uid){
+    var nn = {t:'', c:[], _ex:true, _uid:'u' + Date.now() + Math.floor(Math.random()*1000)};
+    if (uid === 'ROOT') { mcData.push(nn); }
+    else {
+      var f = mcFindU(uid); if (!f) return;
+      f.node.c = f.node.c || [];
+      f.node.c.push(nn);
+      f.node._ex = true;
+    }
+    mcSave(); mcRenderMap(); mcMapFocus(nn._uid);
+  };
+
+  window.mcMapAddSib = function(uid){
+    if (uid === 'ROOT') return;
+    var f = mcFindU(uid); if (!f) return;
+    var nn = {t:'', c:[], _ex:true, _uid:'u' + Date.now() + Math.floor(Math.random()*1000)};
+    f.parent.splice(f.index + 1, 0, nn);
+    mcSave(); mcRenderMap(); mcMapFocus(nn._uid);
+  };
+
+  window.mcMapDelete = function(uid){
+    if (uid === 'ROOT') return;
+    var f = mcFindU(uid); if (!f) return;
+    var kids = f.node.c && f.node.c.length;
+    if ((f.node.t || kids) && !confirm('删除「' + (f.node.t || '(空)') + '」' + (kids ? '及其子节点' : '') + '？')) return;
+    f.parent.splice(f.index, 1);
+    mcSave(); mcRenderMap();
+  };
+
+  window.mcMapToggle = function(uid){
+    var f = mcFindU(uid); if (!f) return;
+    f.node._ex = f.node._ex === false ? true : false;
+    mcSave(); mcRenderMap();
+  };
+
+  window.mcMapKeydown = function(ev, el){
+    var uid = el.getAttribute('data-uid');
+    if (ev.key === 'Enter') { ev.preventDefault(); if (uid === 'ROOT') mcMapAddChild('ROOT'); else mcMapAddSib(uid); }
+    else if (ev.key === 'Tab') { ev.preventDefault(); mcMapAddChild(uid); }
+    else if (ev.key === 'Backspace' && el.textContent === '' && uid !== 'ROOT') {
+      var f = mcFindU(uid);
+      if (f && (!f.node.c || !f.node.c.length)) { ev.preventDefault(); f.parent.splice(f.index, 1); mcSave(); mcRenderMap(); }
+    }
+  };
+
+  /* 覆盖 v3.6 的只读渲染：可编辑 + 尊重折叠状态 */
+  window.mcRenderMap = function(){
+    var box = document.getElementById('mcMap');
+    if (!box) return;
+    var ROW = 46, COLW = 230, PAD = 24;
+    var nodes = [], links = [], leafCursor = 0;
+    function layout(n, depth, uid){
+      var collapsed = n._ex === false && n.c && n.c.length;
+      var isLeaf = !n.c || !n.c.length || collapsed;
+      var y;
+      if (isLeaf) { y = leafCursor * ROW; leafCursor++; }
+      else {
+        var ys = n.c.map(function(ch){ return layout(ch, depth + 1, ch._uid); });
+        y = (ys[0] + ys[ys.length - 1]) / 2;
+        n.c.forEach(function(ch, i){ links.push({x1:depth*COLW+185, y1:y+15, x2:(depth+1)*COLW, y2:ys[i]+15}); });
+      }
+      nodes.push({x:depth*COLW, y:y, t:n.t, uid:uid, kids:(n.c&&n.c.length)||0, collapsed:collapsed});
+      return y;
+    }
+    var root = {t:'📋 我的语料', c: mcData, _ex: true};
+    layout(root, 0, 'ROOT');
+    var H = Math.max(leafCursor * ROW + PAD * 2 + 40, 300), maxD = 0;
+    nodes.forEach(function(n){ if (n.x > maxD) maxD = n.x; });
+    var W = maxD + COLW + PAD + 160;
+    var h = '<svg width="' + W + '" height="' + H + '" style="position:absolute;left:0;top:0;pointer-events:none">';
+    links.forEach(function(l){
+      h += '<path d="M' + l.x1 + ' ' + (l.y1 + PAD) + ' C' + (l.x1 + 32) + ' ' + (l.y1 + PAD) + ' ' + (l.x2 - 32) + ' ' + (l.y2 + PAD) + ' ' + l.x2 + ' ' + (l.y2 + PAD) + '" fill="none" stroke="rgba(94,92,230,.45)" stroke-width="1.5"/>';
+    });
+    h += '</svg>';
+    nodes.forEach(function(n){
+      var isRoot = n.uid === 'ROOT';
+      h += '<div class="mc-mapnode" style="left:' + (n.x + 4) + 'px;top:' + (n.y + PAD - 4) + 'px" data-uid="' + n.uid + '">'
+        + '<span class="mc-maptext" contenteditable="' + (isRoot ? 'false' : 'true') + '" data-uid="' + n.uid + '"'
+        + (isRoot ? '' : ' oninput="mcMapInput(this)" onkeydown="mcMapKeydown(event,this)" onblur="mcSave()" tabindex="0"')
+        + '>' + escapeHtml(n.t || '') + '</span>';
+      if (n.kids) h += '<span class="mc-maptoggle" onclick="mcMapToggle(\'' + n.uid + '\')" title="' + (n.collapsed ? '展开' : '折叠') + '">' + (n.collapsed ? '＋' + n.kids : '▾') + '</span>';
+      h += '<span class="mc-mapops">'
+        + '<span class="mc-mapop" onmousedown="event.preventDefault()" onclick="mcMapAddChild(\'' + n.uid + '\')">＋子</span>'
+        + (isRoot ? '' : '<span class="mc-mapop" onmousedown="event.preventDefault()" onclick="mcMapAddSib(\'' + n.uid + '\')">＋同级</span>'
+        + '<span class="mc-mapop" style="color:var(--r)" onmousedown="event.preventDefault()" onclick="mcMapDelete(\'' + n.uid + '\')">✕</span>')
+        + '</span></div>';
+    });
+    h += '<div style="width:' + W + 'px;height:' + H + 'px"></div>';
+    box.innerHTML = h;
+  };
+
+  /* 页面说明文案补充 */
+  var _oSMC = showMyCorpus;
+  showMyCorpus = function(){
+    _oSMC();
+    var d = document.querySelector('#ct .hero .desc');
+    if (d && d.innerHTML.indexOf('导图同样可编辑') < 0) d.innerHTML += ' · <b>导图同样可编辑</b>：点节点改字，回车加同级，Tab加子节点';
   };
 })();
 (function() {
