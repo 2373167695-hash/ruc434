@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<!-- v2.1 · 2026-07-25 13:28 · modular -->
+<!-- v2.1 · 2026-07-25 15:39 · modular -->
 <html lang="zh-CN">
 <head>
 <meta charset="UTF-8">
@@ -9723,6 +9723,298 @@ function _dailyBarHtml() {
       mockState.answers = new Array(mockState.questions.length).fill('');
       mockState.startTime = Date.now(); mockState.phase = 'exam'; renderMockExam();
     });
+  };
+})();
+
+/* ---------- v3.6 我的语料·幕布式大纲编辑器重写(修复ID冲突/假拖拽/双击编辑) ---------- */
+(function(){
+  var css = '.mc-row{display:flex;align-items:flex-start;gap:2px;padding:2px 4px;border-radius:6px;position:relative}'
+    + '.mc-row:focus-within{background:rgba(94,92,230,.10)}'
+    + '.mc-bullet{flex:0 0 20px;text-align:center;cursor:pointer;color:var(--ts);font-size:11px;line-height:1.9;user-select:none}'
+    + '.mc-text{flex:1;min-width:60px;outline:none;line-height:1.9;font-size:14px;word-break:break-word;white-space:pre-wrap}'
+    + '.mc-text:empty:before{content:"输入内容…";color:rgba(255,255,255,.25)}'
+    + '.mc-ops{display:none;flex:0 0 auto;gap:2px;align-items:center}'
+    + '.mc-row:focus-within .mc-ops{display:flex}'
+    + '.mc-op{padding:2px 7px;font-size:11px;color:var(--ts);cursor:pointer;border:1px solid var(--bdr);border-radius:5px;background:rgba(255,255,255,.04);user-select:none}'
+    + '.mc-op:hover{color:var(--t);border-color:var(--pu)}'
+    + '.mc-map{position:relative;overflow:auto;min-height:300px;max-height:72vh;border:1px solid var(--bdr);border-radius:12px}'
+    + '.mc-mapnode{position:absolute;padding:5px 12px;background:rgba(94,92,230,.14);border:1px solid rgba(94,92,230,.4);border-radius:8px;font-size:12px;max-width:200px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}';
+  var st = document.createElement('style'); st.textContent = css; document.head.appendChild(st);
+
+  var _uidSeq = 0;
+  var _mcView = 'outline';
+  var _mcSaveTimer = null;
+
+  function _assignUid(nodes){
+    nodes.forEach(function(n){
+      n._uid = 'u' + (++_uidSeq);
+      delete n._id;
+      if (n.c && n.c.length) _assignUid(n.c);
+    });
+  }
+
+  mcLoad = function(){
+    if (mcData) return mcData;
+    try { mcData = JSON.parse(localStorage.getItem('r434_mycorpus')||'[]'); } catch(e) { mcData = []; }
+    if (!mcData.length) {
+      mcData = [
+        {t:'📚 理论层', _ex:true, c:[{t:'比较优势理论',c:[{t:'概括：一国应专业化生产并出口其具有比较优势的商品'},{t:'关键词：劳动生产率、机会成本、贸易互利'},{t:'真题：★2011简答 ★2014简答'}]}]},
+        {t:'📰 案例层', _ex:true, c:[{t:'国际贸易摩擦',c:[{t:'中美关税战',c:[{t:'事实：美国对华加征多轮关税，涉及超5000亿美元'},{t:'理论：关税效应分析(主)、贸易保护理论(主)'}]}]}]},
+        {t:'💬 话术层', _ex:true, c:[{t:'A级·必背',c:[{t:'制度型开放 → 替换"中国要更开放"'}]}]}
+      ];
+    }
+    _assignUid(mcData);
+    return mcData;
+  };
+
+  mcSave = function(){
+    try {
+      localStorage.setItem('r434_mycorpus', JSON.stringify(mcData, function(k, v){ return k === '_uid' ? undefined : v; }));
+    } catch(e) {}
+    if (_mcSaveTimer) clearTimeout(_mcSaveTimer);
+    _mcSaveTimer = setTimeout(function(){ try { syncToCloud(); } catch(e) {} }, 800);
+  };
+
+  /* 唯一uid查找：返回 {node, parent(数组), index} */
+  window.mcFindU = function(uid){
+    function walk(nodes){
+      for (var i = 0; i < nodes.length; i++) {
+        if (nodes[i]._uid === uid) return {node:nodes[i], parent:nodes, index:i};
+        if (nodes[i].c && nodes[i].c.length) { var r = walk(nodes[i].c); if (r) return r; }
+      }
+      return null;
+    }
+    return walk(mcData);
+  };
+
+  mcRender = function(){
+    var box = document.getElementById('mcTree');
+    if (!box) return;
+    var h = '';
+    (function walk(nodes, depth){
+      nodes.forEach(function(n){
+        var hasKids = n.c && n.c.length;
+        var open = n._ex !== false;
+        h += '<div class="mc-row" data-uid="' + n._uid + '" style="margin-left:' + (depth*22) + 'px">'
+          + '<span class="mc-bullet" onclick="mcToggle(\'' + n._uid + '\')">' + (hasKids ? (open ? '▾' : '▸') : '•') + '</span>'
+          + '<div class="mc-text" contenteditable="true" data-uid="' + n._uid + '" oninput="mcInput(this)" onkeydown="mcKeydown(event, this)" onblur="mcSave()">' + escapeHtml(n.t || '') + '</div>'
+          + '<span class="mc-ops">'
+          + '<span class="mc-op" onclick="mcAddChild(\'' + n._uid + '\')" title="添加子节点">＋子</span>'
+          + '<span class="mc-op" onclick="mcMove(\'' + n._uid + '\',-1)" title="上移">↑</span>'
+          + '<span class="mc-op" onclick="mcMove(\'' + n._uid + '\',1)" title="下移">↓</span>'
+          + '<span class="mc-op" onclick="mcOutdent(\'' + n._uid + '\')" title="升级">⇤</span>'
+          + '<span class="mc-op" onclick="mcIndent(\'' + n._uid + '\')" title="降级">⇥</span>'
+          + '<span class="mc-op" style="color:var(--r)" onclick="mcDelete(\'' + n._uid + '\')" title="删除">✕</span>'
+          + '</span></div>';
+        if (hasKids && open) walk(n.c, depth + 1);
+      });
+    })(mcData, 0);
+    h += '<div style="padding:8px 4px"><span class="mc-op" onclick="mcAddRoot()">＋ 添加一级节点</span></div>';
+    box.innerHTML = h;
+  };
+
+  window.mcFocus = function(uid){
+    var el = document.querySelector('.mc-text[data-uid="' + uid + '"]');
+    if (!el) return;
+    el.focus();
+    try {
+      var range = document.createRange();
+      range.selectNodeContents(el); range.collapse(false);
+      var sel = window.getSelection(); sel.removeAllRanges(); sel.addRange(range);
+    } catch(e) {}
+  };
+
+  window.mcInput = function(el){
+    var f = mcFindU(el.getAttribute('data-uid'));
+    if (f) f.node.t = el.textContent;
+  };
+
+  window.mcKeydown = function(ev, el){
+    var uid = el.getAttribute('data-uid');
+    if (ev.key === 'Enter') {
+      ev.preventDefault();
+      var f = mcFindU(uid); if (!f) return;
+      var nn = {t:'', c:[], _uid:'u' + (++_uidSeq), _ex:true};
+      f.parent.splice(f.index + 1, 0, nn);
+      mcSave(); mcRender(); mcFocus(nn._uid);
+    } else if (ev.key === 'Tab') {
+      ev.preventDefault();
+      if (ev.shiftKey) mcOutdent(uid); else mcIndent(uid);
+    } else if (ev.key === 'Backspace' && el.textContent === '') {
+      var f2 = mcFindU(uid);
+      if (f2 && (!f2.node.c || !f2.node.c.length)) {
+        ev.preventDefault();
+        var prevUid = null;
+        if (f2.index > 0) prevUid = f2.parent[f2.index - 1]._uid;
+        f2.parent.splice(f2.index, 1);
+        mcSave(); mcRender();
+        if (prevUid) mcFocus(prevUid);
+      }
+    }
+  };
+
+  mcToggle = function(uid){
+    var f = mcFindU(uid); if (!f) return;
+    if (!f.node.c || !f.node.c.length) return;
+    f.node._ex = f.node._ex === false ? true : false;
+    mcSave(); mcRender();
+  };
+
+  mcAddRoot = function(){
+    var nn = {t:'', c:[], _uid:'u' + (++_uidSeq), _ex:true};
+    mcData.push(nn);
+    mcSave(); mcRender(); mcFocus(nn._uid);
+  };
+
+  mcAddChild = function(uid){
+    var f = mcFindU(uid); if (!f) return;
+    f.node.c = f.node.c || [];
+    var nn = {t:'', c:[], _uid:'u' + (++_uidSeq), _ex:true};
+    f.node.c.push(nn);
+    f.node._ex = true;
+    mcSave(); mcRender(); mcFocus(nn._uid);
+  };
+
+  mcDelete = function(uid){
+    var f = mcFindU(uid); if (!f) return;
+    var kids = f.node.c && f.node.c.length;
+    if ((f.node.t || kids) && !confirm('删除「' + (f.node.t || '(空)') + '」' + (kids ? '及其 ' + f.node.c.length + ' 个子节点' : '') + '？')) return;
+    f.parent.splice(f.index, 1);
+    mcSave(); mcRender();
+  };
+
+  window.mcIndent = function(uid){
+    var f = mcFindU(uid); if (!f || f.index === 0) return;
+    var prev = f.parent[f.index - 1];
+    f.parent.splice(f.index, 1);
+    prev.c = prev.c || [];
+    prev.c.push(f.node);
+    prev._ex = true;
+    mcSave(); mcRender(); mcFocus(uid);
+  };
+
+  window.mcOutdent = function(uid){
+    var f = mcFindU(uid); if (!f) return;
+    function findParentNode(nodes, arr){
+      for (var i = 0; i < nodes.length; i++) {
+        if (nodes[i].c === arr) return {node:nodes[i], parent:nodes, index:i};
+        if (nodes[i].c && nodes[i].c.length) { var r = findParentNode(nodes[i].c, arr); if (r) return r; }
+      }
+      return null;
+    }
+    var pf = findParentNode(mcData, f.parent);
+    if (!pf) return; /* 已是一级节点 */
+    f.parent.splice(f.index, 1);
+    pf.parent.splice(pf.index + 1, 0, f.node);
+    mcSave(); mcRender(); mcFocus(uid);
+  };
+
+  window.mcMove = function(uid, dir){
+    var f = mcFindU(uid); if (!f) return;
+    var ni = f.index + dir;
+    if (ni < 0 || ni >= f.parent.length) return;
+    f.parent.splice(f.index, 1);
+    f.parent.splice(ni, 0, f.node);
+    mcSave(); mcRender(); mcFocus(uid);
+  };
+
+  /* 导图视图(只读) */
+  window.mcRenderMap = function(){
+    var box = document.getElementById('mcMap');
+    if (!box) return;
+    var ROW = 40, COLW = 210, PAD = 20;
+    var nodes = [], links = [], leafCursor = 0;
+    function layout(n, depth){
+      var y;
+      if (!n.c || !n.c.length) { y = leafCursor * ROW; leafCursor++; }
+      else {
+        var ys = n.c.map(function(ch){ return layout(ch, depth + 1); });
+        y = (ys[0] + ys[ys.length - 1]) / 2;
+        n.c.forEach(function(ch, i){ links.push({x1:depth*COLW+170, y1:y+14, x2:(depth+1)*COLW, y2:ys[i]+14}); });
+      }
+      nodes.push({x:depth*COLW, y:y, t:n.t || '(空)'});
+      return y;
+    }
+    var root = {t:'📋 我的语料', c: mcData};
+    layout(root, 0);
+    var H = Math.max(leafCursor * ROW + PAD * 2, 300), maxD = 0;
+    nodes.forEach(function(n){ if (n.x > maxD) maxD = n.x; });
+    var W = maxD + COLW + PAD;
+    var h = '<svg width="' + W + '" height="' + H + '" style="position:absolute;left:0;top:0;pointer-events:none">';
+    links.forEach(function(l){
+      h += '<path d="M' + l.x1 + ' ' + (l.y1 + PAD) + ' C' + (l.x1 + 30) + ' ' + (l.y1 + PAD) + ' ' + (l.x2 - 30) + ' ' + (l.y2 + PAD) + ' ' + l.x2 + ' ' + (l.y2 + PAD) + '" fill="none" stroke="rgba(94,92,230,.45)" stroke-width="1.5"/>';
+    });
+    h += '</svg>';
+    nodes.forEach(function(n){
+      h += '<div class="mc-mapnode" style="left:' + (n.x + 4) + 'px;top:' + (n.y + PAD - 2) + 'px" title="' + escapeHtml(n.t) + '">' + escapeHtml(n.t) + '</div>';
+    });
+    h += '<div style="width:' + W + 'px;height:' + H + 'px"></div>';
+    box.innerHTML = h;
+  };
+
+  window.mcSwitchView = function(v){
+    _mcView = v;
+    document.getElementById('mcTree').style.display = v === 'outline' ? 'block' : 'none';
+    document.getElementById('mcMap').style.display = v === 'map' ? 'block' : 'none';
+    document.getElementById('mcTabOutline').className = 'me-chip' + (v==='outline' ? ' on' : '');
+    document.getElementById('mcTabMap').className = 'me-chip' + (v==='map' ? ' on' : '');
+    if (v === 'map') mcRenderMap();
+  };
+
+  mcImportMD = function(){
+    var ov = document.createElement('div');
+    ov.id = 'mcImportOv';
+    ov.style.cssText = 'position:fixed;inset:0;background:rgba(0,0,0,.6);z-index:999;display:flex;align-items:center;justify-content:center;padding:20px';
+    ov.innerHTML = '<div class="pcard" style="width:min(640px,94vw);padding:18px">'
+      + '<h4 style="margin:0 0 10px">📥 导入 Markdown 大纲</h4>'
+      + '<textarea id="mcImportTxt" placeholder="- 一级节点\n  - 二级节点\n    - 三级节点\n(以-开头,两个空格缩进一级)" style="width:100%;box-sizing:border-box;min-height:220px;background:rgba(255,255,255,.04);border:1px solid var(--bdr);border-radius:10px;padding:12px;font-size:13px;line-height:1.7;color:var(--t);font-family:monospace;outline:none"></textarea>'
+      + '<div style="display:flex;gap:8px;justify-content:flex-end;margin-top:12px">'
+      + '<button class="mc-op" onclick="document.getElementById(\'mcImportOv\').remove()" style="padding:8px 16px">取消</button>'
+      + '<button class="ai-btn ai-btn-sm" onclick="mcDoImport()" style="padding:8px 20px">追加导入</button></div></div>';
+    document.body.appendChild(ov);
+  };
+
+  window.mcDoImport = function(){
+    var md = (document.getElementById('mcImportTxt')||{}).value || '';
+    var ov = document.getElementById('mcImportOv');
+    if (ov) ov.remove();
+    if (!md.trim()) return;
+    var stack = [];
+    md.split('\n').forEach(function(line){
+      var m = line.match(/^(\s*)[-*+] (.*)$/);
+      if (!m) return;
+      var d = Math.floor(m[1].replace(/\t/g, '  ').length / 2);
+      var txt = m[2].trim();
+      if (!txt) return;
+      var node = {t:txt, c:[], _ex:true, _uid:'u' + (++_uidSeq)};
+      if (d === 0 || !stack.length) { mcData.push(node); stack = [node]; }
+      else {
+        while (stack.length > d) stack.pop();
+        var parent = stack[stack.length - 1];
+        parent.c = parent.c || [];
+        parent.c.push(node);
+        stack.push(node);
+      }
+    });
+    mcSave(); mcRender();
+  };
+
+  showMyCorpus = function(){
+    document.getElementById('bc').innerHTML = '<span>📋 我的语料</span>';
+    mcLoad();
+    var h = '<div class="hero"><h1>📋 我的语料</h1><div class="desc">幕布式大纲：<b>点击文字直接编辑</b> · 回车=插入同级 · Tab/Shift+Tab=降级/升级 · 行尾按钮支持手机操作 · 自动保存</div></div>';
+    h += '<div style="margin-bottom:12px;display:flex;gap:8px;flex-wrap:wrap;align-items:center">';
+    h += '<span id="mcTabOutline" class="me-chip on" onclick="mcSwitchView(\'outline\')">📝 大纲编辑</span>';
+    h += '<span id="mcTabMap" class="me-chip" onclick="mcSwitchView(\'map\')">🧠 导图视图</span>';
+    h += '<span style="flex:1"></span>';
+    h += '<span class="mc-op" onclick="mcExportMD()" style="padding:6px 14px">📤 导出MD</span>';
+    h += '<span class="mc-op" onclick="mcImportMD()" style="padding:6px 14px">📥 导入MD</span>';
+    h += '</div>';
+    h += '<div id="mcTree" class="pcard" style="padding:12px 14px"></div>';
+    h += '<div id="mcMap" class="mc-map pcard" style="display:none"></div>';
+    document.getElementById('ct').innerHTML = h;
+    _mcView = 'outline';
+    mcRender();
   };
 })();
 (function() {
