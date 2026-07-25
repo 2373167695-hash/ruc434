@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<!-- v2.1 · 2026-07-25 12:59 · modular -->
+<!-- v2.1 · 2026-07-25 13:04 · modular -->
 <html lang="zh-CN">
 <head>
 <meta charset="UTF-8">
@@ -9340,6 +9340,177 @@ function showRecite() {
     } catch(e) { console.error("frontier corpus:", e); }
   };
 })();
+
+/* ---------- v3.3 统一复习队列：错题+背诵+金句卡+知识卡 一条队列刷完 ---------- */
+var _rvItems = [], _rvIdx = 0, _rvStats = null;
+
+function _rvBuildQueue() {
+  var q = [];
+  var cardLog = {};
+  try { cardLog = JSON.parse(localStorage.getItem('r434_cards')||'{}'); } catch(e) {}
+  /* 1. 到期错题(优先) */
+  for (var id in wrongReview) {
+    if (_cardDue(wrongReview[id])) {
+      var d = dataById(id);
+      if (d) q.push({ type:'wrong', key:id, title:'📋 错题 · '+d.year+'年第'+d.num+'题 '+d.type,
+        front:d.question, back:(d.answer||'暂无参考答案') });
+    }
+  }
+  /* 2. 到期背诵记录 */
+  _reciteLoad().forEach(function(e){
+    if (_reciteDue(e)) q.push({ type:'recite', key:e.id, title:'📔 背诵 · '+e.title, front:'回忆你在 '+e.d+' 背过的内容：'+e.title, back:e.content });
+  });
+  /* 3. 到期金句卡(已复习过或来自错题的) */
+  if (typeof Q_ANALYSIS !== 'undefined' && Q_ANALYSIS.questions) {
+    var wlog = {};
+    try { wlog = JSON.parse(localStorage.getItem('r434_wrong')||'{}'); } catch(e) {}
+    Q_ANALYSIS.questions.forEach(function(qa){
+      if (!qa.memorizable || !qa.memorizable.length) return;
+      var log = cardLog['qa_'+qa.id];
+      if ((log || wlog[qa.id]) && _cardDue(log)) {
+        var d2 = dataById(qa.id);
+        q.push({ type:'qa', key:'qa_'+qa.id, title:'🎯 金句卡 · '+(qa.year||'')+'年第'+(qa.num||'')+'题',
+          front:(d2?d2.question:('真题 '+qa.id)), back:qa.memorizable.join('\n\n') });
+      }
+    });
+  }
+  /* 4. 到期知识卡 */
+  Object.keys(KNOWLEDGE).forEach(function(kn){
+    if (_cardDue(cardLog[kn])) {
+      var item = KNOWLEDGE[kn];
+      var back = (item.overview||'') + ((item.key&&item.key.length) ? ('\n\n要点：\n· '+item.key.slice(0,4).join('\n· ')) : '');
+      q.push({ type:'kn', key:kn, title:'📚 知识卡 · '+(item.module||''), front:kn, back:back||'(暂无内容)' });
+    }
+  });
+  return q;
+}
+
+function _rvGrade(quality) {
+  var it = _rvItems[_rvIdx];
+  if (!it) return;
+  try {
+    if (it.type === 'wrong') {
+      if (!wrongReview[it.key]) wrongReview[it.key] = {n:0, ef:2.5, interval:1};
+      wrongReview[it.key] = sm2NextInterval(wrongReview[it.key], quality);
+      localStorage.setItem('r434_wrong_review', JSON.stringify(wrongReview));
+      if (!marks[it.key]) marks[it.key] = {};
+      marks[it.key].done = true;
+      saveState();
+    } else if (it.type === 'recite') {
+      var list = _reciteLoad();
+      list.forEach(function(e){ if (e.id === it.key) e.sm2 = sm2NextInterval(e.sm2||{n:0,ef:2.5,interval:1}, quality); });
+      _reciteSave(list);
+    } else {
+      var log = JSON.parse(localStorage.getItem('r434_cards')||'{}');
+      log[it.key] = sm2NextInterval(log[it.key]||{n:0,ef:2.5,interval:1}, quality);
+      localStorage.setItem('r434_cards', JSON.stringify(log));
+    }
+  } catch(e) { console.error('rv grade:', e); }
+  _rvStats[quality < 1 ? 'forgot' : (quality < 3 ? 'vague' : 'good')]++;
+  _rvStats.done++;
+  _rvIdx++;
+  _rvRender();
+}
+
+function _rvSkip() { _rvStats.skip++; _rvIdx++; _rvRender(); }
+
+function _rvRender() {
+  var ct = document.getElementById('ct');
+  document.getElementById('bc').innerHTML = '<span>🔄 统一复习</span>';
+  if (!_rvItems.length) {
+    ct.innerHTML = '<div class="hero" style="text-align:center"><h2>🎉 当前没有到期的复习项</h2><p style="color:var(--ts)">错题、背诵记录、金句卡、知识卡的到期内容会自动进入这里。</p><button class="ai-btn" onclick="navigate(\'\')" style="margin-top:12px;padding:8px 24px">返回首页</button></div>';
+    return;
+  }
+  if (_rvIdx >= _rvItems.length) {
+    var s = _rvStats;
+    ct.innerHTML = '<div class="hero" style="text-align:center"><h1>✅ 今日复习完成</h1>'
+      + '<div class="desc">共 ' + s.done + ' 项 · <span style="color:#4CAF50">记牢 ' + s.good + '</span> · <span style="color:#FF9800">模糊 ' + s.vague + '</span> · <span style="color:#f44336">忘了 ' + s.forgot + '</span>' + (s.skip ? ' · 跳过 ' + s.skip : '') + '</div>'
+      + '<div style="margin-top:8px;font-size:12px;color:var(--ts)">忘了/模糊的内容会在更短间隔后再次出现。</div>'
+      + '<div style="margin-top:16px;display:flex;gap:8px;justify-content:center">'
+      + '<button class="ai-btn" onclick="navigate(\'\')" style="padding:8px 24px">返回首页</button>'
+      + '<button class="ai-btn ai-btn-sm" onclick="showReview()" style="padding:8px 18px">再查一遍队列</button></div></div>';
+    return;
+  }
+  var it = _rvItems[_rvIdx];
+  var pct = Math.round(_rvIdx / _rvItems.length * 100);
+  var h = '<div class="hero" style="padding-bottom:10px"><div style="display:flex;justify-content:space-between;align-items:center"><h3 style="margin:0">🔄 统一复习</h3><span style="font-size:12px;color:var(--ts)">' + (_rvIdx+1) + ' / ' + _rvItems.length + '</span></div>'
+    + '<div style="background:rgba(255,255,255,.08);border-radius:3px;height:5px;margin-top:8px"><div style="background:var(--pu);height:5px;border-radius:3px;width:' + pct + '%"></div></div></div>';
+  h += '<div class="pcard"><div style="padding:16px 18px">'
+    + '<div style="font-size:11px;color:var(--ts);margin-bottom:8px">' + it.title + '</div>'
+    + '<div style="font-weight:700;font-size:15px;line-height:1.7;margin-bottom:12px">' + escapeHtml(it.front) + '</div>'
+    + '<div class="mask-line" style="padding:12px;background:rgba(255,255,255,.04);border-radius:8px;font-size:13px;line-height:1.9;white-space:pre-wrap" onclick="this.classList.toggle(\'revealed\')">' + escapeHtml(it.back) + '</div>'
+    + '<div style="font-size:11px;color:var(--ts);margin-top:6px">↑ 先回忆，点击揭开核对，再自评</div>'
+    + '<div style="margin-top:14px;display:flex;gap:8px;justify-content:center;flex-wrap:wrap">'
+    + '<button onclick="_rvGrade(0)" style="padding:8px 20px;background:#f44336;color:#fff;border:none;border-radius:8px;font-size:13px;cursor:pointer">忘了</button>'
+    + '<button onclick="_rvGrade(1)" style="padding:8px 20px;background:#FF9800;color:#fff;border:none;border-radius:8px;font-size:13px;cursor:pointer">模糊</button>'
+    + '<button onclick="_rvGrade(3)" style="padding:8px 20px;background:#4CAF50;color:#fff;border:none;border-radius:8px;font-size:13px;cursor:pointer">记牢了</button>'
+    + '<button onclick="_rvSkip()" style="padding:8px 14px;background:transparent;color:var(--ts);border:1px solid var(--bdr);border-radius:8px;font-size:12px;cursor:pointer">跳过</button>'
+    + '</div></div></div>';
+  ct.innerHTML = h;
+  ct.scrollTop = 0;
+}
+
+function showReview() {
+  _rvItems = _rvBuildQueue();
+  _rvIdx = 0;
+  _rvStats = {done:0, good:0, vague:0, forgot:0, skip:0};
+  _rvRender();
+}
+
+/* 路由 + 侧边栏入口 + 今日主线简化为两步 */
+(function(){
+  var _origNav2 = navigate;
+  navigate = function(p, topicName, skipHistory){
+    if (p === 'review') {
+      closeSidebar();
+      if (!skipHistory) pushNav(p);
+      var bb = document.getElementById('backBtn'); if (bb) bb.style.display = 'block';
+      curPath = p; saveState();
+      try { showReview(); } catch(err) { console.error('review render:', err); }
+      return;
+    }
+    _origNav2(p, topicName, skipHistory);
+  };
+
+  function _injectReviewNav(){
+    var anchor = document.querySelector('.ni[data-p="recite"]');
+    if (anchor && !document.querySelector('.ni[data-p="review"]')) {
+      anchor.insertAdjacentHTML('beforebegin', '<div class="ni lv0" data-p="review">🔄 统一复习</div>');
+    }
+  }
+  var _origBuild2 = buildNav;
+  buildNav = function(){ _origBuild2(); _injectReviewNav(); };
+  _injectReviewNav();
+  if (curPath === 'review') { try { showReview(); } catch(e) {} }
+})();
+
+/* 今日主线 v2：复习队列 + 今日一题 两步制(重声明覆盖旧版) */
+function _dailyBarHtml() {
+  var q = _rvBuildQueue();
+  var byType = {wrong:0, recite:0, qa:0, kn:0};
+  q.forEach(function(it){ byType[it.type]++; });
+  var detail = [];
+  if (byType.wrong) detail.push('错题' + byType.wrong);
+  if (byType.recite) detail.push('背诵' + byType.recite);
+  if (byType.qa) detail.push('金句卡' + byType.qa);
+  if (byType.kn) detail.push('知识卡' + byType.kn);
+  var glog = [];
+  try { glog = JSON.parse(localStorage.getItem('r434_gradelog')||'[]'); } catch(e) {}
+  var today = new Date().toISOString().slice(0,10);
+  var wroteToday = glog.length && glog[0].d === today;
+  var dailyQid = _dailyPickQid();
+  var dq = dataById(dailyQid);
+
+  var h = '<div class="pcard" style="margin-bottom:16px"><div class="pcard-body">';
+  h += '<h3 style="margin:0 0 12px">📅 今日主线 <span style="font-size:12px;color:var(--ts);font-weight:400">先清复习队列，再写一道题</span></h3>';
+  h += '<div class="daily-bar">';
+  h += '<div class="daily-item"><span class="dl-t">1️⃣ 统一复习队列</span><span class="dl-v">' + (q.length === 0 ? '<span style="color:var(--gn)">✅ 今日清零</span>' : '<span style="color:#f44336">' + q.length + '</span> 项到期 <span style="font-size:11px;color:var(--ts)">(' + detail.join(' · ') + ')</span>') + '</span>'
+    + '<button class="ai-btn ai-btn-sm" onclick="navigate(\'review\')" style="align-self:flex-start;padding:4px 14px;font-size:12px">' + (q.length ? '开始复习' : '查看队列') + '</button></div>';
+  h += '<div class="daily-item"><span class="dl-t">2️⃣ 今日一题（写作+批改）</span><span class="dl-v" style="font-size:12px;line-height:1.5">' + (wroteToday ? '<span style="color:var(--gn)">✅ 今日已完成批改</span>' : escapeHtml(dq ? (dq.year+'年·'+dq.type+'：'+dq.question.substring(0,32)+'…') : '')) + '</span>'
+    + '<button class="ai-btn ai-btn-sm" onclick="dailyGoWrite(\'' + dailyQid + '\')" style="align-self:flex-start;padding:4px 14px;font-size:12px">' + (wroteToday?'再写一题':'去写题') + '</button></div>';
+  h += '</div></div></div>';
+  return h;
+}
 (function() {
   var files = ["per_question.json","module_corpus.json"];
   var vars  = ["Q_ANALYSIS","MODULE_CORPUS"];
