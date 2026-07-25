@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<!-- v2.1 · 2026-07-25 16:03 · modular -->
+<!-- v2.1 · 2026-07-25 16:08 · modular -->
 <html lang="zh-CN">
 <head>
 <meta charset="UTF-8">
@@ -10411,6 +10411,59 @@ function _dailyBarHtml() {
     if (ev.key === '/') {
       var gs = document.getElementById('gs');
       if (gs) { ev.preventDefault(); gs.focus(); }
+    }
+  });
+})();
+
+/* ---------- v3.10 导图视图桌面拓宽: 破限全宽 + 全屏模式(Esc退出) ---------- */
+(function(){
+  var css =
+    /* 桌面: 导图突破内容区900px限宽, 居中拉满可用视口(全宽减侧边栏与留白) */
+    '@media(min-width:1025px){.mc-map{position:relative;left:50%;transform:translateX(-50%);width:calc(100vw - 240px - 72px);max-height:80vh}}'
+    + '@media(min-width:769px) and (max-width:1024px){.mc-map{position:relative;left:50%;transform:translateX(-50%);width:calc(100vw - 220px - 56px);max-height:80vh}}'
+    /* 全屏模式 */
+    + '.mc-map.mc-map-fs{position:fixed !important;inset:0 !important;left:0 !important;transform:none !important;width:auto !important;max-height:none !important;height:auto !important;z-index:998;border-radius:0;background:#0a0a1a}'
+    + '.mc-map-fsbtn{position:sticky;top:10px;left:10px;z-index:60;display:inline-block;height:0;overflow:visible}'
+    + '.mc-map-fsbtn button{padding:6px 14px;font-size:12px;border-radius:14px;border:1px solid var(--bdr);background:rgba(20,20,40,.92);color:var(--t);cursor:pointer}'
+    + '.mc-map-fsbtn button:hover{border-color:var(--pu)}';
+  var st = document.createElement('style'); st.textContent = css; document.head.appendChild(st);
+
+  window.mcMapFull = function(){
+    var box = document.getElementById('mcMap');
+    if (!box) return;
+    box.classList.toggle('mc-map-fs');
+    var b = document.getElementById('mcMapFsBtn');
+    if (b) b.textContent = box.classList.contains('mc-map-fs') ? '✕ 退出全屏 (Esc)' : '⛶ 全屏编辑';
+  };
+
+  var _oRM = window.mcRenderMap;
+  window.mcRenderMap = function(){
+    _oRM();
+    var box = document.getElementById('mcMap');
+    if (box && !document.getElementById('mcMapFsBtn')) {
+      box.insertAdjacentHTML('afterbegin',
+        '<div class="mc-map-fsbtn"><button id="mcMapFsBtn" onclick="mcMapFull()">' + (box.classList.contains('mc-map-fs') ? '✕ 退出全屏 (Esc)' : '⛶ 全屏编辑') + '</button></div>');
+    } else if (box) {
+      var b = document.getElementById('mcMapFsBtn');
+      if (b) b.textContent = box.classList.contains('mc-map-fs') ? '✕ 退出全屏 (Esc)' : '⛶ 全屏编辑';
+    }
+  };
+
+  /* 切回大纲视图时退出全屏 */
+  var _oSV = window.mcSwitchView;
+  window.mcSwitchView = function(v){
+    if (v !== 'map') {
+      var box = document.getElementById('mcMap');
+      if (box) box.classList.remove('mc-map-fs');
+    }
+    _oSV(v);
+  };
+
+  /* Esc 退出全屏 */
+  document.addEventListener('keydown', function(ev){
+    if (ev.key === 'Escape') {
+      var box = document.getElementById('mcMap');
+      if (box && box.classList.contains('mc-map-fs')) { ev.preventDefault(); mcMapFull(); }
     }
   });
 })();
