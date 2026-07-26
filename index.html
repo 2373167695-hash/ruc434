@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<!-- v2.1 · 2026-07-26 05:34 · modular -->
+<!-- v2.1 · 2026-07-26 06:15 · modular -->
 <html lang="zh-CN">
 <head>
 <meta charset="UTF-8">
@@ -10729,6 +10729,153 @@ function _dailyBarHtml() {
       footer.insertAdjacentHTML('beforebegin', '<div id="tvLibRow" style="display:flex;gap:6px;flex-wrap:wrap;align-items:center;margin-bottom:6px"><span style="font-size:11px;color:var(--pu);font-weight:700">标准图形库(秒开)：</span>' + chips + '<span class="tviz-chip" onclick="tvisGen(true)" title="忽略缓存重新调用AI">🔄 重新生成</span></div>');
     }
     tvNoteBind();
+  };
+})();
+
+/* ---------- v3.12 逻辑框架图本地化: 48知识点秒出框架图(knowledge.json驱动, 零AI) ---------- */
+(function(){
+  function esc(s){ return escapeHtml(String(s || '')); }
+  function sec(icon, title, inner, color){
+    return '<div style="background:rgba(255,255,255,.04);border:1px solid ' + (color || 'rgba(255,255,255,.10)') + ';border-radius:12px;padding:12px 16px;margin:0">'
+      + '<div style="font-size:12px;font-weight:700;color:' + (color ? color.replace('.4', '1').replace('rgba','rgba') : '#aaa') + ';margin-bottom:8px;letter-spacing:.5px">' + icon + ' ' + title + '</div>' + inner + '</div>';
+  }
+  function arrow(){
+    return '<div style="text-align:center;color:#7c7ce8;font-size:16px;line-height:1;margin:2px 0">↓</div>';
+  }
+  function items(arr, numbered){
+    var h = '';
+    (arr || []).forEach(function(x, i){
+      h += '<div style="display:flex;gap:8px;align-items:flex-start;padding:4px 0;font-size:13px;line-height:1.7;color:#ddd">'
+        + '<span style="flex:0 0 auto;color:#a78bfa;font-weight:700;font-size:12px;margin-top:2px">' + (numbered ? (i+1) + '.' : '·') + '</span><span>' + esc(x) + '</span></div>';
+    });
+    return h || '<div style="font-size:12px;color:#777">—</div>';
+  }
+
+  window.tvShowFramework = function(name){
+    var kn = KNOWLEDGE[name];
+    if (!kn) { for (var k in KNOWLEDGE) { if (k.indexOf(name) >= 0 || name.indexOf(k) >= 0) { kn = KNOWLEDGE[k]; name = k; break; } } }
+    if (!kn) return false;
+    var ph = document.getElementById('tvizPlaceholder'), disp = document.getElementById('tvizCanvasDisplay');
+    if (ph) ph.style.display = 'none';
+    if (!disp) return false;
+    disp.style.display = 'block';
+
+    var body = '<div style="text-align:center;padding:14px 16px;background:linear-gradient(135deg,rgba(94,92,230,.28),rgba(94,92,230,.10));border:1px solid rgba(94,92,230,.5);border-radius:12px">'
+      + '<div style="font-size:11px;color:#a5a5f0;margin-bottom:4px">' + esc(kn.module || '') + '</div>'
+      + '<div style="font-size:19px;font-weight:800;color:#fff">' + esc(kn.name || name) + '</div>'
+      + (kn.overview ? '<div style="font-size:12px;color:#c9c9e8;margin-top:8px;line-height:1.7;text-align:left">' + esc(kn.overview) + '</div>' : '')
+      + '</div>';
+    if (kn.assumptions && kn.assumptions.length) body += arrow() + sec('📋', '前提假设', items(kn.assumptions), 'rgba(96,165,250,.4)');
+    if (kn.key && kn.key.length) body += arrow() + sec('⚙️', '核心机制与要点', items(kn.key, true), 'rgba(74,222,128,.4)');
+    var hasPros = kn.evaluation_pros && kn.evaluation_pros.length, hasCons = kn.evaluation_cons && kn.evaluation_cons.length;
+    if (hasPros || hasCons) {
+      body += arrow() + '<div style="display:grid;grid-template-columns:1fr 1fr;gap:10px">'
+        + sec('✅', '理论贡献', items(kn.evaluation_pros), 'rgba(74,222,128,.35)')
+        + sec('⚠️', '局限与批评', items(kn.evaluation_cons), 'rgba(248,113,113,.35)')
+        + '</div>';
+    }
+    var tail = '';
+    if (kn.exam) tail += sec('🎯', '考点提示', '<div style="font-size:12px;line-height:1.7;color:#ddd">' + esc(kn.exam) + '</div>', 'rgba(251,191,36,.4)');
+    if (kn.frontier) tail += (tail ? '<div style="height:10px"></div>' : '') + sec('🛰', '2026 前沿动态', '<div style="font-size:12px;line-height:1.7;color:#ddd">' + esc(kn.frontier) + '</div>', 'rgba(167,139,250,.4)');
+    if (tail) body += arrow() + tail;
+
+    disp.innerHTML = '<div style="padding:10px 0">'
+      + '<div style="display:flex;align-items:center;gap:10px;max-width:860px;margin:0 auto 8px"><div style="font-size:14px;font-weight:700;color:#ddd;flex:1">🧩 逻辑框架图 · ' + esc(name) + '（本地秒出·数据可溯源）</div>'
+      + '<button class="ai-btn ai-btn-sm" onclick="tvExportPNG()" style="padding:5px 14px;font-size:12px">⬇ 导出PNG</button></div>'
+      + '<div id="tvFwHost" style="max-width:860px;margin:0 auto;display:flex;flex-direction:column;gap:0;background:#101024;border-radius:14px;padding:18px">' + body + '</div></div>';
+
+    var kp = document.getElementById('tvizKeypoints');
+    if (kp) kp.innerHTML = '<ul style="margin:0;padding-left:16px;font-size:12px;line-height:1.8">' + (kn.key || []).map(function(n){ return '<li>' + esc(n) + '</li>'; }).join('') + '</ul>';
+    var el2 = document.getElementById('tvizElements');
+    if (el2) el2.innerHTML = items(kn.assumptions);
+    var ex = document.getElementById('tvizExam');
+    if (ex) ex.innerHTML = '<div style="font-size:12px;line-height:1.7">' + esc(kn.exam || '—') + '</div>';
+    var rel = document.getElementById('tvizRelated');
+    if (rel) {
+      try {
+        var rts = findRelatedTopics(name) || [];
+        rel.innerHTML = rts.length ? rts.slice(0, 5).map(function(t){ var tn = t.name || t; return '<span class="tviz-chip" style="font-size:11px" onclick="tvShowFramework(\'' + esc(tn) + '\')">' + esc(tn) + '</span>'; }).join(' ') : '—';
+      } catch(e) { rel.innerHTML = '—'; }
+    }
+    var qs = document.getElementById('tvizQuestions');
+    if (qs) {
+      var ids = [];
+      for (var tk in TQM) { if (tk.indexOf(name) >= 0) { ids = TQM[tk].slice(0, 4); break; } }
+      qs.innerHTML = ids.length ? ids.map(function(id){ return '<span class="pcard-ref" style="font-size:11px;cursor:pointer" onclick="showExamQ(\'' + id + '\')">' + id + '</span>'; }).join(' ') : '—';
+    }
+    var hd = document.getElementById('tvis-hero-desc');
+    if (hd) hd.textContent = '当前：' + name + ' · 本地框架图(知识库驱动,无需AI)';
+    if (typeof _tvKey !== 'undefined') {
+      window._tvKey = name;
+      var ta = document.getElementById('tvizNote');
+      if (ta) { try { ta.value = (JSON.parse(localStorage.getItem('r434_tviz_notes')||'{}'))[name] || ''; } catch(e) {} }
+    }
+    return true;
+  };
+
+  /* PNG导出扩展: SVG图走原路径, HTML框架图走foreignObject路径 */
+  var _oExp = window.tvExportPNG;
+  window.tvExportPNG = function(){
+    var svg = document.querySelector('#tvSvgHost svg');
+    if (svg) { _oExp(); return; }
+    var host = document.getElementById('tvFwHost');
+    if (!host) { alert('当前没有可导出的图形'); return; }
+    var w = host.offsetWidth, h = host.scrollHeight;
+    var xhtml = new XMLSerializer().serializeToString(host);
+    var fo = '<svg xmlns="http://www.w3.org/2000/svg" width="' + w + '" height="' + h + '"><foreignObject width="100%" height="100%"><div xmlns="http://www.w3.org/1999/xhtml">' + xhtml + '</div></foreignObject></svg>';
+    var blob = new Blob([fo], {type:'image/svg+xml;charset=utf-8'});
+    var url = URL.createObjectURL(blob);
+    var img = new Image();
+    img.onload = function(){
+      var c = document.createElement('canvas');
+      c.width = w * 2; c.height = h * 2;
+      var ctx = c.getContext('2d');
+      ctx.scale(2, 2);
+      ctx.fillStyle = '#101024'; ctx.fillRect(0, 0, w, h);
+      ctx.drawImage(img, 0, 0, w, h);
+      URL.revokeObjectURL(url);
+      var a = document.createElement('a');
+      a.download = '框架图_' + Date.now() + '.png';
+      a.href = c.toDataURL('image/png');
+      a.click();
+    };
+    img.onerror = function(){ URL.revokeObjectURL(url); alert('导出失败:浏览器限制了HTML转图片,可直接截图'); };
+    img.src = url;
+  };
+
+  /* 输入匹配知识点→本地框架图优先(AI留给库外理论, 点🔄重新生成强制走AI) */
+  var _oGen2 = window.tvisGen;
+  window.tvisGen = function(force){
+    var inp = document.getElementById('tvizInput');
+    var q = inp ? inp.value.trim() : '';
+    if (q && !force) {
+      var name = q.replace(/画出|的完整.*图|框架图|流程图|机制图|理论$/g, function(m){ return m === '理论' ? '理论' : ''; }).trim();
+      if (KNOWLEDGE[name] && tvShowFramework(name)) return;
+      if (KNOWLEDGE[q] && tvShowFramework(q)) return;
+    }
+    _oGen2(force);
+  };
+
+  /* 页面注入: 48知识点下拉(按模块分组) */
+  var _oTV2 = showTheoryViz;
+  showTheoryViz = function(){
+    _oTV2();
+    var row = document.getElementById('tvLibRow');
+    if (row && !document.getElementById('tvKnSelect')) {
+      var groups = {};
+      Object.keys(KNOWLEDGE).forEach(function(k){
+        var m = (KNOWLEDGE[k].module || '其他').split('/')[0];
+        (groups[m] = groups[m] || []).push(k);
+      });
+      var opts = '<option value="">🧩 选择知识点·秒出框架图(48个)</option>';
+      Object.keys(groups).forEach(function(g){
+        opts += '<optgroup label="' + escapeHtml(g) + '">';
+        groups[g].forEach(function(k){ opts += '<option value="' + escapeHtml(k) + '">' + escapeHtml(k) + '</option>'; });
+        opts += '</optgroup>';
+      });
+      row.insertAdjacentHTML('afterbegin',
+        '<select id="tvKnSelect" onchange="if(this.value)tvShowFramework(this.value)" style="padding:6px 10px;border:1px solid rgba(94,92,230,.5);border-radius:14px;background:rgba(94,92,230,.12);color:var(--t);font-size:12px;max-width:240px;outline:none">' + opts + '</select>');
+    }
   };
 })();
 (function() {
