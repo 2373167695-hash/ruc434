@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<!-- v2.1 · 2026-07-26 07:54 · modular -->
+<!-- v2.1 · 2026-07-26 09:03 · modular -->
 <html lang="zh-CN">
 <head>
 <meta charset="UTF-8">
@@ -11115,6 +11115,240 @@ function _dailyBarHtml() {
         + '<button class="ai-btn ai-btn-sm" style="padding:6px 16px" onclick="backupExport()">⬇ 导出备份</button> '
         + '<button class="mc-op" style="padding:6px 16px;margin-left:8px" onclick="backupImport()">⬆ 从备份恢复</button></div>');
     }
+  };
+})();
+
+/* ---------- v3.16 AI语音对话: Web Speech识别(zh-CN) + 流式回复朗读 + 免手连续对话模式 ---------- */
+(function(){
+  var css = '.vc-btn{width:38px;height:38px;border-radius:50%;border:1px solid var(--bdr);background:rgba(255,255,255,.05);color:var(--t);cursor:pointer;font-size:16px;flex:0 0 auto;display:flex;align-items:center;justify-content:center;transition:all .2s}'
+    + '.vc-btn:hover{border-color:var(--pu)}'
+    + '.vc-btn.on{background:rgba(239,68,68,.25);border-color:#ef4444;animation:vcPulse 1.2s infinite}'
+    + '.vc-btn.mode-on{background:rgba(74,222,128,.2);border-color:#4ade80}'
+    + '@keyframes vcPulse{0%,100%{box-shadow:0 0 0 0 rgba(239,68,68,.4)}50%{box-shadow:0 0 0 8px rgba(239,68,68,0)}}'
+    + '.vc-status{font-size:11px;color:var(--ts);padding:2px 10px;display:none}';
+  var st = document.createElement('style'); st.textContent = css; document.head.appendChild(st);
+
+  var SR = window.SpeechRecognition || window.webkitSpeechRecognition;
+  var V = { rec: null, listening: false, mode: false, lastSpoken: '', watch: null, speaking: false };
+
+  function setStatus(msg){
+    var el = document.getElementById('vcStatus');
+    if (el) { el.style.display = msg ? 'block' : 'none'; el.textContent = msg || ''; }
+  }
+
+  /* ---- 语音识别 ---- */
+  function makeRec(){
+    var rec = new SR();
+    rec.lang = 'zh-CN';
+    rec.interimResults = true;
+    rec.continuous = false;
+    rec.onresult = function(ev){
+      var fin = '', interim = '';
+      for (var i = 0; i < ev.results.length; i++) {
+        if (ev.results[i].isFinal) fin += ev.results[i][0].transcript;
+        else interim += ev.results[i][0].transcript;
+      }
+      var inp = document.getElementById('chat-q');
+      if (inp) inp.value = fin || interim;
+      if (fin) {
+        rec._gotFinal = true;
+        if (V.mode || rec._autoSend) { setStatus('🤖 AI思考中…'); setTimeout(function(){ sendChat(); startWatch(); }, 150); }
+      }
+    };
+    rec.onend = function(){
+      V.listening = false;
+      var b = document.getElementById('vcMic');
+      if (b) b.classList.remove('on');
+      if (!rec._gotFinal) setStatus(V.mode ? '📞 语音对话中·点🎤说话' : '');
+    };
+    rec.onerror = function(ev){
+      V.listening = false;
+      var b = document.getElementById('vcMic'); if (b) b.classList.remove('on');
+      if (ev.error === 'not-allowed') setStatus('⚠️ 请在浏览器地址栏允许麦克风权限');
+      else if (ev.error !== 'aborted' && ev.error !== 'no-speech') setStatus('识别出错: ' + ev.error);
+      else if (ev.error === 'no-speech') setStatus('没听到声音,再点🎤试一次');
+    };
+    return rec;
+  }
+
+  window.vcToggleMic = function(autoSend){
+    if (!SR) { alert('当前浏览器不支持语音识别,请用 Chrome 或 Edge'); return; }
+    if (V.listening) { try { V.rec.stop(); } catch(e) {} return; }
+    try { speechSynthesis.cancel(); } catch(e) {}
+    V.rec = makeRec();
+    V.rec._autoSend = !!autoSend || V.mode;
+    V.rec._gotFinal = false;
+    try {
+      V.rec.start();
+      V.listening = true;
+      var b = document.getElementById('vcMic'); if (b) b.classList.add('on');
+      setStatus('🎤 正在听…说完自动' + (V.rec._autoSend ? '发送' : '填入输入框'));
+    } catch(e) { setStatus('启动失败,重试一下'); }
+  };
+
+  /* ---- 朗读(分句排队, 规避Chrome长文本截断) ---- */
+  function cleanForSpeech(text){
+    return text
+      .replace(/```[\s\S]*?```/g, '。代码略。')
+      .replace(/\$[^$]*\$/g, '公式')
+      .replace(/\[来源[:：][^\]]*\]/g, '')
+      .replace(/[#*`>|_\-]{2,}/g, ' ')
+      .replace(/[#*`>|]/g, '')
+      .replace(/!?\[[^\]]*\]\([^)]*\)/g, '')
+      .replace(/[\u{1F300}-\u{1FAFF}\u{2600}-\u{27BF}📌🎯✅⚠️①②③④⑤⑥⑦⑧⑨⑩]/gu, function(m){
+        var map = {'①':'一、','②':'二、','③':'三、','④':'四、','⑤':'五、','⑥':'六、','⑦':'七、','⑧':'八、','⑨':'九、','⑩':'十、'};
+        return map[m] || '';
+      })
+      .replace(/\s{2,}/g, ' ').trim();
+  }
+  window.vcSpeak = function(text){
+    try { speechSynthesis.cancel(); } catch(e) {}
+    var clean = cleanForSpeech(text);
+    if (!clean) return;
+    var parts = clean.split(/(?<=[。！？；\n])/).filter(function(x){ return x.trim().length > 0; });
+    if (!parts.length) parts = [clean];
+    var zh = speechSynthesis.getVoices().filter(function(v){ return /zh|CN/i.test(v.lang); })[0];
+    V.speaking = true;
+    setStatus('🔊 朗读中…(点🔇停止)');
+    parts.forEach(function(p, i){
+      var u = new SpeechSynthesisUtterance(p);
+      u.lang = 'zh-CN'; u.rate = 1.15;
+      if (zh) u.voice = zh;
+      if (i === parts.length - 1) {
+        u.onend = function(){
+          V.speaking = false;
+          if (V.mode) { setStatus('📞 轮到你说·自动开麦'); setTimeout(function(){ if (V.mode && !V.listening) vcToggleMic(true); }, 400); }
+          else setStatus('');
+        };
+      }
+      speechSynthesis.speak(u);
+    });
+  };
+  window.vcStopSpeak = function(){
+    try { speechSynthesis.cancel(); } catch(e) {}
+    V.speaking = false;
+    setStatus(V.mode ? '📞 语音对话中·点🎤说话' : '');
+  };
+
+  /* ---- 回复完成侦测: c-load消失 + 最后一条assistant文本1.2s稳定 → 朗读 ---- */
+  function startWatch(){
+    if (V.watch) clearInterval(V.watch);
+    var lastText = '', stableAt = 0;
+    V.watch = setInterval(function(){
+      var body = document.getElementById('chat-body');
+      if (!body) { clearInterval(V.watch); V.watch = null; return; }
+      if (document.getElementById('c-load')) { lastText = ''; return; }
+      var msgs = body.querySelectorAll('.chat-msg.assistant');
+      if (!msgs.length) return;
+      var t = msgs[msgs.length - 1].textContent || '';
+      if (!t.trim() || t === V.lastSpoken) return;
+      if (t !== lastText) { lastText = t; stableAt = Date.now(); return; }
+      if (Date.now() - stableAt > 1200) {
+        clearInterval(V.watch); V.watch = null;
+        V.lastSpoken = t;
+        vcSpeak(t);
+      }
+    }, 400);
+  }
+
+  /* ---- 连续对话模式 ---- */
+  window.vcToggleMode = function(){
+    V.mode = !V.mode;
+    var b = document.getElementById('vcMode');
+    if (b) { b.classList.toggle('mode-on', V.mode); b.title = V.mode ? '退出语音对话模式' : '开启连续语音对话'; }
+    if (V.mode) { setStatus('📞 语音对话模式已开·点🎤开始说话'); }
+    else { vcStopSpeak(); if (V.listening) { try { V.rec.stop(); } catch(e) {} } setStatus(''); }
+  };
+
+  /* ---- UI注入: AI聊天页输入区 ---- */
+  var _oShowAI = showAI;
+  showAI = function(){
+    _oShowAI();
+    var inp = document.getElementById('chat-q');
+    if (!inp || document.getElementById('vcMic')) return;
+    var row = inp.parentElement;
+    if (!row) return;
+    inp.insertAdjacentHTML('afterend',
+      '<button class="vc-btn" id="vcMic" onclick="vcToggleMic()" title="语音输入(说完自动填入)">🎤</button>'
+      + '<button class="vc-btn" id="vcMode" onclick="vcToggleMode()" title="开启连续语音对话">📞</button>'
+      + '<button class="vc-btn" id="vcStop" onclick="vcStopSpeak()" title="停止朗读">🔇</button>');
+    var body = document.getElementById('chat-body');
+    if (body && !document.getElementById('vcStatus')) body.insertAdjacentHTML('afterend', '<div class="vc-status" id="vcStatus"></div>');
+    if (!SR) { var m = document.getElementById('vcMic'); if (m) { m.style.opacity = '.35'; m.title = '当前浏览器不支持,请用Chrome/Edge'; } }
+    /* 手动打字发送时也朗读(仅语音对话模式下) */
+    var send = document.getElementById('chat-send');
+    if (send && !send._vcHook) {
+      send._vcHook = true;
+      send.addEventListener('click', function(){ if (V.mode) startWatch(); });
+    }
+    inp.addEventListener('keydown', function(ev){ if (ev.key === 'Enter' && V.mode) startWatch(); });
+  };
+  /* 语音合成的voice列表首次为空, 预热 */
+  try { speechSynthesis.getVoices(); if (speechSynthesis.onvoiceschanged !== undefined) speechSynthesis.onvoiceschanged = function(){}; } catch(e) {}
+})();
+
+/* ---------- v3.17 MiMo语音对话修复: ASR请求格式(input_audio) + 录音转16kWAV + 状态可见 ---------- */
+(function(){
+  function vStatus(msg, isErr){
+    var body = document.getElementById('ai-chat-body');
+    if (!body) return;
+    var old = document.getElementById('vAsrStatus');
+    if (old) old.remove();
+    if (!msg) return;
+    body.insertAdjacentHTML('beforeend', '<div id="vAsrStatus" style="text-align:center;font-size:11px;color:' + (isErr ? '#f87171' : 'var(--ts)') + ';padding:4px">' + msg + '</div>');
+    body.scrollTop = body.scrollHeight;
+  }
+
+  /* webm录音 → 16kHz单声道WAV(ASR实测稳定格式) */
+  function toWav16k(blob){
+    var AC = window.AudioContext || window.webkitAudioContext;
+    var ac = new AC();
+    return blob.arrayBuffer().then(function(ab){ return ac.decodeAudioData(ab); }).then(function(buf){
+      var sr = 16000, ratio = buf.sampleRate / sr, n = Math.floor(buf.length / ratio);
+      var ch = buf.getChannelData(0);
+      var wav = new ArrayBuffer(44 + n * 2), v = new DataView(wav);
+      function ws(o, s){ for (var i = 0; i < s.length; i++) v.setUint8(o + i, s.charCodeAt(i)); }
+      ws(0, 'RIFF'); v.setUint32(4, 36 + n * 2, true); ws(8, 'WAVE'); ws(12, 'fmt ');
+      v.setUint32(16, 16, true); v.setUint16(20, 1, true); v.setUint16(22, 1, true);
+      v.setUint32(24, sr, true); v.setUint32(28, sr * 2, true); v.setUint16(32, 2, true); v.setUint16(34, 16, true);
+      ws(36, 'data'); v.setUint32(40, n * 2, true);
+      for (var i = 0; i < n; i++) {
+        var s = ch[Math.floor(i * ratio)];
+        v.setInt16(44 + i * 2, Math.max(-1, Math.min(1, s)) * 32767, true);
+      }
+      try { ac.close(); } catch(e) {}
+      var bytes = new Uint8Array(wav), bin = '';
+      for (var j = 0; j < bytes.length; j += 8192) bin += String.fromCharCode.apply(null, bytes.subarray(j, j + 8192));
+      return btoa(bin);
+    });
+  }
+
+  /* 重写: 正确的 input_audio 请求格式 + 错误可见 */
+  processVoice = function(){
+    var blob = new Blob(_voiceChunks, { type: 'audio/webm' });
+    if (blob.size < 2000) { vStatus('🎤 录音太短,按住说完再松开', true); setTimeout(function(){ vStatus(''); }, 2500); return; }
+    vStatus('👂 MiMo 正在听你说了什么…');
+    toWav16k(blob).then(function(b64){
+      return fetch(DS_URL, {
+        method: 'POST',
+        headers: { Authorization: 'Bearer ' + getAPIKey(), 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          model: 'mimo-v2.5-asr',
+          messages: [{ role: 'user', content: [{ type: 'input_audio', input_audio: { data: 'data:audio/wav;base64,' + b64, format: 'wav' } }] }]
+        })
+      });
+    }).then(function(r){
+      if (!r.ok) throw Error('ASR HTTP ' + r.status);
+      return r.json();
+    }).then(function(d){
+      var text = (d.choices && d.choices[0] && d.choices[0].message) ? (d.choices[0].message.content || '').trim() : '';
+      vStatus('');
+      if (text && text.length > 0) sendVoiceMessage(text);
+      else { vStatus('👂 没听清,再说一次?', true); setTimeout(function(){ vStatus(''); }, 2500); }
+    }).catch(function(err){
+      vStatus('⚠️ 语音识别失败: ' + err.message + '(检查网络/Key)', true);
+      setTimeout(function(){ vStatus(''); }, 4000);
+    });
   };
 })();
 (function() {
