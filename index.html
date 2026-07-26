@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<!-- v2.1 · 2026-07-26 07:05 · modular -->
+<!-- v2.1 · 2026-07-26 07:31 · modular -->
 <html lang="zh-CN">
 <head>
 <meta charset="UTF-8">
@@ -4079,17 +4079,14 @@ function showHome() {recordTrend();var bb=document.getElementById('backBtn');if(
   h += '<div class="gc" onclick="navigate(\'hot\')"><div class="ico" style="background:rgba(94,92,230,.08)">🔥</div><div class="cnt"><h4>热点素材解读</h4><p>跨国公司平台经济 · ESA理论与MNPs</p></div></div>';
   h += '</div>';
   // Year × Module heatmap
-  var ymodules = ['国际贸易','国际投资与跨国公司','国际金融','新兴议题'];
+  var ymodules = ['国际贸易理论','国际贸易政策及理论','国际金融','国际投资','跨国公司经营'];
   var years = [2011,2012,2013,2014,2015,2016,2017,2018,2019,2020,2021,2022,2023,2024,2025,2026];
   var ymMap = {};
   years.forEach(function(y){ymMap[y]={};ymodules.forEach(function(m){ymMap[y][m]=0;});});
   DATA.forEach(function(q){
     (q.knowledge||[]).forEach(function(k){
-      var mod='';
-      if(k.indexOf('国际贸易')>=0)mod='国际贸易';
-      else if(k.indexOf('跨国')>=0||k.indexOf('国际商务')>=0)mod='国际投资与跨国公司';
-      else if(k.indexOf('国际金融')>=0)mod='国际金融';
-      else mod='新兴议题';
+      var _kn=KNOWLEDGE[k];
+      var mod=_kn&&_kn.module?_kn.module.split('/')[0]:'';
       if(ymMap[q.year]&&ymMap[q.year][mod]!==undefined)ymMap[q.year][mod]++;
     });
   });
@@ -4103,11 +4100,11 @@ function showHome() {recordTrend();var bb=document.getElementById('backBtn');if(
   function hmText(v){return v>4?'#fff':'var(--pu)';}
   function hmDot(v){return v===0?'':v<=2?'●':v<=4?'●●':v<=7?'●●●':'●●●●';}
   
-  h += '<div class="pcard" style="margin-top:16px"><div class="pcard-hdr"><h3>📊 命题趋势热力图</h3><span style="font-size:11px;color:var(--ts)">2011—2023 · 年×模块</span></div><div class="pcard-body" style="overflow-x:auto">';
+  h += '<div class="pcard" style="margin-top:16px"><div class="pcard-hdr"><h3>📊 命题趋势热力图</h3><span style="font-size:11px;color:var(--ts)">2011—2026 · 年×模块</span></div><div class="pcard-body" style="overflow-x:auto">';
   h += '<table style="border-collapse:separate;border-spacing:4px;width:100%;min-width:520px">';
   // Header row
   h += '<tr><td style="width:44px"></td>';
-  ymodules.forEach(function(m){h+='<td style="padding:4px 2px;text-align:center;font-size:10px;font-weight:600;color:var(--ts);letter-spacing:.3px">'+m.substring(0,2)+'<br>'+m.substring(2,4)+'</td>';});
+  ymodules.forEach(function(m){var _sn={'国际贸易理论':'贸易理论','国际贸易政策及理论':'贸易政策','国际金融':'国际金融','国际投资':'国际投资','跨国公司经营':'跨国经营'}[m]||m;h+='<td style="padding:4px 2px;text-align:center;font-size:10px;font-weight:600;color:var(--ts);letter-spacing:.3px">'+_sn.substring(0,2)+'<br>'+_sn.substring(2,4)+'</td>';});
   h += '<td style="width:32px"></td></tr>';
   
   years.forEach(function(y){
@@ -5604,7 +5601,7 @@ function showModuleCorpus() {
   document.getElementById('bc').innerHTML = '<span>📖 模块语料</span>';
   
   var h = '<div class="hero"><h1>📖 模块语料</h1>' +
-    '<div class="desc">从123道历年真题答案中提炼：通用答题模板、高频规范话术、命题规律、必背素材。按8大知识模块组织，每条必背段落标注来源真题。</div></div>';
+    '<div class="desc">从'+DATA.length+'道历年真题答案中提炼：通用答题模板、高频规范话术、命题规律、必背素材。按8大知识模块组织，每条必背段落标注来源真题。</div></div>';
   
   if (typeof MODULE_CORPUS === 'undefined' || !MODULE_CORPUS.modules) {
     h += '<div class="pcard"><div class="pcard-body"><p>💰 语料库数据未加载</p></div></div>';
@@ -5710,21 +5707,18 @@ function aiPredictExam() {
   var ld = aiLoading('AI正在分析13年真题规律和你的学习进度...'); content.innerHTML = ''; content.appendChild(ld);
   content.scrollIntoView({behavior:'smooth'});
   // Build context: year×module frequency
-  var modules = ['国际贸易','国际投资与跨国公司','国际金融','新兴议题'];
+  var modules = ['国际贸易理论','国际贸易政策及理论','国际金融','国际投资','跨国公司经营'];
   var ymMap = {};
-  [2011,2012,2013,2014,2015,2016,2017,2018,2019,2020,2021,2022,2023].forEach(function(y){ymMap[y]={};modules.forEach(function(m){ymMap[y][m]=0;});});
+  [2011,2012,2013,2014,2015,2016,2017,2018,2019,2020,2021,2022,2023,2024,2025,2026].forEach(function(y){ymMap[y]={};modules.forEach(function(m){ymMap[y][m]=0;});});
   DATA.forEach(function(q){
     (q.knowledge||[]).forEach(function(k){
-      var mod='';
-      if(k.indexOf('国际贸易')>=0)mod='国际贸易';
-      else if(k.indexOf('跨国')>=0||k.indexOf('国际商务')>=0)mod='国际投资与跨国公司';
-      else if(k.indexOf('国际金融')>=0)mod='国际金融';
-      else mod='新兴议题';
+      var _kn=KNOWLEDGE[k];
+      var mod=_kn&&_kn.module?_kn.module.split('/')[0]:'';
       if(ymMap[q.year]&&ymMap[q.year][mod]!==undefined)ymMap[q.year][mod]++;
     });
   });
   var trendStr = modules.map(function(m){
-    var recent = ymMap[2021][m]+ymMap[2022][m]+ymMap[2023][m];
+    var recent = ymMap[2024][m]+ymMap[2025][m]+ymMap[2026][m];
     return m+':近3年'+recent+'次';
   }).join('；');
   var doneQ = DATA.filter(function(q) { return marks[q.id] && marks[q.id].done; }).length;
@@ -6309,7 +6303,7 @@ function showStats() {
   
   // Module progress bars
   h += '<div class="pcard" style="margin-top:16px"><div class="pcard-hdr"><h3>📚 各模块学习进度</h3></div><div class="pcard-body">';
-  var modOrder = ['国际贸易', '国际投资与跨国公司', '国际金融', '新兴议题'];
+  var modOrder = ['国际贸易理论','国际贸易政策及理论','国际金融','国际投资','跨国公司经营'];
   modOrder.forEach(function(mod) {
     var s = moduleStats[mod];
     if (!s) return;
@@ -6585,9 +6579,9 @@ function showWrongBook() {
 function showGraph() {
   document.getElementById('bc').innerHTML = '<span>🕸️ 知识图谱</span>';
   var G = {nodes:[], edges:[], nodeMap:{}, filters:{mod:{}, edgeType:'all', unviewed:false, kw:''}};
-  var modColors = {'国际贸易':'#7c3aed','国际投资与跨国公司':'#2563eb','国际金融':'#059669','新兴议题':'#ea580c'};
-  var modLight = {'国际贸易':'rgba(124,58,237,.15)','国际投资与跨国公司':'#dbeafe','国际金融':'#d1fae5','新兴议题':'#ffedd5'};
-  var modList = ['国际贸易','国际投资与跨国公司','国际金融','新兴议题'];
+  var modColors = {'国际贸易理论':'#7c3aed','国际贸易政策及理论':'#ea580c','国际金融':'#059669','国际投资':'#2563eb','跨国公司经营':'#d946ef'};
+  var modLight = {'国际贸易理论':'rgba(124,58,237,.15)','国际贸易政策及理论':'#ffedd5','国际金融':'#d1fae5','国际投资':'#dbeafe','跨国公司经营':'#fae8ff'};
+  var modList = ['国际贸易理论','国际贸易政策及理论','国际金融','国际投资','跨国公司经营'];
   modList.forEach(function(m){G.filters.mod[m]=true;});
   for (var k in KNOWLEDGE) {
     var item = KNOWLEDGE[k];
@@ -6653,7 +6647,7 @@ function showGraph() {
 
 function graphFilter(){var G=window._graph;G.filters.kw=(document.getElementById('graphSearch')||{}).value||'';G.filters.edgeType=(document.getElementById('graphEdgeFilter')||{}).value||'all';G.filters.unviewed=(document.getElementById('graphUnviewed')||{}).checked||false;document.querySelectorAll('.graph-mod-toggle').forEach(function(cb){G.filters.mod[cb.dataset.mod]=cb.checked;});graphRender();}
 function isNodeVisible(n,G){if(!G.filters.mod[n.module])return false;if(G.filters.unviewed&&n.viewed)return false;if(G.filters.kw&&n.label.indexOf(G.filters.kw)<0)return false;return true;}
-function graphRender(){var G=window._graph;var mc={'国际贸易':'#7c3aed','国际投资与跨国公司':'#2563eb','国际金融':'#059669','新兴议题':'#ea580c'};var ml={'国际贸易':'rgba(124,58,237,.15)','国际投资与跨国公司':'#dbeafe','国际金融':'#d1fae5','新兴议题':'#ffedd5'};var eh='';G.edges.forEach(function(e){if(G.filters.edgeType!=='all'&&e.type!==G.filters.edgeType)return;var ni=G.nodes[G.nodeMap[e.source]],nj=G.nodes[G.nodeMap[e.target]];if(!isNodeVisible(ni,G)||!isNodeVisible(nj,G))return;var mx=(ni.x+nj.x)/2,my=(ni.y+nj.y)/2,dx=nj.x-ni.x,dy=nj.y-ni.y;var ec=e.type==='evolution'?'#a78bfa':'#cbd5e1';var ew=Math.min(e.weight*1.2,3.5);eh+='<path d="M'+ni.x.toFixed(1)+' '+ni.y.toFixed(1)+' Q'+(mx-dy*0.08).toFixed(1)+' '+(my+dx*0.08).toFixed(1)+' '+nj.x.toFixed(1)+' '+nj.y.toFixed(1)+'" stroke="'+ec+'" stroke-width="'+ew+'" fill="none" opacity="0.3" class="graph-edge" data-source="'+e.source.replace(/"/g,'&quot;')+'" data-target="'+e.target.replace(/"/g,'&quot;')+'"/>';});document.getElementById('graphEdges').innerHTML=eh;var nh='';G.nodes.forEach(function(n){if(!isNodeVisible(n,G))return;var gid='grad-'+n.module.substring(0,2);nh+='<g class="graph-node" style="cursor:pointer" data-id="'+n.id.replace(/"/g,'&quot;')+'" onclick="graphNodeClick(\''+n.id.replace(/'/g,"\\'")+'\')">';if(n.viewed)nh+='<circle cx="'+n.x.toFixed(1)+'" cy="'+n.y.toFixed(1)+'" r="'+(n.size+4)+'" fill="none" stroke="#10b981" stroke-width="1.5" opacity="0.5" stroke-dasharray="3 2"/>';nh+='<circle cx="'+n.x.toFixed(1)+'" cy="'+(n.y+2).toFixed(1)+'" r="'+n.size+'" fill="rgba(0,0,0,0.08)"/>';nh+='<circle cx="'+n.x.toFixed(1)+'" cy="'+n.y.toFixed(1)+'" r="'+n.size+'" fill="url(#'+gid+')" stroke="'+n.color+'" stroke-width="1.5" class="graph-circle" data-id="'+n.id.replace(/"/g,'&quot;')+'"><title>'+n.label+' ('+n.examCount+'次考察)</title></circle>';var fs=n.size>18?10:8;nh+='<text x="'+n.x.toFixed(1)+'" y="'+(n.y+n.size+12).toFixed(1)+'" text-anchor="middle" font-size="'+fs+'" fill="#4b5563" style="pointer-events:none;font-weight:600">'+n.label.substring(0,7)+'</text>';nh+='</g>';});document.getElementById('graphNodes').innerHTML=nh;var svg=document.getElementById('graphSvg');svg.querySelectorAll('.graph-node').forEach(function(g){g.addEventListener('mouseenter',function(){var id=this.dataset.id;svg.querySelectorAll('.graph-edge').forEach(function(e){if(e.dataset.source===id||e.dataset.target===id){e.style.opacity='0.8';e.style.strokeWidth=parseFloat(e.getAttribute('stroke-width'))*2;}else e.style.opacity='0.06';});svg.querySelectorAll('.graph-node').forEach(function(n){if(n.dataset.id!==id)n.style.opacity='0.2';});});g.addEventListener('mouseleave',function(){svg.querySelectorAll('.graph-edge').forEach(function(e){e.style.opacity='0.3';e.style.strokeWidth='';});svg.querySelectorAll('.graph-node').forEach(function(n){n.style.opacity='1';});});});}
+function graphRender(){var G=window._graph;var mc={'国际贸易理论':'#7c3aed','国际贸易政策及理论':'#ea580c','国际金融':'#059669','国际投资':'#2563eb','跨国公司经营':'#d946ef'};var ml={'国际贸易理论':'rgba(124,58,237,.15)','国际贸易政策及理论':'#ffedd5','国际金融':'#d1fae5','国际投资':'#dbeafe','跨国公司经营':'#fae8ff'};var eh='';G.edges.forEach(function(e){if(G.filters.edgeType!=='all'&&e.type!==G.filters.edgeType)return;var ni=G.nodes[G.nodeMap[e.source]],nj=G.nodes[G.nodeMap[e.target]];if(!isNodeVisible(ni,G)||!isNodeVisible(nj,G))return;var mx=(ni.x+nj.x)/2,my=(ni.y+nj.y)/2,dx=nj.x-ni.x,dy=nj.y-ni.y;var ec=e.type==='evolution'?'#a78bfa':'#cbd5e1';var ew=Math.min(e.weight*1.2,3.5);eh+='<path d="M'+ni.x.toFixed(1)+' '+ni.y.toFixed(1)+' Q'+(mx-dy*0.08).toFixed(1)+' '+(my+dx*0.08).toFixed(1)+' '+nj.x.toFixed(1)+' '+nj.y.toFixed(1)+'" stroke="'+ec+'" stroke-width="'+ew+'" fill="none" opacity="0.3" class="graph-edge" data-source="'+e.source.replace(/"/g,'&quot;')+'" data-target="'+e.target.replace(/"/g,'&quot;')+'"/>';});document.getElementById('graphEdges').innerHTML=eh;var nh='';G.nodes.forEach(function(n){if(!isNodeVisible(n,G))return;var gid='grad-'+n.module.substring(0,2);nh+='<g class="graph-node" style="cursor:pointer" data-id="'+n.id.replace(/"/g,'&quot;')+'" onclick="graphNodeClick(\''+n.id.replace(/'/g,"\\'")+'\')">';if(n.viewed)nh+='<circle cx="'+n.x.toFixed(1)+'" cy="'+n.y.toFixed(1)+'" r="'+(n.size+4)+'" fill="none" stroke="#10b981" stroke-width="1.5" opacity="0.5" stroke-dasharray="3 2"/>';nh+='<circle cx="'+n.x.toFixed(1)+'" cy="'+(n.y+2).toFixed(1)+'" r="'+n.size+'" fill="rgba(0,0,0,0.08)"/>';nh+='<circle cx="'+n.x.toFixed(1)+'" cy="'+n.y.toFixed(1)+'" r="'+n.size+'" fill="url(#'+gid+')" stroke="'+n.color+'" stroke-width="1.5" class="graph-circle" data-id="'+n.id.replace(/"/g,'&quot;')+'"><title>'+n.label+' ('+n.examCount+'次考察)</title></circle>';var fs=n.size>18?10:8;nh+='<text x="'+n.x.toFixed(1)+'" y="'+(n.y+n.size+12).toFixed(1)+'" text-anchor="middle" font-size="'+fs+'" fill="#4b5563" style="pointer-events:none;font-weight:600">'+n.label.substring(0,7)+'</text>';nh+='</g>';});document.getElementById('graphNodes').innerHTML=nh;var svg=document.getElementById('graphSvg');svg.querySelectorAll('.graph-node').forEach(function(g){g.addEventListener('mouseenter',function(){var id=this.dataset.id;svg.querySelectorAll('.graph-edge').forEach(function(e){if(e.dataset.source===id||e.dataset.target===id){e.style.opacity='0.8';e.style.strokeWidth=parseFloat(e.getAttribute('stroke-width'))*2;}else e.style.opacity='0.06';});svg.querySelectorAll('.graph-node').forEach(function(n){if(n.dataset.id!==id)n.style.opacity='0.2';});});g.addEventListener('mouseleave',function(){svg.querySelectorAll('.graph-edge').forEach(function(e){e.style.opacity='0.3';e.style.strokeWidth='';});svg.querySelectorAll('.graph-node').forEach(function(n){n.style.opacity='1';});});});}
 
 function graphNodeClick(id){var G=window._graph;var n=G.nodes[G.nodeMap[id]];if(!n)return;var panel=document.getElementById('graphDetail');panel.style.display='block';var rel=[];G.edges.forEach(function(e){if(e.source===id)rel.push({id:e.target,type:e.type,weight:e.weight});else if(e.target===id)rel.push({id:e.source,type:e.type,weight:e.weight});});var qs=[];DATA.forEach(function(q){if((q.knowledge||[]).some(function(k){return k.indexOf(id)>=0||id.indexOf(k)>=0;}))qs.push(q);});var h='<div style="padding:16px"><div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px"><h3 style="font-size:16px;font-weight:700">'+n.label+'</h3><button onclick="document.getElementById(\'graphDetail\').style.display=\'none\'" style="background:none;border:none;font-size:18px;cursor:pointer;color:var(--ts)">✕</button></div>';h+='<div style="display:flex;gap:6px;flex-wrap:wrap;margin-bottom:12px"><span style="font-size:11px;padding:3px 8px;border-radius:10px;background:'+n.color+'22;color:'+n.color+'">'+n.module+'</span><span style="font-size:11px;padding:3px 8px;border-radius:10px;background:#f0ede6;color:var(--ts)">📝 '+n.examCount+'次</span><span style="font-size:11px;padding:3px 8px;border-radius:10px;background:'+(n.viewed?'#d1fae5':'#fee2e2')+';color:'+(n.viewed?'#059669':'#dc2626')+'">'+(n.viewed?'已浏览':'未浏览')+'</span></div>';if(rel.length){h+='<div style="margin-bottom:14px"><div style="font-size:12px;font-weight:700;color:var(--ts);margin-bottom:6px">🔗 关联知识点（'+rel.length+'）</div>';rel.sort(function(a,b){return b.weight-a.weight;});rel.forEach(function(r){var rn=G.nodes[G.nodeMap[r.id]];if(!rn)return;h+='<div onclick="graphNodeClick(\''+r.id.replace(/'/g,"\\'")+'\')" style="display:flex;justify-content:space-between;align-items:center;padding:6px 8px;margin:3px 0;background:#fafaf7;border-radius:6px;cursor:pointer;font-size:12px"><span>'+r.id+'</span><span style="font-size:10px;color:var(--ts)">'+(r.type==='evolution'?'演进':'共现')+' · '+r.weight+'</span></div>';});h+='</div>';}if(qs.length){h+='<div style="margin-bottom:14px"><div style="font-size:12px;font-weight:700;color:var(--ts);margin-bottom:6px">📝 关联真题（'+qs.length+'道）</div>';qs.slice(0,8).forEach(function(q){h+='<div onclick="showExamQ(\''+q.id+'\')" style="padding:6px 8px;margin:3px 0;background:#fafaf7;border-radius:6px;cursor:pointer;font-size:11px"><strong>'+q.year+'#'+q.num+'</strong> '+q.type+' · '+q.question.substring(0,30)+'...</div>';});if(qs.length>8)h+='<div style="font-size:10px;color:var(--ts);text-align:center;padding:4px">还有'+(qs.length-8)+'道...</div>';h+='</div>';}h+='<div style="display:flex;gap:6px;margin-top:12px"><button onclick="navigateByKnowledge(\''+id.replace(/'/g,"\\'")+'\')" style="flex:1;padding:8px;background:var(--pu);color:#fff;border:none;border-radius:6px;cursor:pointer;font-size:12px">📖 详情</button><button onclick="aiExplain(\''+id.replace(/'/g,"\\'")+'\')" style="flex:1;padding:8px;background:#059669;color:#fff;border:none;border-radius:6px;cursor:pointer;font-size:12px">AI讲解</button><button onclick="var _G=window._graph;var rel2=_G.edges.filter(function(e){return e.source===\''+id+'\'||e.target===\''+id+'\'}).map(function(e){return e.source===\''+id+'\'?e.target:e.source});if(rel2.length)aiGraphRelate(\''+id+'\',rel2[0])" style="flex:1;padding:8px;background:var(--or);color:#fff;border:none;border-radius:6px;cursor:pointer;font-size:12px">AI关系分析</button></div></div>';panel.innerHTML=h;}
 
@@ -10867,7 +10861,7 @@ function _dailyBarHtml() {
         var m = (KNOWLEDGE[k].module || '其他').split('/')[0];
         (groups[m] = groups[m] || []).push(k);
       });
-      var opts = '<option value="">🧩 选择知识点·秒出框架图(48个)</option>';
+      var opts = '<option value="">🧩 选择知识点·秒出框架图('+Object.keys(KNOWLEDGE).length+'个)</option>';
       Object.keys(groups).forEach(function(g){
         opts += '<optgroup label="' + escapeHtml(g) + '">';
         groups[g].forEach(function(k){ opts += '<option value="' + escapeHtml(k) + '">' + escapeHtml(k) + '</option>'; });
@@ -10877,6 +10871,49 @@ function _dailyBarHtml() {
         '<select id="tvKnSelect" onchange="if(this.value)tvShowFramework(this.value)" style="padding:6px 10px;border:1px solid rgba(94,92,230,.5);border-radius:14px;background:rgba(94,92,230,.12);color:var(--t);font-size:12px;max-width:240px;outline:none">' + opts + '</select>');
     }
   };
+})();
+
+/* ---------- v3.13 P1入口归一: 语料中心/背诵中心 tab条 ---------- */
+(function(){
+  var css = '.hub-tabs{display:flex;gap:8px;flex-wrap:wrap;align-items:center;margin-bottom:14px;padding:8px 12px;background:rgba(255,255,255,.03);border:1px solid rgba(255,255,255,.08);border-radius:12px}'
+    + '.hub-tabs .ht-label{font-size:11px;font-weight:700;color:var(--ts);letter-spacing:.5px}'
+    + '.hub-tab{padding:6px 14px;font-size:12px;border-radius:14px;border:1px solid var(--bdr);color:var(--t);cursor:pointer;background:transparent}'
+    + '.hub-tab:hover{border-color:var(--pu)}'
+    + '.hub-tab.on{background:rgba(94,92,230,.22);border-color:var(--pu);font-weight:700}';
+  var st = document.createElement('style'); st.textContent = css; document.head.appendChild(st);
+
+  function bar(label, tabs, cur){
+    var h = '<div class="hub-tabs"><span class="ht-label">' + label + '</span>';
+    tabs.forEach(function(t){
+      h += '<span class="hub-tab' + (t[1] === cur ? ' on' : '') + '" onclick="navigate(\'' + t[1] + '\')">' + t[0] + '</span>';
+    });
+    return h + '</div>';
+  }
+  function inject(label, tabs, cur){
+    var ct = document.getElementById('ct');
+    if (ct && !ct.querySelector('.hub-tabs')) ct.insertAdjacentHTML('afterbegin', bar(label, tabs, cur));
+  }
+
+  var CORPUS_TABS = [['🧠 三层语料', 'corpushub'], ['📖 模块语料', 'modcorpus'], ['📋 我的语料', 'mycorpus']];
+  var RECITE_TABS = [['⏰ 复习队列', 'review'], ['🃏 金句卡', 'cards'], ['📔 背诵打卡', 'recite']];
+
+  var _oCH = showCorpusHub;
+  showCorpusHub = function(){ _oCH(); inject('📦 语料中心', CORPUS_TABS, curPath === 'answerbank' || curPath === 'capmap' ? 'corpushub' : curPath); };
+  var _oMC2 = showModuleCorpus;
+  showModuleCorpus = function(){ _oMC2(); inject('📦 语料中心', CORPUS_TABS, 'modcorpus'); };
+  var _oMy = showMyCorpus;
+  showMyCorpus = function(){ _oMy(); inject('📦 语料中心', CORPUS_TABS, 'mycorpus'); };
+
+  if (typeof showReview === 'function') {
+    var _oRv2 = showReview;
+    showReview = function(){ _oRv2(); inject('🧠 背诵中心', RECITE_TABS, 'review'); };
+  }
+  var _oCd = showCards;
+  showCards = function(tab){ _oCd(tab); inject('🧠 背诵中心', RECITE_TABS, 'cards'); };
+  if (typeof showRecite === 'function') {
+    var _oRc = showRecite;
+    showRecite = function(){ _oRc(); inject('🧠 背诵中心', RECITE_TABS, 'recite'); };
+  }
 })();
 (function() {
   var files = ["per_question.json","module_corpus.json"];
