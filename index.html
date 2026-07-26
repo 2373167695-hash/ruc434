@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<!-- v2.1 · 2026-07-26 07:31 · modular -->
+<!-- v2.1 · 2026-07-26 07:43 · modular -->
 <html lang="zh-CN">
 <head>
 <meta charset="UTF-8">
@@ -10914,6 +10914,86 @@ function _dailyBarHtml() {
     var _oRc = showRecite;
     showRecite = function(){ _oRc(); inject('🧠 背诵中心', RECITE_TABS, 'recite'); };
   }
+})();
+
+/* ---------- v3.14 返回逻辑重构: 浏览器History集成 + 同中心tab替换栈顶 + 双栈同步 ---------- */
+(function(){
+  /* 同一中心内的tab互切: 返回时应跳过这些横跳, 直接回到进中心之前的页面 */
+  var GROUPS = [
+    ['corpushub', 'answerbank', 'capmap', 'modcorpus', 'mycorpus'],   /* 语料中心 */
+    ['review', 'cards', 'recite'],                                    /* 背诵中心 */
+    ['outputtrain', 'answercheck', 'mockexam']                        /* 写作中心 */
+  ];
+  function groupOf(p){
+    for (var i = 0; i < GROUPS.length; i++) if (GROUPS[i].indexOf(p) >= 0) return i;
+    return -1;
+  }
+  function sameGroup(a, b){
+    if (a === undefined || b === undefined) return false;
+    var g = groupOf(a);
+    return g >= 0 && g === groupOf(b);
+  }
+
+  var _histDepth = 0;      /* 我们压入浏览器历史的层数(防止back()退出站点) */
+  var _fromPopstate = false;
+
+  /* pushNav 重写: 组内横跳替换栈顶; 其余压栈; 同步写浏览器历史 */
+  var _origPushNav = pushNav;
+  pushNav = function(p){
+    var top = navStack.length ? navStack[navStack.length - 1] : undefined;
+    if (top === p) return;
+    var url = '#/' + encodeURIComponent(p || '');
+    if (sameGroup(top, p)) {
+      /* tab横跳: 替换而非追加 */
+      navStack[navStack.length - 1] = p;
+      try { localStorage.setItem('r434_nav', JSON.stringify(navStack)); } catch(e) {}
+      if (!_fromPopstate) { try { history.replaceState({p: p, r434: 1}, '', url); } catch(e) {} }
+    } else {
+      _origPushNav(p);
+      if (!_fromPopstate) {
+        try { history.pushState({p: p, r434: 1}, '', url); _histDepth++; } catch(e) {}
+      }
+    }
+  };
+
+  /* 浏览器返回/前进/鼠标侧键 → 站内路由 */
+  window.addEventListener('popstate', function(ev){
+    var st2 = ev.state;
+    var target = (st2 && st2.r434 && st2.p !== undefined) ? st2.p : '';
+    if (_histDepth > 0) _histDepth--;
+    /* 同步内部栈: 若target在栈中, 裁剪到该位置; 否则视为前进, 压栈 */
+    var idx = navStack.lastIndexOf(target);
+    if (idx >= 0) navStack = navStack.slice(0, idx + 1);
+    else navStack.push(target);
+    if (!target) navStack = [''];
+    try { localStorage.setItem('r434_nav', JSON.stringify(navStack)); } catch(e) {}
+    _fromPopstate = true;
+    try { navigate(target, undefined, true); } finally { _fromPopstate = false; }
+  });
+
+  /* 站内←按钮: 优先走浏览器历史(保持双栈一致); 无历史时用内部栈兜底 */
+  goBack = function(){
+    if (_histDepth > 0 && history.state && history.state.r434) { history.back(); return; }
+    if (navStack.length > 1) {
+      navStack.pop();
+      var target = navStack[navStack.length - 1];
+      if (!target) { clearNavStack(); navigate('', undefined, true); }
+      else navigate(target, undefined, true);
+      try { history.replaceState({p: target || '', r434: 1}, '', '#/' + encodeURIComponent(target || '')); } catch(e) {}
+    } else {
+      navigate('', undefined, true);
+      try { history.replaceState({p: '', r434: 1}, '', '#/'); } catch(e) {}
+    }
+  };
+
+  /* 初始化: 锚定当前页为历史起点; 支持 #/路径 直达(刷新/分享恢复) */
+  try {
+    var hashP = decodeURIComponent((location.hash || '').replace(/^#\//, ''));
+    if (hashP && hashP !== curPath && typeof navigate === 'function') {
+      navigate(hashP, undefined, true);
+    }
+    history.replaceState({p: curPath || '', r434: 1}, '', '#/' + encodeURIComponent(curPath || ''));
+  } catch(e) {}
 })();
 (function() {
   var files = ["per_question.json","module_corpus.json"];
