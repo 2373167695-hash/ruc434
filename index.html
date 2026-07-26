@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<!-- v2.1 · 2026-07-25 16:08 · modular -->
+<!-- v2.1 · 2026-07-26 05:34 · modular -->
 <html lang="zh-CN">
 <head>
 <meta charset="UTF-8">
@@ -10466,6 +10466,270 @@ function _dailyBarHtml() {
       if (box && box.classList.contains('mc-map-fs')) { ev.preventDefault(); mcMapFull(); }
     }
   });
+})();
+
+/* ---------- v3.11 理论可视化重铸: SVG标准图形库(可控精确) + PNG导出 + 笔记持久化 + AI缓存 ---------- */
+(function(){
+  /* ===== SVG 坐标系脚手架: 经济坐标(0-100)映射到像素, 保证几何严格 ===== */
+  var W = 680, H = 500, mL = 64, mR = 36, mT = 34, mB = 58;
+  function PX(q){ return mL + q / 100 * (W - mL - mR); }
+  function PY(p){ return H - mB - p / 100 * (H - mT - mB); }
+  function ln(q1, p1, q2, p2, color, w, dash){
+    return '<line x1="' + PX(q1) + '" y1="' + PY(p1) + '" x2="' + PX(q2) + '" y2="' + PY(p2) + '" stroke="' + color + '" stroke-width="' + (w||2) + '"' + (dash ? ' stroke-dasharray="5,4"' : '') + '/>';
+  }
+  function poly(pts, fill){
+    return '<polygon points="' + pts.map(function(p){ return PX(p[0]) + ',' + PY(p[1]); }).join(' ') + '" fill="' + fill + '" stroke="none"/>';
+  }
+  function txt(q, p, s, color, size, anchor){
+    return '<text x="' + PX(q) + '" y="' + PY(p) + '" fill="' + (color||'#ddd') + '" font-size="' + (size||13) + '" text-anchor="' + (anchor||'middle') + '" font-family="-apple-system,PingFang SC,sans-serif">' + s + '</text>';
+  }
+  function guideX(q, label){ return ln(q, 0, q, -0.5, '#888', 1) + txt(q, -6, label, '#aaa', 12); }
+  function axes(xl, yl){
+    var h = '<defs><marker id="tvArr" markerWidth="8" markerHeight="8" refX="6" refY="3" orient="auto"><path d="M0,0 L6,3 L0,6 Z" fill="#999"/></marker></defs>';
+    h += '<line x1="' + PX(0) + '" y1="' + PY(0) + '" x2="' + (PX(100) + 18) + '" y2="' + PY(0) + '" stroke="#999" stroke-width="1.5" marker-end="url(#tvArr)"/>';
+    h += '<line x1="' + PX(0) + '" y1="' + PY(0) + '" x2="' + PX(0) + '" y2="' + (PY(100) - 14) + '" stroke="#999" stroke-width="1.5" marker-end="url(#tvArr)"/>';
+    h += '<text x="' + (PX(100) + 14) + '" y="' + (PY(0) + 18) + '" fill="#aaa" font-size="12" text-anchor="end">' + xl + '</text>';
+    h += '<text x="' + (PX(0) - 8) + '" y="' + (PY(100) - 2) + '" fill="#aaa" font-size="12" text-anchor="end">' + yl + '</text>';
+    h += '<text x="' + (PX(0) - 6) + '" y="' + (PY(0) + 16) + '" fill="#aaa" font-size="12" text-anchor="end">O</text>';
+    return h;
+  }
+  function priceGuide(p, toQ, label, color, solid){
+    return ln(0, p, toQ, p, color || '#888', 1.2, !solid) + txt(-4.5, p - 1.2, label, color || '#ccc', 12, 'end');
+  }
+  function svgWrap(inner){
+    return '<svg viewBox="0 0 ' + W + ' ' + H + '" xmlns="http://www.w3.org/2000/svg" style="width:100%;max-width:820px;display:block;margin:0 auto;background:#101024;border-radius:12px">' + inner + '</svg>';
+  }
+  var GREEN = 'rgba(74,222,128,.30)', RED = 'rgba(248,113,113,.34)', BLUE = 'rgba(96,165,250,.30)', ORANGE = 'rgba(251,146,60,.32)';
+
+  /* ===== 六张标准图(几何均由线性方程精确解出) ===== */
+  var LIB = {};
+
+  /* 1. 关税效应 — S:P=10+Q, D:P=90-Q, Pa=(40,50), Pw=30, t=10 */
+  LIB.tariff = { name: '关税效应(进口小国)', build: function(){
+    var h = axes('数量 Q', '价格 P');
+    h += poly([[0,30],[0,40],[30,40],[20,30]], GREEN) + poly([[20,30],[30,40],[30,30]], RED)
+       + poly([[30,30],[30,40],[50,40],[50,30]], BLUE) + poly([[50,40],[60,30],[50,30]], RED);
+    h += ln(5,15,85,95,'#4ade80',2.5) + txt(88,96,'S','#4ade80',15);
+    h += ln(5,85,85,5,'#60a5fa',2.5) + txt(88,6,'D','#60a5fa',15);
+    h += priceGuide(50, 40, 'Pa', '#aaa') + '<circle cx="' + PX(40) + '" cy="' + PY(50) + '" r="4" fill="#fff"/>' + txt(43,53,'E(自给自足均衡)','#ccc',11,'start');
+    h += priceGuide(30, 62, 'Pw', '#fbbf24', true) + priceGuide(40, 52, 'Pw+t', '#fb923c', true);
+    h += ln(20,0,20,30,'#888',1,true) + ln(30,0,30,40,'#888',1,true) + ln(50,0,50,40,'#888',1,true) + ln(60,0,60,30,'#888',1,true);
+    h += guideX(20,'Q1') + guideX(30,'Q2') + guideX(50,'Q3') + guideX(60,'Q4');
+    h += txt(13,34.5,'a','#4ade80',15) + txt(27,33,'b','#f87171',15) + txt(40,34.5,'c','#60a5fa',15) + txt(53,33,'d','#f87171',15);
+    return svgWrap(h);
+  }, notes: ['征税后国内价格由 Pw 升至 Pw+t：国内生产 Q1→Q2(↑)，国内消费 Q4→Q3(↓)，进口由 Q4−Q1 缩减为 Q3−Q2', '福利分解：消费者剩余 −(a+b+c+d)；生产者剩余 +a；政府关税收入 +c', '净福利损失 = b(生产扭曲) + d(消费扭曲)，两块无谓损失三角形', '大国情形补充：若能压低世界价格,存在贸易条件改善效应,可能部分抵消损失'],
+  exam: '高频画图题。必须标注:S/D交点Pa、Pw与Pw+t两条价格线、Q1-Q4四个数量、a/b/c/d四块面积并逐一说明归属。' },
+
+  /* 2. 配额效应 — 与关税同几何, c含义不同 */
+  LIB.quota = { name: '进口配额效应', build: function(){
+    var h = axes('数量 Q', '价格 P');
+    h += poly([[0,30],[0,40],[30,40],[20,30]], GREEN) + poly([[20,30],[30,40],[30,30]], RED)
+       + poly([[30,30],[30,40],[50,40],[50,30]], ORANGE) + poly([[50,40],[60,30],[50,30]], RED);
+    h += ln(5,15,85,95,'#4ade80',2.5) + txt(88,96,'S','#4ade80',15);
+    h += ln(5,85,85,5,'#60a5fa',2.5) + txt(88,6,'D','#60a5fa',15);
+    h += priceGuide(30, 62, 'Pw', '#fbbf24', true) + priceGuide(40, 52, 'Pq', '#fb923c', true);
+    h += ln(20,0,20,30,'#888',1,true) + ln(30,0,30,40,'#888',1,true) + ln(50,0,50,40,'#888',1,true) + ln(60,0,60,30,'#888',1,true);
+    h += guideX(20,'Q1') + guideX(30,'Q2') + guideX(50,'Q3') + guideX(60,'Q4');
+    h += txt(13,34.5,'a','#4ade80',15) + txt(27,33,'b','#f87171',15) + txt(40,34.5,'c','#fb923c',15) + txt(53,33,'d','#f87171',15);
+    h += '<line x1="' + PX(30) + '" y1="' + PY(44) + '" x2="' + PX(50) + '" y2="' + PY(44) + '" stroke="#fb923c" stroke-width="1.5" marker-end="url(#tvArr)"/>' + txt(40,45.5,'配额量 Q3−Q2','#fb923c',11);
+    return svgWrap(h);
+  }, notes: ['限量进口使国内价格升至 Pq(配额下的市场出清价)，几何效应与等量关税相同', '关键差异：c 不再是政府收入,而是配额租金——归进口许可证持有者(若拍卖许可证则归政府)', '与关税的动态差异：需求增长时,关税下进口自动增加、价格不变；配额下进口被锁死、价格进一步上涨', '净损失同为 b+d;若租金被外国出口商攫取(如自愿出口限制VER),本国损失扩大为 b+c+d'],
+  exam: '常考"关税与配额的异同"比较题:等价条件(竞争市场+拍卖许可证)与不等价情形(需求变动/租金归属)是采分点。' },
+
+  /* 3. 出口补贴 — 出口小国: Pa=50, Pw=60, s=10 → 国内价70 */
+  LIB.subsidy = { name: '出口补贴(小国)', build: function(){
+    var h = axes('数量 Q', '价格 P');
+    h += poly([[20,60],[20,70],[60,70],[60,60]], BLUE);
+    h += poly([[30,60],[20,70],[30,70]], RED) + poly([[50,60],[60,70],[50,70]], RED);
+    h += ln(5,15,85,95,'#4ade80',2.5) + txt(88,96,'S','#4ade80',15);
+    h += ln(5,85,85,5,'#60a5fa',2.5) + txt(88,6,'D','#60a5fa',15);
+    h += priceGuide(60, 75, 'Pw', '#fbbf24', true) + priceGuide(70, 75, 'Pw+s', '#fb923c', true) + priceGuide(50, 42, 'Pa', '#888');
+    h += ln(20,0,20,70,'#888',1,true) + ln(30,0,30,60,'#888',1,true) + ln(50,0,50,60,'#888',1,true) + ln(60,0,60,70,'#888',1,true);
+    h += guideX(20,'C2') + guideX(30,'C1') + guideX(50,'S1') + guideX(60,'S2');
+    h += txt(25,66,'b','#f87171',15) + txt(55,66,'d','#f87171',15) + txt(40,64.5,'补贴支出 s×出口量','#93c5fd',12);
+    h += '<line x1="' + PX(20) + '" y1="' + PY(73) + '" x2="' + PX(60) + '" y2="' + PY(73) + '" stroke="#fb923c" stroke-width="1.5" marker-end="url(#tvArr)"/>' + txt(40,74.5,'补贴后出口量 S2−C2','#fb923c',11);
+    return svgWrap(h);
+  }, notes: ['补贴使国内价格升至 Pw+s：生产 S1→S2(↑)，国内消费 C1→C2(↓)，出口大幅扩张', '福利分解：生产者受益、消费者受损(承受更高国内价)、政府承担补贴支出 s×出口量(蓝色矩形)', '净福利损失 = b(消费扭曲) + d(生产扭曲)——补贴是"赔本赚吆喝"的政策', '现实关联：欧美对中国新能源"补贴"指责、WTO《补贴与反补贴措施协定》的禁止性补贴分类'],
+  exam: '结合欧盟对华电动车反补贴调查考的概率高:画图说明补贴的福利效应+反补贴税的合规逻辑,是图形与时政结合的典型题。' },
+
+  /* 4. 关税同盟: 贸易创造与贸易转移 — Pw=30, Pp=35, t=15 */
+  LIB.union = { name: '贸易创造与贸易转移', build: function(){
+    var h = axes('数量 Q', '价格 P');
+    h += poly([[25,35],[35,45],[35,35]], GREEN) + poly([[45,45],[55,35],[45,35]], GREEN);
+    h += poly([[35,30],[35,35],[45,35],[45,30]], RED);
+    h += ln(5,15,85,95,'#4ade80',2.5) + txt(88,96,'S','#4ade80',15);
+    h += ln(5,85,85,5,'#60a5fa',2.5) + txt(88,6,'D','#60a5fa',15);
+    h += priceGuide(45, 60, 'Pw+t (结盟前)', '#f87171', true) + priceGuide(35, 60, 'Pp (结盟后)', '#4ade80', true) + priceGuide(30, 60, 'Pw (世界)', '#fbbf24', true);
+    h += ln(25,0,25,35,'#888',1,true) + ln(35,0,35,45,'#888',1,true) + ln(45,0,45,45,'#888',1,true) + ln(55,0,55,35,'#888',1,true);
+    h += guideX(25,'Q1') + guideX(35,'Q2') + guideX(45,'Q3') + guideX(55,'Q4');
+    h += txt(32.5,38,'b','#4ade80',15) + txt(48,37,'d','#4ade80',15) + txt(40,31.8,'e','#f87171',15);
+    return svgWrap(h);
+  }, notes: ['结盟前：对所有国家征税t,国内价=Pw+t,从最低成本的世界供应商进口 Q3−Q2', '结盟后：对伙伴国免税,价格降至Pp,进口扩大为 Q4−Q1,但全部转从伙伴国(成本Pp>Pw)进口', '贸易创造(福利+)：b(高成本国内生产被替代) + d(消费扩张) 两块绿色三角形', '贸易转移(福利−)：e(红色矩形)=原进口量×(Pp−Pw),原本征税进口自低成本世界供应商,现转向高成本伙伴国,损失了这部分关税收入中的实际资源成本', '净效应 = b+d−e：伙伴国成本越接近世界价格、原关税越高,越可能净收益'],
+  exam: '区域经济一体化必考图。RCEP/中国-东盟自贸区题目中,先画此图再讨论静态效应,后接动态效应(规模经济/竞争/投资)即是完整答案。' },
+
+  /* 5. J曲线 */
+  LIB.jcurve = { name: 'J曲线效应', build: function(){
+    var h = axes('时间 t', '贸易差额');
+    h += priceGuide(50, 100, '0', '#888');
+    var p = 'M' + PX(4) + ',' + PY(52) + ' C' + PX(18) + ',' + PY(20) + ' ' + PX(30) + ',' + PY(16) + ' ' + PX(44) + ',' + PY(34)
+      + ' S' + PX(72) + ',' + PY(88) + ' ' + PX(94) + ',' + PY(92);
+    h += '<path d="' + p + '" fill="none" stroke="#fb923c" stroke-width="3"/>';
+    h += ln(4, 0, 4, 100, '#60a5fa', 1.5, true) + txt(6, 96, '本币贬值时点 t0', '#60a5fa', 12, 'start');
+    h += txt(26, 8, '① 恶化期：合同滞后+粘性定价，进口支付↑', '#f87171', 12, 'start');
+    h += txt(48, 45, '② 数量调整启动', '#ccc', 12, 'start');
+    h += txt(58, 82, '③ 改善期：出口量↑进口量↓', '#4ade80', 12, 'start');
+    return svgWrap(h);
+  }, notes: ['本币贬值后贸易差额先恶化后改善,轨迹形如字母 J', '恶化期成因：已签合同按原价执行(合同滞后)、进出口数量短期难调(认知与生产滞后)、以外币计价的进口支出立即上升', '长期改善的条件：马歇尔-勒纳条件 |ηx|+|ηm|>1(进出口需求弹性之和大于1)', '应用：2026年人民币升值讨论的是反向J曲线——短期顺差未必收窄'],
+  exam: '常与马歇尔-勒纳条件打包考:先写条件,再画J曲线说明时滞,最后结合人民币汇率现实——三段式满分结构。' },
+
+  /* 6. 外汇市场均衡 — D:E=90-Q, S:E=10+Q; D右移→E升 */
+  LIB.fx = { name: '外汇市场均衡与本币贬值', build: function(){
+    var h = axes('外汇数量 Q$', '汇率 E(直接标价)');
+    h += ln(5,85,85,5,'#60a5fa',2.5) + txt(87,4,'D$','#60a5fa',14);
+    h += ln(15,95,85,25,'#93c5fd',2,true) + txt(87,24,"D$′",'#93c5fd',14);
+    h += ln(5,15,85,95,'#4ade80',2.5) + txt(88,96,'S$','#4ade80',15);
+    h += '<circle cx="' + PX(40) + '" cy="' + PY(50) + '" r="4" fill="#fff"/>' + priceGuide(50, 40, 'E*', '#aaa') + ln(40,0,40,50,'#888',1,true) + guideX(40,'Q*');
+    h += '<circle cx="' + PX(50) + '" cy="' + PY(60) + '" r="4" fill="#fb923c"/>' + priceGuide(60, 50, "E′", '#fb923c') + ln(50,0,50,60,'#888',1,true) + guideX(50,"Q′");
+    h += txt(64,70,'外汇需求增加(进口↑/资本外流)','#93c5fd',12);
+    h += txt(20,63,'E↑ = 本币贬值','#fb923c',13);
+    return svgWrap(h);
+  }, notes: ['直接标价法下,E=1单位外币的本币价格：E上升=本币贬值,E下降=本币升值', '外汇需求方：进口付汇、对外投资、资本外流、偿还外债；外汇供给方：出口收汇、外资流入、侨汇', '需求曲线右移(D→D′)：均衡汇率 E*→E′,本币贬值——可解释资本外流冲击', '联系汇率决定理论：短期看利率平价(资本流动),长期看购买力平价(物价),中期看国际收支'],
+  exam: '画图分析"美联储加息为何引发新兴市场货币贬值":加息→利差→资本流出→外汇需求右移→E↑,一张图讲清传导链。' };
+
+  window._tvKey = 'general';
+
+  /* ===== 笔记持久化 ===== */
+  function _noteLoad(){
+    try { return JSON.parse(localStorage.getItem('r434_tviz_notes')||'{}'); } catch(e){ return {}; }
+  }
+  window.tvNoteBind = function(){
+    var ta = document.getElementById('tvizNote');
+    if (!ta || ta._bound) return;
+    ta._bound = true;
+    ta.value = _noteLoad()[window._tvKey] || '';
+    ta.addEventListener('input', function(){
+      var all = _noteLoad();
+      all[window._tvKey] = ta.value;
+      try { localStorage.setItem('r434_tviz_notes', JSON.stringify(all)); } catch(e) {}
+    });
+  };
+  function _noteSwitch(key){
+    window._tvKey = key;
+    var ta = document.getElementById('tvizNote');
+    if (ta) ta.value = _noteLoad()[key] || '';
+  }
+
+  /* ===== 标准图渲染 ===== */
+  window.tvShowGraph = function(key){
+    var g = LIB[key]; if (!g) return;
+    var ph = document.getElementById('tvizPlaceholder'), disp = document.getElementById('tvizCanvasDisplay');
+    if (ph) ph.style.display = 'none';
+    if (!disp) return;
+    disp.style.display = 'block';
+    var h = '<div style="padding:10px 0">'
+      + '<div style="display:flex;align-items:center;gap:10px;max-width:820px;margin:0 auto 8px"><div style="font-size:14px;font-weight:700;color:#ddd;flex:1">📈 ' + g.name + '（标准图·几何精确）</div>'
+      + '<button class="ai-btn ai-btn-sm" onclick="tvExportPNG()" style="padding:5px 14px;font-size:12px">⬇ 导出PNG</button></div>'
+      + '<div id="tvSvgHost">' + g.build() + '</div></div>';
+    disp.innerHTML = h;
+    var kp = document.getElementById('tvizKeypoints');
+    if (kp) kp.innerHTML = '<ul style="margin:0;padding-left:16px;font-size:12px;line-height:1.8">' + g.notes.map(function(n){ return '<li>' + n + '</li>'; }).join('') + '</ul>';
+    var ex = document.getElementById('tvizExam');
+    if (ex) ex.innerHTML = '<div style="font-size:12px;line-height:1.7">' + g.exam + '</div>';
+    var hd = document.getElementById('tvis-hero-desc');
+    if (hd) hd.textContent = '当前：' + g.name + ' · 标准图形库(无需AI,秒开)';
+    _noteSwitch(key);
+  };
+
+  /* ===== SVG→PNG 导出(2x高清) ===== */
+  window.tvExportPNG = function(){
+    var svg = document.querySelector('#tvSvgHost svg') || document.querySelector('#tvizCanvasDisplay svg');
+    if (!svg) { alert('当前没有可导出的SVG图形'); return; }
+    var xml = new XMLSerializer().serializeToString(svg);
+    var blob = new Blob([xml], {type:'image/svg+xml;charset=utf-8'});
+    var url = URL.createObjectURL(blob);
+    var img = new Image();
+    img.onload = function(){
+      var c = document.createElement('canvas');
+      c.width = W * 2; c.height = H * 2;
+      var ctx = c.getContext('2d');
+      ctx.fillStyle = '#101024'; ctx.fillRect(0, 0, c.width, c.height);
+      ctx.drawImage(img, 0, 0, c.width, c.height);
+      URL.revokeObjectURL(url);
+      var a = document.createElement('a');
+      a.download = '理论图形_' + Date.now() + '.png';
+      a.href = c.toDataURL('image/png');
+      a.click();
+    };
+    img.src = url;
+  };
+
+  /* ===== AI经济图请求 → 改走SVG标准图(几何不再交给AI) ===== */
+  var _origEcon = window.tvisRenderEconGraph;
+  window.tvisRenderEconGraph = function(json, q){
+    var key = 'tariff';
+    if (/配额/.test(q)) key = 'quota';
+    else if (/补贴/.test(q)) key = 'subsidy';
+    else if (/同盟|创造|转移/.test(q)) key = 'union';
+    else if (/J曲线|j曲线/.test(q)) key = 'jcurve';
+    else if (/外汇|汇率/.test(q)) key = 'fx';
+    tvShowGraph(key);
+    if (json && json.desc) {
+      var host = document.getElementById('tvSvgHost');
+      if (host) host.insertAdjacentHTML('beforeend', '<div style="max-width:820px;margin:10px auto 0;padding:10px 14px;background:rgba(255,255,255,.03);border-radius:8px;font-size:12px;line-height:1.7;color:#aaa">🤖 AI补充：' + json.desc + '</div>');
+    }
+  };
+
+  /* ===== AI框架图缓存 ===== */
+  function _cacheLoad(){ try { return JSON.parse(localStorage.getItem('r434_tviz_cache')||'{}'); } catch(e){ return {}; } }
+  var _origBR = window.tvisBuildRender;
+  if (typeof _origBR === 'function') {
+    window.tvisBuildRender = function(c, q){
+      try {
+        var cache = _cacheLoad();
+        cache[q] = c;
+        var keys = Object.keys(cache);
+        if (keys.length > 30) delete cache[keys[0]];
+        localStorage.setItem('r434_tviz_cache', JSON.stringify(cache));
+      } catch(e) {}
+      _origBR(c, q);
+    };
+  }
+  var _origGen = window.tvisGen;
+  window.tvisGen = function(force){
+    var inp = document.getElementById('tvizInput');
+    var q = inp ? inp.value.trim() : '';
+    if (q && !force) {
+      var cached = _cacheLoad()[q];
+      if (cached) {
+        var ph = document.getElementById('tvizPlaceholder');
+        if (ph) ph.style.display = 'none';
+        var disp = document.getElementById('tvizCanvasDisplay');
+        if (disp) disp.style.display = 'block';
+        tvisBuildRender(cached, q);
+        var hd = document.getElementById('tvis-hero-desc');
+        if (hd) hd.textContent = '当前：' + q + ' · 已缓存(点重新生成可刷新)';
+        var btn = document.getElementById('tvizBtn');
+        if (btn) { btn.disabled = false; btn.textContent = '生成'; }
+        _noteSwitch(q);
+        return;
+      }
+    }
+    _noteSwitch(q || 'general');
+    _origGen();
+  };
+
+  /* ===== 页面包装: 标准图chips + 重新生成按钮 + 笔记绑定 ===== */
+  var _origTV = showTheoryViz;
+  showTheoryViz = function(){
+    _origTV();
+    var footer = document.querySelector('.tviz-chips');
+    if (footer && !document.getElementById('tvLibRow')) {
+      var chips = '';
+      Object.keys(LIB).forEach(function(k){ chips += '<span class="tviz-chip" style="border-color:rgba(94,92,230,.5)" onclick="tvShowGraph(\'' + k + '\')">📐 ' + LIB[k].name + '</span>'; });
+      footer.insertAdjacentHTML('beforebegin', '<div id="tvLibRow" style="display:flex;gap:6px;flex-wrap:wrap;align-items:center;margin-bottom:6px"><span style="font-size:11px;color:var(--pu);font-weight:700">标准图形库(秒开)：</span>' + chips + '<span class="tviz-chip" onclick="tvisGen(true)" title="忽略缓存重新调用AI">🔄 重新生成</span></div>');
+    }
+    tvNoteBind();
+  };
 })();
 (function() {
   var files = ["per_question.json","module_corpus.json"];
