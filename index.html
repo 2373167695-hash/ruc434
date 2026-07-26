@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<!-- v2.1 · 2026-07-26 09:09 · modular -->
+<!-- v2.1 · 2026-07-26 09:38 · modular -->
 <html lang="zh-CN">
 <head>
 <meta charset="UTF-8">
@@ -11511,6 +11511,122 @@ function _dailyBarHtml() {
       vb.insertAdjacentHTML('afterend', '<button id="callBtn" onclick="vcCallToggle()" title="电话式语音通话(免按键)" style="width:36px;height:36px;border-radius:50%;border:1px solid var(--bdr);background:rgba(74,222,128,.12);color:#4ade80;cursor:pointer;font-size:15px;flex:0 0 auto">☎️</button>');
     }
   };
+})();
+
+/* ---------- v3.19 语音通话提速: RAG轻量上下文(287K→8K) + 流式生成 + 电话风格短答 ---------- */
+(function(){
+  /* 语音专用上下文: 用现成的456文档RAG索引精准检索, 不再全量倾倒 */
+  window.buildVoiceContext = function(q){
+    var ctx = '【你是人大434国际商务考研电话辅导老师,以下是与学生问题最相关的资料】\n\n';
+    var hits = [];
+    try { hits = ragRetrieve(q, 10) || []; } catch(e) {}
+    var qn = 0, kn = 0;
+    hits.forEach(function(d){
+      if (d.type === 'question' && qn < 3 && d.ref) {
+        ctx += '【真题 ' + d.ref.year + '年第' + d.ref.num + '题 ' + d.ref.type + '】' + d.ref.question.substring(0, 200) + '\n';
+        if (d.ref.answer) ctx += '标准答案要点: ' + d.ref.answer.substring(0, 450) + '\n\n';
+        qn++;
+      } else if (d.type === 'knowledge' && kn < 4 && d.ref) {
+        ctx += '【知识点 ' + (d.ref.name || d.id) + '】' + (d.ref.overview || '').substring(0, 260) + '\n';
+        if (d.ref.key && d.ref.key.length) ctx += '要点: ' + d.ref.key.slice(0, 5).join('；') + '\n';
+        if (d.ref.assumptions && d.ref.assumptions.length) ctx += '假设: ' + d.ref.assumptions.slice(0, 4).join('；') + '\n';
+        ctx += '\n';
+        kn++;
+      }
+    });
+    if (qn + kn === 0) {
+      ctx += '(题库未检索到直接相关条目,可基于国际商务通识回答,但要提醒学生该问题可能超出434考纲)\n';
+      ctx += '本库知识点清单: ' + Object.keys(KNOWLEDGE).slice(0, 40).join('、') + ' 等77个\n';
+    }
+    return ctx;
+  };
+
+  /* 覆盖: 语音消息走轻量ctx + 流式 + 短答风格(按住说话与通话模式共用) */
+  sendVoiceMessage = function(q){
+    var chatBody = document.getElementById('ai-chat-body');
+    if (!chatBody) return;
+    chatBody.innerHTML += '<div class="ai-msg ai-msg-user">🎤 ' + escapeHtml(q) + '</div>';
+    var loadingId = 'ai-loading-' + Date.now();
+    chatBody.innerHTML += '<div id="' + loadingId + '" class="ai-loading"><span class="ai-dot"></span><span class="ai-dot"></span><span class="ai-dot"></span></div>';
+    chatBody.scrollTop = chatBody.scrollHeight;
+    chatHistory.push({role: 'user', content: q});
+
+    var ctx = buildVoiceContext(q);
+    var sys = '你是人大434国际商务考研辅导老师,正在和学生打电话。回答规则:\n'
+      + '1. 口语化短句,像老师电话里讲课,禁止markdown/表格/编号符号/中英对照括号\n'
+      + '2. 第一句直接给核心结论,然后展开2-4个要点\n'
+      + '3. 总长严格控制在120-250字(电话里没人听长篇)\n'
+      + '4. 结尾用一句"你可以再想想…"或"记住关键是…"收束\n'
+      + '5. 严格依据下面资料回答,资料没有的不要编造\n\n' + ctx;
+    var msgs = [{role: 'system', content: sys}];
+    chatHistory.slice(-6).forEach(function(h){ msgs.push({role: h.role, content: h.content.substring(0, 500)}); });
+
+    var botDiv = null, full = '';
+    fetch(DS_URL, {
+      method: 'POST',
+      headers: {Authorization: 'Bearer ' + getAPIKey(), 'Content-Type': 'application/json'},
+      body: JSON.stringify({model: 'mimo-v2.5', messages: msgs, stream: true, temperature: 0.3, max_tokens: 500})
+    }).then(function(r){
+      if (!r.ok) throw Error('HTTP ' + r.status);
+      return r.body.getReader();
+    }).then(function(rd){
+      var buf = '', dec = new TextDecoder();
+      function pump(){
+        rd.read().then(function(res){
+          if (res.done) {
+            var le = document.getElementById(loadingId); if (le) le.remove();
+            chatHistory.push({role: 'assistant', content: full});
+            saveState();
+            if (full) speakText(full);
+            return;
+          }
+          buf += dec.decode(res.value, {stream: true});
+          var lines = buf.split('\n'); buf = lines.pop() || '';
+          lines.forEach(function(l){
+            if (!l.startsWith('data: ')) return;
+            var dd = l.substring(6);
+            if (dd === '[DONE]') return;
+            try {
+              var p = JSON.parse(dd);
+              var x = (p.choices && p.choices[0].delta) ? (p.choices[0].delta.content || '') : '';
+              if (x) {
+                if (!botDiv) {
+                  var le = document.getElementById(loadingId); if (le) le.remove();
+                  chatBody.insertAdjacentHTML('beforeend', '<div class="ai-msg ai-msg-bot" id="vb-' + loadingId + '"></div>');
+                  botDiv = document.getElementById('vb-' + loadingId);
+                }
+                full += x;
+                botDiv.textContent = full;
+                chatBody.scrollTop = chatBody.scrollHeight;
+              }
+            } catch(e) {}
+          });
+          pump();
+        });
+      }
+      pump();
+    }).catch(function(err){
+      var le = document.getElementById(loadingId);
+      if (le) le.innerHTML = '<div class="ai-msg-err">请求失败：' + err.message + '</div>';
+      if (typeof _callBackToListen === 'function') _callBackToListen();
+    });
+  };
+})();
+
+/* ---------- v3.20 RAG中文分词修复: bigram切分 + 重建索引(语音通话检索命中率修复) ---------- */
+(function(){
+  tokenize = function(s){
+    var out = [];
+    String(s).toLowerCase().replace(/[^\u4e00-\u9fa5a-z0-9]/g, ' ').split(/\s+/).forEach(function(seg){
+      if (!seg) return;
+      if (/[\u4e00-\u9fa5]/.test(seg)) {
+        if (seg.length <= 2) { out.push(seg); return; }
+        for (var i = 0; i < seg.length - 1; i++) out.push(seg.substr(i, 2));  /* 中文二元切分 */
+      } else if (seg.length > 1) out.push(seg);
+    });
+    return out;
+  };
+  try { buildTfidf(); } catch(e) {}
 })();
 (function() {
   var files = ["per_question.json","module_corpus.json"];
