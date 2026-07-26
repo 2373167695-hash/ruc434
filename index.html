@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<!-- v2.1 · 2026-07-26 09:38 · modular -->
+<!-- v2.1 · 2026-07-26 11:54 · modular -->
 <html lang="zh-CN">
 <head>
 <meta charset="UTF-8">
@@ -11627,6 +11627,196 @@ function _dailyBarHtml() {
     return out;
   };
   try { buildTfidf(); } catch(e) {}
+})();
+
+/* ---------- v3.21 语音流水线: 句子级TTS并行合成+保序播放(开口~3s) + 点状态球打断 ---------- */
+(function(){
+  var P = { slots: [], produced: 0, playIdx: 0, playing: false, genDone: false, stopped: true, activeFetch: 0, audio: null };
+
+  function orbSet(cls, icon, s1, s2){
+    var orb = document.getElementById('callOrb');
+    if (!orb) return;
+    orb.className = 'call-orb ' + cls;
+    orb.textContent = icon;
+    var e1 = document.getElementById('callState'), e2 = document.getElementById('callSub');
+    if (e1) e1.textContent = s1 || '';
+    if (e2) e2.textContent = s2 || '';
+  }
+
+  function pipeReset(){
+    P.slots = []; P.produced = 0; P.playIdx = 0; P.playing = false; P.genDone = false; P.stopped = false; P.activeFetch = 0;
+    try { if (P.audio) { P.audio.pause(); P.audio = null; } } catch(e) {}
+  }
+  window.vcPipeStop = function(){
+    P.stopped = true;
+    try { if (P.audio) { P.audio.pause(); P.audio = null; } } catch(e) {}
+  };
+
+  function synth(idx){
+    if (P.stopped) return;
+    P.activeFetch++;
+    var text = P.slots[idx].text;
+    fetch(DS_URL, {
+      method: 'POST',
+      headers: { Authorization: 'Bearer ' + getAPIKey(), 'Content-Type': 'application/json' },
+      body: JSON.stringify({ model: 'mimo-v2.5-tts', messages: [ { role: 'user', content: '用自然流畅的语气朗读' }, { role: 'assistant', content: text } ] })
+    }).then(function(r){ return r.json(); }).then(function(d){
+      P.activeFetch--;
+      var a = null;
+      if (d.choices && d.choices[0] && d.choices[0].message) {
+        var msg = d.choices[0].message;
+        if (msg.audio && msg.audio.data) a = 'data:audio/wav;base64,' + msg.audio.data;
+        else if (typeof msg.audio === 'string' && msg.audio.indexOf('data:') === 0) a = msg.audio;
+      }
+      P.slots[idx].audio = a; P.slots[idx].ready = true;
+      pump(); tryPlay();
+    }).catch(function(){ P.activeFetch--; P.slots[idx].ready = true; P.slots[idx].audio = null; pump(); tryPlay(); });
+  }
+  function pump(){
+    if (P.stopped) return;
+    for (var i = 0; i < P.slots.length && P.activeFetch < 2; i++) {
+      if (!P.slots[i].ready && !P.slots[i].fetching) { P.slots[i].fetching = true; synth(i); }
+    }
+  }
+  function allDone(){ return P.genDone && P.playIdx >= P.slots.length; }
+  function tryPlay(){
+    if (P.stopped || P.playing) return;
+    if (allDone()) {
+      orbSet('listening', '🎧', '请讲,我在听', '说完停顿即发送');
+      if (typeof _callBackToListen === 'function') _callBackToListen();
+      return;
+    }
+    if (P.playIdx >= P.slots.length || !P.slots[P.playIdx].ready) return;
+    var slot = P.slots[P.playIdx];
+    P.playIdx++;
+    if (!slot.audio) { tryPlay(); return; }
+    P.playing = true;
+    orbSet('speaking', '🔊', 'AI 回答中…', '点圆球可打断');
+    P.audio = new Audio(slot.audio);
+    P.audio.onended = function(){ P.playing = false; P.audio = null; tryPlay(); };
+    P.audio.onerror = function(){ P.playing = false; P.audio = null; tryPlay(); };
+    P.audio.play().catch(function(){ P.playing = false; P.audio = null; tryPlay(); });
+  }
+  function feedSentence(text){
+    var t = text.trim();
+    if (!t) return;
+    P.slots.push({ text: t.substring(0, 240), ready: false, fetching: false, audio: null });
+    pump();
+  }
+
+  /* 覆盖 v3.19: 流式生成中逐句切给TTS流水线 */
+  var _prevSVM = sendVoiceMessage;
+  sendVoiceMessage = function(q){
+    var chatBody = document.getElementById('ai-chat-body');
+    if (!chatBody) return;
+    pipeReset();
+    chatBody.innerHTML += '<div class="ai-msg ai-msg-user">🎤 ' + escapeHtml(q) + '</div>';
+    var loadingId = 'ai-loading-' + Date.now();
+    chatBody.innerHTML += '<div id="' + loadingId + '" class="ai-loading"><span class="ai-dot"></span><span class="ai-dot"></span><span class="ai-dot"></span></div>';
+    chatBody.scrollTop = chatBody.scrollHeight;
+    chatHistory.push({role: 'user', content: q});
+
+    var ctx = buildVoiceContext(q);
+    var sys = '你是人大434国际商务考研辅导老师,正在和学生打电话。回答规则:\n'
+      + '1. 口语化短句,像老师电话里讲课,禁止markdown/表格/编号符号/中英文对照括号\n'
+      + '2. 第一句必须短(15字内)且直接给核心结论,后面展开2-4个要点,句子都用句号结尾\n'
+      + '3. 总长严格控制在120-220字\n'
+      + '4. 严格依据资料回答,资料没有的不要编造\n\n' + ctx;
+    var msgs = [{role: 'system', content: sys}];
+    chatHistory.slice(-6).forEach(function(h){ msgs.push({role: h.role, content: h.content.substring(0, 500)}); });
+
+    var botDiv = null, full = '', fedIdx = 0;
+    function feedFrom(force){
+      var rest = full.slice(fedIdx);
+      var m;
+      while ((m = rest.match(/[^。！？!?]*[。！？!?]/))) {
+        var sent = m[0];
+        if (sent.trim().length >= 6 || force) { feedSentence(sent); }
+        else if (P.slots.length) { P.slots[P.slots.length-1].text += sent; }
+        else { feedSentence(sent); }
+        fedIdx += sent.length;
+        rest = full.slice(fedIdx);
+      }
+      if (force && rest.trim()) { feedSentence(rest); fedIdx = full.length; }
+    }
+
+    fetch(DS_URL, {
+      method: 'POST',
+      headers: {Authorization: 'Bearer ' + getAPIKey(), 'Content-Type': 'application/json'},
+      body: JSON.stringify({model: 'mimo-v2.5', messages: msgs, stream: true, temperature: 0.3, max_tokens: 450})
+    }).then(function(r){
+      if (!r.ok) throw Error('HTTP ' + r.status);
+      return r.body.getReader();
+    }).then(function(rd){
+      var buf = '', dec = new TextDecoder();
+      function loop2(){
+        rd.read().then(function(res){
+          if (res.done) {
+            var le = document.getElementById(loadingId); if (le) le.remove();
+            feedFrom(true);
+            P.genDone = true;
+            tryPlay();
+            if (botDiv) botDiv.innerHTML = renderMarkdown(full);  /* 流结束后恢复排版渲染 */
+            chatHistory.push({role: 'assistant', content: full});
+            saveState();
+            return;
+          }
+          buf += dec.decode(res.value, {stream: true});
+          var lines = buf.split('\n'); buf = lines.pop() || '';
+          lines.forEach(function(l){
+            if (!l.startsWith('data: ')) return;
+            var dd = l.substring(6);
+            if (dd === '[DONE]') return;
+            try {
+              var p = JSON.parse(dd);
+              var x = (p.choices && p.choices[0].delta) ? (p.choices[0].delta.content || '') : '';
+              if (x) {
+                if (!botDiv) {
+                  var le = document.getElementById(loadingId); if (le) le.remove();
+                  chatBody.insertAdjacentHTML('beforeend', '<div class="ai-msg ai-msg-bot" id="vb-' + loadingId + '"></div>');
+                  botDiv = document.getElementById('vb-' + loadingId);
+                }
+                full += x;
+                botDiv.textContent = full;
+                chatBody.scrollTop = chatBody.scrollHeight;
+                feedFrom(false);
+              }
+            } catch(e) {}
+          });
+          loop2();
+        });
+      }
+      loop2();
+    }).catch(function(err){
+      var le = document.getElementById(loadingId);
+      if (le) le.innerHTML = '<div class="ai-msg-err">请求失败：' + err.message + '</div>';
+      P.genDone = true;
+      if (typeof _callBackToListen === 'function') _callBackToListen();
+    });
+  };
+
+  /* 打断: 点状态球停止播放立即开麦; 挂断时停流水线 */
+  var _oCallT = vcCallToggle;
+  vcCallToggle = function(){
+    _oCallT();
+    setTimeout(function(){
+      var orb = document.getElementById('callOrb');
+      if (orb && !orb._bargeHook) {
+        orb._bargeHook = true;
+        orb.style.cursor = 'pointer';
+        orb.title = 'AI说话时点我打断';
+        orb.addEventListener('click', function(){
+          if (P.playing || P.slots.length > P.playIdx) {
+            vcPipeStop();
+            orbSet('listening', '🎧', '打断了,请讲', '');
+            if (typeof _callBackToListen === 'function') _callBackToListen();
+          }
+        });
+      }
+    }, 1200);
+  };
+  var _oCallE = vcCallEnd;
+  vcCallEnd = function(){ vcPipeStop(); _oCallE(); };
 })();
 (function() {
   var files = ["per_question.json","module_corpus.json"];
