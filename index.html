@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<!-- v2.1 · 2026-07-26 09:03 · modular -->
+<!-- v2.1 · 2026-07-26 09:09 · modular -->
 <html lang="zh-CN">
 <head>
 <meta charset="UTF-8">
@@ -11349,6 +11349,167 @@ function _dailyBarHtml() {
       vStatus('⚠️ 语音识别失败: ' + err.message + '(检查网络/Key)', true);
       setTimeout(function(){ vStatus(''); }, 4000);
     });
+  };
+})();
+
+/* ---------- v3.18 电话式通话模式: VAD自动检测说话/停顿, 免按键全双工循环(全链路MiMo) ---------- */
+(function(){
+  var css = '.call-panel{position:fixed;right:20px;bottom:20px;z-index:950;background:rgba(16,16,36,.97);border:1px solid rgba(94,92,230,.5);border-radius:18px;padding:16px 18px;width:230px;box-shadow:0 12px 40px rgba(0,0,0,.5);text-align:center}'
+    + '.call-orb{width:74px;height:74px;border-radius:50%;margin:6px auto 10px;display:flex;align-items:center;justify-content:center;font-size:30px;transition:all .3s;border:2px solid transparent}'
+    + '.call-orb.listening{background:rgba(74,222,128,.15);border-color:#4ade80;animation:cpulse 2s infinite}'
+    + '.call-orb.recording{background:rgba(96,165,250,.2);border-color:#60a5fa;animation:cpulse .8s infinite}'
+    + '.call-orb.thinking{background:rgba(167,139,250,.18);border-color:#a78bfa}'
+    + '.call-orb.speaking{background:rgba(251,146,60,.18);border-color:#fb923c;animation:cpulse 1.4s infinite}'
+    + '@keyframes cpulse{0%,100%{box-shadow:0 0 0 0 rgba(94,92,230,.35)}50%{box-shadow:0 0 0 14px rgba(94,92,230,0)}}'
+    + '.call-state{font-size:13px;font-weight:700;color:var(--t);margin-bottom:2px}'
+    + '.call-sub{font-size:11px;color:var(--ts);margin-bottom:10px;min-height:14px}'
+    + '.call-hang{background:rgba(239,68,68,.85);border:none;color:#fff;border-radius:20px;padding:8px 22px;font-size:13px;cursor:pointer;font-weight:700}'
+    + '.call-hang:hover{background:#ef4444}'
+    + '.call-vu{height:4px;border-radius:2px;background:rgba(255,255,255,.08);margin:0 8px 10px;overflow:hidden}'
+    + '.call-vu>div{height:100%;width:0%;background:linear-gradient(90deg,#4ade80,#60a5fa);transition:width .08s}';
+  var st = document.createElement('style'); st.textContent = css; document.head.appendChild(st);
+
+  var C = { on:false, state:'idle', stream:null, ac:null, an:null, rec:null, timer:null, buf:null,
+            silMs:0, recMs:0, baseline:0.006, audio:null, thinkT0:0 };
+
+  function ui(state, sub){
+    C.state = state;
+    var orb = document.getElementById('callOrb'), s1 = document.getElementById('callState'), s2 = document.getElementById('callSub');
+    if (!orb) return;
+    orb.className = 'call-orb ' + state;
+    var m = { listening:['🎧','请讲,我在听','说完停顿一下即自动发送'], recording:['🗣','你正在说…','停顿1秒自动结束'],
+              thinking:['🤔','MiMo 思考中…','识别+检索知识库'], speaking:['🔊','AI 回答中…','说完自动轮到你'] };
+    orb.textContent = (m[state]||['☎️'])[0];
+    if (s1) s1.textContent = (m[state]||['',''])[1] || '';
+    if (s2) s2.textContent = sub !== undefined ? sub : ((m[state]||['','',''])[2] || '');
+  }
+
+  function rms(){
+    var d = new Uint8Array(C.an.fftSize);
+    C.an.getByteTimeDomainData(d);
+    var s = 0;
+    for (var i = 0; i < d.length; i++) { var v = (d[i] - 128) / 128; s += v * v; }
+    return Math.sqrt(s / d.length);
+  }
+
+  function startSeg(){
+    C.buf = [];
+    C.rec = new MediaRecorder(C.stream, { mimeType: 'audio/webm;codecs=opus' });
+    C.rec.ondataavailable = function(e){ if (e.data.size > 0) C.buf.push(e.data); };
+    C.rec.onstop = function(){
+      if (!C.on) return;
+      if (C.recMs < 500) { ui('listening', '刚才太短,继续说'); return; }
+      _voiceChunks = C.buf;
+      ui('thinking');
+      C.thinkT0 = Date.now();
+      processVoice();
+    };
+    C.rec.start();
+  }
+
+  function loop(){
+    if (!C.on) return;
+    var level = rms();
+    var vu = document.querySelector('.call-vu>div');
+    if (vu) vu.style.width = Math.min(100, level * 900) + '%';
+    var TH = Math.max(C.baseline * 3, 0.012);
+    if (C.state === 'listening') {
+      if (level > TH) { C.recMs = 0; C.silMs = 0; startSeg(); ui('recording'); }
+    } else if (C.state === 'recording') {
+      C.recMs += 60;
+      if (level < TH) { C.silMs += 60; if (C.silMs > 1100) { try { C.rec.stop(); } catch(e){} } }
+      else C.silMs = 0;
+    } else if (C.state === 'thinking') {
+      if (Date.now() - C.thinkT0 > 60000) ui('listening', '等太久了,请重说');
+    }
+  }
+
+  window.vcCallToggle = function(){
+    if (C.on) { vcCallEnd(); return; }
+    if (!navigator.mediaDevices || !window.MediaRecorder) { alert('浏览器不支持通话,请用Chrome/Edge'); return; }
+    navigator.mediaDevices.getUserMedia({ audio: { echoCancellation: true, noiseSuppression: true } }).then(function(stream){
+      C.stream = stream;
+      var AC = window.AudioContext || window.webkitAudioContext;
+      C.ac = new AC();
+      C.an = C.ac.createAnalyser(); C.an.fftSize = 1024;
+      C.ac.createMediaStreamSource(stream).connect(C.an);
+      C.on = true;
+      document.body.insertAdjacentHTML('beforeend',
+        '<div class="call-panel" id="callPanel"><div style="font-size:11px;color:var(--ts);letter-spacing:1px">☎️ MiMo 语音通话</div>'
+        + '<div class="call-orb" id="callOrb">🎧</div><div class="call-state" id="callState"></div><div class="call-sub" id="callSub"></div>'
+        + '<div class="call-vu"><div></div></div>'
+        + '<button class="call-hang" onclick="vcCallEnd()">挂断</button></div>');
+      /* 前0.8秒采集环境底噪作为自适应阈值 */
+      var samples = [];
+      var cal = setInterval(function(){ samples.push(rms()); }, 60);
+      ui('listening', '正在适应环境音…');
+      setTimeout(function(){
+        clearInterval(cal);
+        if (samples.length) C.baseline = samples.sort(function(a,b){return a-b})[Math.floor(samples.length*0.6)];
+        ui('listening');
+        C.timer = setInterval(loop, 60);
+      }, 800);
+    }).catch(function(err){ alert('无法访问麦克风: ' + err.message); });
+  };
+
+  window.vcCallEnd = function(){
+    C.on = false;
+    clearInterval(C.timer);
+    try { if (C.rec && C.rec.state === 'recording') C.rec.stop(); } catch(e) {}
+    try { C.stream.getTracks().forEach(function(t){ t.stop(); }); } catch(e) {}
+    try { C.ac.close(); } catch(e) {}
+    try { if (C.audio) { C.audio.pause(); C.audio = null; } } catch(e) {}
+    var p = document.getElementById('callPanel'); if (p) p.remove();
+    C.state = 'idle';
+  };
+
+  /* speakText 覆盖: 记录audio实例, 播完自动回到聆听 */
+  var _oSpeak = speakText;
+  speakText = function(text){
+    if (!C.on) { _oSpeak(text); return; }
+    if (!text) { ui('listening'); return; }
+    ui('speaking');
+    var clean = text.replace(/[#*`\[\]()]/g, '').replace(/\$[^$]*\$/g, '公式').replace(/\n+/g, '。').substring(0, 600);
+    fetch(DS_URL, {
+      method: 'POST',
+      headers: { Authorization: 'Bearer ' + getAPIKey(), 'Content-Type': 'application/json' },
+      body: JSON.stringify({ model: 'mimo-v2.5-tts', messages: [ { role: 'user', content: '用自然流畅的语气朗读' }, { role: 'assistant', content: clean } ] })
+    }).then(function(r){ return r.json(); }).then(function(d){
+      var audioData = null;
+      if (d.choices && d.choices[0] && d.choices[0].message) {
+        var msg = d.choices[0].message;
+        if (msg.audio && msg.audio.data) audioData = 'data:audio/wav;base64,' + msg.audio.data;
+        else if (typeof msg.audio === 'string' && msg.audio.indexOf('data:') === 0) audioData = msg.audio;
+      }
+      if (audioData && C.on) {
+        C.audio = new Audio(audioData);
+        C.audio.onended = function(){ C.audio = null; if (C.on) setTimeout(function(){ ui('listening'); }, 350); };
+        C.audio.onerror = function(){ C.audio = null; if (C.on) ui('listening'); };
+        C.audio.play().catch(function(){ if (C.on) ui('listening'); });
+      } else if (C.on) ui('listening');
+    }).catch(function(){ if (C.on) ui('listening'); });
+  };
+
+  /* 识别失败时回到聆听(通话模式感知): 监听v3.17的状态提示 */
+  window._callBackToListen = function(){ if (C.on && C.state === 'thinking') ui('listening', '没听清,再说一次'); };
+  new MutationObserver(function(muts){
+    if (!C.on || C.state !== 'thinking') return;
+    muts.forEach(function(mu){
+      for (var i = 0; i < mu.addedNodes.length; i++) {
+        var nd = mu.addedNodes[i];
+        if (nd.id === 'vAsrStatus' && /没听清|失败|太短/.test(nd.textContent)) _callBackToListen();
+      }
+    });
+  }).observe(document.body, { childList: true, subtree: true });
+
+  /* UI: aichat输入条加通话按钮 */
+  var _oAI2 = showAI;
+  showAI = function(){
+    _oAI2();
+    var vb = document.getElementById('voiceBtn');
+    if (vb && !document.getElementById('callBtn')) {
+      vb.insertAdjacentHTML('afterend', '<button id="callBtn" onclick="vcCallToggle()" title="电话式语音通话(免按键)" style="width:36px;height:36px;border-radius:50%;border:1px solid var(--bdr);background:rgba(74,222,128,.12);color:#4ade80;cursor:pointer;font-size:15px;flex:0 0 auto">☎️</button>');
+    }
   };
 })();
 (function() {
