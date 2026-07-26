@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<!-- v2.1 · 2026-07-26 12:10 · modular -->
+<!-- v2.1 · 2026-07-26 12:45 · modular -->
 <html lang="zh-CN">
 <head>
 <meta charset="UTF-8">
@@ -11860,6 +11860,50 @@ function _dailyBarHtml() {
     getAPIKey(function(k){ if (!k) callErr('登录已过期 — 请重新登录后再拨打'); });
     _ctK();
   };
+})();
+
+/* ---------- v3.23 体验治理①: 视觉降噪+对比度 / 设计token统一 / 首屏紧凑 / 弹层归位 ---------- */
+(function(){
+  var css = ''
+  /* ===== 1. 视觉降噪: 背景图退后, 内容站前 ===== */
+  + 'body::after{background:rgba(6,8,20,.80) !important}'
+  + ':root{--t:#eef0f6;--ts:rgba(235,238,248,.62);--card:rgba(22,25,46,.66)}'
+  /* 卡片底色加实: 文字不再骑在背景图上 */
+  + '.pcard,.gc,.today,.banner,.kn-hero{background:rgba(22,25,46,.72) !important}'
+  + '.hero{background:rgba(26,28,52,.78) !important}'
+  + '.chat-msg.assistant,.ai-msg{background:rgba(28,30,56,.85)}'
+  /* 正文可读性: 行高与最小字号 */
+  + '.pcard,.gc,.kn-body,.chat-msg,.ai-msg{line-height:1.75}'
+
+  /* ===== 2. 设计token统一: 按钮/字号/圆角收编二十轮补丁 ===== */
+  /* 卡片圆角统一14 */
+  + '.pcard,.gc,.hero,.today,.banner,.kn-hero{border-radius:14px !important}'
+  /* 操作类小按钮统一制式: 12px/6x14/圆角10 */
+  + '.mc-op,.hub-tab,.tviz-chip,.pcard-ref{font-size:12px !important;padding:6px 14px !important;border-radius:10px !important;line-height:1.4}'
+  + '.mc-op:hover,.hub-tab:hover,.tviz-chip:hover{border-color:var(--pu);color:var(--t)}'
+  /* 辅助文字下限12px: 治10-11px蚂蚁字 */
+  + '.rv-kbd-hint,.vc-status,.call-sub,.mc-toolbar2 .mc-op,.hub-tabs .ht-label,.tviz-chips .tviz-chip{font-size:12px !important}'
+  + '.sidebar-section-label{font-size:11px;letter-spacing:1.2px;opacity:.75}'
+  /* 主按钮统一 */
+  + '.ai-btn{border-radius:10px !important}'
+
+  /* ===== 3. 首屏降噪: hero与圆环降级, 主线让位 ===== */
+  + '.hero{padding:18px 24px !important}'
+  + '.hero h1{font-size:20px !important;letter-spacing:0}'
+  + '.hero .desc{font-size:12px !important}'
+  + '.hero svg{transform:scale(.78);transform-origin:left center}'
+
+  /* ===== 4. 弹层归位: 各占一角不打架 ===== */
+  + '#bkRemind{left:16px !important;right:auto !important;bottom:16px !important}'
+  + '.mc-toast{bottom:84px}'
+
+  /* ===== 5. 滚动与焦点的细腻感 ===== */
+  + '.content::-webkit-scrollbar{width:8px}.content::-webkit-scrollbar-thumb{background:rgba(255,255,255,.14);border-radius:4px}'
+  + 'button:focus-visible,[contenteditable]:focus-visible,input:focus-visible,textarea:focus-visible{outline:2px solid rgba(94,92,230,.55);outline-offset:1px}';
+  var st = document.createElement('style');
+  st.id = 'uxTheme1';
+  st.textContent = css;
+  document.head.appendChild(st);
 })();
 (function() {
   var files = ["per_question.json","module_corpus.json"];
