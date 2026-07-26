@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<!-- v2.1 · 2026-07-26 11:54 · modular -->
+<!-- v2.1 · 2026-07-26 12:10 · modular -->
 <html lang="zh-CN">
 <head>
 <meta charset="UTF-8">
@@ -11817,6 +11817,49 @@ function _dailyBarHtml() {
   };
   var _oCallE = vcCallEnd;
   vcCallEnd = function(){ vcPipeStop(); _oCallE(); };
+})();
+
+/* ---------- v3.22 语音链路Key就绪保障: 等Key再发请求 + 失效时通话面板显式报错 ---------- */
+(function(){
+  function callErr(msg){
+    var s1 = document.getElementById('callState'), s2 = document.getElementById('callSub');
+    var orb = document.getElementById('callOrb');
+    if (orb) { orb.className = 'call-orb'; orb.textContent = '⚠️'; }
+    if (s1) s1.textContent = 'AI 服务未就绪';
+    if (s2) s2.textContent = msg;
+    var body = document.getElementById('ai-chat-body');
+    if (body) {
+      body.insertAdjacentHTML('beforeend', '<div style="text-align:center;font-size:12px;color:#f87171;padding:6px">⚠️ ' + msg + '</div>');
+      body.scrollTop = body.scrollHeight;
+    }
+  }
+
+  function ensureKey(then){
+    var settled = false;
+    var k0 = getAPIKey(function(k){
+      if (settled) return;
+      settled = true;
+      if (k) then();
+      else callErr('登录已过期或未登录 — 请退出后重新登录,语音才能连上MiMo');
+    });
+    if (k0) { if (!settled) { settled = true; then(); } return; }
+    setTimeout(function(){
+      if (!settled) { settled = true; callErr('获取AI密钥超时,请检查网络后重试'); }
+    }, 8000);
+  }
+
+  var _svmK = sendVoiceMessage;
+  sendVoiceMessage = function(q){ ensureKey(function(){ _svmK(q); }); };
+
+  var _pvK = processVoice;
+  processVoice = function(){ ensureKey(function(){ _pvK(); }); };
+
+  /* 接通瞬间预热Key: 边采底噪边拉Key, 第一句话不吃亏 */
+  var _ctK = vcCallToggle;
+  vcCallToggle = function(){
+    getAPIKey(function(k){ if (!k) callErr('登录已过期 — 请重新登录后再拨打'); });
+    _ctK();
+  };
 })();
 (function() {
   var files = ["per_question.json","module_corpus.json"];
