@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<!-- v2.1 · 2026-07-26 12:45 · modular -->
+<!-- v2.1 · 2026-07-26 12:48 · modular -->
 <html lang="zh-CN">
 <head>
 <meta charset="UTF-8">
@@ -11902,6 +11902,55 @@ function _dailyBarHtml() {
   + 'button:focus-visible,[contenteditable]:focus-visible,input:focus-visible,textarea:focus-visible{outline:2px solid rgba(94,92,230,.55);outline-offset:1px}';
   var st = document.createElement('style');
   st.id = 'uxTheme1';
+  st.textContent = css;
+  document.head.appendChild(st);
+})();
+
+/* ---------- v3.24 视觉重制: 背景景深模糊替代压黑, 精致玻璃卡片(通透+可读兼得) ---------- */
+(function(){
+  var old = document.getElementById('uxTheme1');
+  if (old) old.remove();  /* 撤掉v3.23的压黑方案 */
+  var css = ''
+  /* ===== 背景: 高斯模糊景深 — 氛围保留, 细节退后 ===== */
+  + 'body::before{filter:blur(26px) brightness(.72) saturate(1.05) !important;transform:scale(1.1)}'
+  + 'body::after{background:linear-gradient(180deg,rgba(8,10,24,.42),rgba(8,10,24,.58)) !important}'
+  + ':root{--t:#f2f3f8;--ts:rgba(233,236,248,.60)}'
+
+  /* ===== 玻璃卡片: 半透+模糊+顶缘高光+柔和投影 ===== */
+  + '.pcard,.gc,.today,.banner,.kn-hero{'
+  +   'background:rgba(21,24,45,.52) !important;'
+  +   'backdrop-filter:blur(22px) saturate(150%) !important;-webkit-backdrop-filter:blur(22px) saturate(150%) !important;'
+  +   'border:1px solid rgba(255,255,255,.09) !important;border-radius:16px !important;'
+  +   'box-shadow:inset 0 1px 0 rgba(255,255,255,.07), 0 10px 36px rgba(0,0,0,.30) !important}'
+  + '.pcard:hover,.gc:hover{border-color:rgba(140,140,255,.28) !important}'
+
+  /* hero: 紫韵渐变玻璃, 有气质不抢戏 */
+  + '.hero{background:linear-gradient(135deg,rgba(94,92,230,.20),rgba(21,24,45,.55)) !important;'
+  +   'backdrop-filter:blur(22px) saturate(150%) !important;-webkit-backdrop-filter:blur(22px) saturate(150%) !important;'
+  +   'border:1px solid rgba(130,128,255,.22) !important;border-radius:16px !important;'
+  +   'box-shadow:inset 0 1px 0 rgba(255,255,255,.10), 0 10px 36px rgba(0,0,0,.30) !important;'
+  +   'padding:20px 26px !important}'
+  + '.hero h1{font-size:21px !important;letter-spacing:0}'
+  + '.hero svg{transform:scale(.82);transform-origin:left center}'
+
+  /* 聊天气泡与侧栏也走玻璃制式 */
+  + '.chat-msg.assistant,.ai-msg{background:rgba(26,29,54,.60);backdrop-filter:blur(14px)}'
+  + '.sidebar{background:rgba(14,16,32,.66) !important;backdrop-filter:blur(26px) saturate(140%) !important;-webkit-backdrop-filter:blur(26px) saturate(140%) !important;border-right:1px solid rgba(255,255,255,.06)}'
+
+  /* ===== token统一(保留v3.23正确部分) ===== */
+  + '.pcard,.gc,.kn-body,.chat-msg,.ai-msg{line-height:1.75}'
+  + '.mc-op,.hub-tab,.tviz-chip,.pcard-ref{font-size:12px !important;padding:6px 14px !important;border-radius:10px !important;line-height:1.4}'
+  + '.mc-op:hover,.hub-tab:hover,.tviz-chip:hover{border-color:var(--pu);color:var(--t)}'
+  + '.rv-kbd-hint,.vc-status,.call-sub,.hub-tabs .ht-label{font-size:12px !important}'
+  + '.ai-btn{border-radius:10px !important}'
+
+  /* 弹层归位/滚动/焦点(保留) */
+  + '#bkRemind{left:16px !important;right:auto !important;bottom:16px !important}'
+  + '.mc-toast{bottom:84px}'
+  + '.content::-webkit-scrollbar{width:8px}.content::-webkit-scrollbar-thumb{background:rgba(255,255,255,.14);border-radius:4px}'
+  + 'button:focus-visible,[contenteditable]:focus-visible,input:focus-visible,textarea:focus-visible{outline:2px solid rgba(94,92,230,.55);outline-offset:1px}';
+  var st = document.createElement('style');
+  st.id = 'uxTheme2';
   st.textContent = css;
   document.head.appendChild(st);
 })();
