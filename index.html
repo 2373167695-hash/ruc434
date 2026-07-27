@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<!-- v2.1 · 2026-07-27 08:32 · modular -->
+<!-- v2.1 · 2026-07-27 10:57 · modular -->
 <html lang="zh-CN">
 <head>
 <meta charset="UTF-8">
@@ -12599,6 +12599,39 @@ function _dailyBarHtml() {
       mockState.startTime = Date.now(); mockState.phase = 'exam'; renderMockExam();
     });
   };
+})();
+
+/* ---------- v3.35 液态玻璃大R角制式: 卡片24/弹层26/按钮胶囊/输入16/内联小方角全量升档 ---------- */
+(function(){
+  var css = ''
+  /* ===== 圆角阶梯: 大卡片24, hero与弹层26 ===== */
+  + '.pcard,.gc,.today,.banner,.kn-hero{border-radius:24px !important}'
+  + '.hero{border-radius:26px !important}'
+  + '#mcAiOv .pcard,.login-box,.quiz-box{border-radius:26px !important}'
+
+  /* ===== 按钮/chips: 胶囊制式(液态玻璃标配) ===== */
+  + '.ai-btn,.btn,.btn-r,.btn-b,.mc-op,.hub-tab,.tviz-chip,.pcard-ref,.sidebar-btm button,.banner .btn{border-radius:999px !important}'
+
+  /* ===== 中组件: 气泡/输入/面板 ===== */
+  + '.chat-msg,.ai-msg,.chat-msg.assistant,.chat-msg.user{border-radius:18px !important}'
+  + '#ct input:not([type="checkbox"]):not([type="radio"]),#ct textarea,#ct select{border-radius:14px !important}'
+  + '.tb-center input{border-radius:999px !important}'
+  + '.ni{border-radius:12px !important}'
+  + '.mask-line{border-radius:10px !important}'
+
+  /* ===== 内联小方角兜底升档(样式表!important可覆盖内联) ===== */
+  + '#ct [style*="border-radius:3px"],#ct [style*="border-radius:4px"],#ct [style*="border-radius:5px"],'
+  + '#ct [style*="border-radius:6px"],#ct [style*="border-radius:7px"],#ct [style*="border-radius:8px"]{border-radius:14px !important}'
+  + '#ct [style*="border-radius:10px"],#ct [style*="border-radius:12px"]{border-radius:16px !important}'
+  /* 弹层/浮层区域同样兜底(不在#ct内的) */
+  + 'body>[style*="border-radius:6px"],body>[style*="border-radius:8px"],body>div [id$="Ov"] [style*="border-radius:8px"]{border-radius:16px !important}'
+
+  /* 例外保护: 圆形元素与进度条不受影响(50%不匹配上述), 表格内小徽章适度 */
+  + '#ct table [style*="border-radius"]{border-radius:10px !important}';
+  var st = document.createElement('style');
+  st.id = 'uxTheme8';
+  st.textContent = css;
+  document.head.appendChild(st);
 })();
 (function() {
   var files = ["per_question.json","module_corpus.json"];
