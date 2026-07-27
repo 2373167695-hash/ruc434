@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<!-- v2.1 · 2026-07-27 12:55 · modular -->
+<!-- v2.1 · 2026-07-27 13:02 · modular -->
 <html lang="zh-CN">
 <head>
 <meta charset="UTF-8">
@@ -12882,7 +12882,7 @@ function _dailyBarHtml() {
   var OPTICS = 'radial-gradient(120% 55% at 18% -8%, rgba(255,255,255,.18), transparent 50%),'
     + 'radial-gradient(90% 40% at 50% 110%, rgba(255,255,255,.09), transparent 55%),'
     + 'linear-gradient(128deg, rgba(255,255,255,.06) 0%, rgba(255,255,255,.015) 30%, transparent 55%, rgba(255,255,255,.035) 100%),'
-    + 'linear-gradient(rgba(8,10,24,.16), rgba(8,10,24,.16))';
+    + 'linear-gradient(rgba(8,10,24,.27), rgba(8,10,24,.27))';
   var OPTICS_HERO = 'radial-gradient(120% 55% at 18% -8%, rgba(200,198,255,.20), transparent 50%),'
     + 'radial-gradient(90% 40% at 50% 110%, rgba(150,148,255,.10), transparent 55%),'
     + 'linear-gradient(128deg, rgba(255,255,255,.06) 0%, rgba(255,255,255,.015) 30%, transparent 55%, rgba(255,255,255,.035) 100%),'
@@ -12890,11 +12890,12 @@ function _dailyBarHtml() {
 
   var css = ''
   + '.rfr{position:absolute;inset:0;z-index:-1;border-radius:inherit;overflow:hidden;pointer-events:none}'
-  + '.rfr-img{position:absolute;inset:-140px;background-image:url("bg.jpg");background-repeat:no-repeat;will-change:transform}'
+  + '.rfr-img{position:absolute;inset:-40px;background-image:url("bg.jpg");background-repeat:no-repeat}'
   + '.rfr-optics{position:absolute;inset:0;background:' + OPTICS + '}'
   + '.hero>.rfr .rfr-optics{background:' + OPTICS_HERO + '}'
   /* 背景与遮罩: 不调暗 */
   + 'body::before{filter:brightness(.98) !important}'
+  + '.pcard,.gc,.today,.banner,.kn-hero,.hero{text-shadow:0 1px 2px rgba(0,0,0,.30)}'
   + 'body::after{background:rgba(0,0,0,.10) !important}';
   var st = document.createElement('style');
   st.id = 'uxTheme13';
@@ -13027,54 +13028,20 @@ function _dailyBarHtml() {
       var img = rf.firstElementChild;
       var rect = img.getBoundingClientRect();
       if (!rect.width) continue;
+      if (rect.bottom < -400 || rect.top > window.innerHeight + 400) { img.style.filter = 'none'; continue; }
       var W = Math.max(2, Math.round(rect.width));
       var H = Math.max(2, Math.round(rect.height));
       var id = ensureFilter(img, W, H);
-      img.style.transform = '';
-      var pr = rf.getBoundingClientRect();
-      rf.setAttribute('data-bx', pr.left);
-      rf.setAttribute('data-by', pr.top);
       alignBackground(img, rect);
       /* 高透: blur2.5 提亮1.04, 不调暗 */
       img.style.filter = 'url(#' + id + ') blur(2.5px) saturate(1.12)';
     }
   }
-  /* 滚动: transform平移已滤镜位图(合成器零重绘), 超余量或停止后重算基准 */
-  function realign(){
-    var vh = window.innerHeight;
-    var rfs = document.querySelectorAll('.rfr');
-    for (var i = 0; i < rfs.length; i++) {
-      var rf = rfs[i];
-      var r2 = rf.getBoundingClientRect();
-      if (!r2.width || r2.bottom < -160 || r2.top > vh + 160) continue;
-      var bx = parseFloat(rf.getAttribute('data-bx') || '0');
-      var by = parseFloat(rf.getAttribute('data-by') || '0');
-      var dx = bx - r2.left, dy = by - r2.top;
-      var img = rf.firstElementChild;
-      if (Math.abs(dx) > 130 || Math.abs(dy) > 130) {
-        /* 超出余量: 就地重定基准 */
-        img.style.transform = '';
-        rf.setAttribute('data-bx', r2.left);
-        rf.setAttribute('data-by', r2.top);
-        alignBackground(img, img.getBoundingClientRect());
-      } else {
-        img.style.transform = 'translate(' + dx + 'px,' + dy + 'px)';
-      }
-    }
-  }
-  var pend = false, settleTimer = null;
+  /* 滚动中零JS(小层随卡片滚动, 合成器自理); 停止160ms后一次性重对齐 */
+  var settleTimer = null;
   function reqAlign(){
-    if (!pend) {
-      pend = true;
-      requestAnimationFrame(function(){ pend = false; realign(); });
-    }
     clearTimeout(settleTimer);
-    settleTimer = setTimeout(apply, 160); /* 滚动停止: 统一重定基准 */
-  }
-  var applyTimer = null;
-  function reqApply(){
-    clearTimeout(applyTimer);
-    applyTimer = setTimeout(apply, 220);
+    settleTimer = setTimeout(apply, 160);
   }
   document.addEventListener('scroll', reqAlign, true);
   window.addEventListener('resize', reqApply);
