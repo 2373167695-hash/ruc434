@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<!-- v2.1 · 2026-07-26 13:06 · modular -->
+<!-- v2.1 · 2026-07-27 02:45 · modular -->
 <html lang="zh-CN">
 <head>
 <meta charset="UTF-8">
@@ -11951,6 +11951,136 @@ function _dailyBarHtml() {
   st.id = 'uxTheme2';
   st.textContent = css;
   document.head.appendChild(st);
+})();
+
+/* ---------- v3.25 AI框架图重做: RAG资料喂给AI + 一次JSON生成图与侧栏 + 复用本地框架图渲染风格 ---------- */
+(function(){
+  function esc(s){ return escapeHtml(String(s || '')); }
+  function sec(icon, title, inner, color){
+    return '<div style="background:rgba(21,24,45,.55);border:1px solid ' + (color || 'rgba(255,255,255,.10)') + ';border-radius:12px;padding:12px 16px">'
+      + '<div style="font-size:12px;font-weight:700;color:#c9c9ee;margin-bottom:8px;letter-spacing:.5px">' + icon + ' ' + title + '</div>' + inner + '</div>';
+  }
+  function arrow(){ return '<div style="text-align:center;color:#7c7ce8;font-size:16px;line-height:1;margin:2px 0">↓</div>'; }
+  function items(arr, numbered){
+    var h = '';
+    (arr || []).forEach(function(x, i){
+      h += '<div style="display:flex;gap:8px;align-items:flex-start;padding:4px 0;font-size:13px;line-height:1.7;color:#ddd">'
+        + '<span style="flex:0 0 auto;color:#a78bfa;font-weight:700;font-size:12px;margin-top:2px">' + (numbered ? (i+1) + '.' : '·') + '</span><span>' + esc(x) + '</span></div>';
+    });
+    return h || '<div style="font-size:12px;color:#777">—</div>';
+  }
+  function fillSide(id, arr){
+    var el = document.getElementById(id);
+    if (!el) return;
+    el.innerHTML = (arr && arr.length)
+      ? '<ul style="margin:0;padding-left:16px;font-size:12px;line-height:1.8">' + arr.map(function(x){ return '<li>' + esc(x) + '</li>'; }).join('') + '</ul>'
+      : '—';
+  }
+
+  window.tvShowAIFramework = function(json, q){
+    var ph = document.getElementById('tvizPlaceholder'), disp = document.getElementById('tvizCanvasDisplay');
+    if (ph) ph.style.display = 'none';
+    if (!disp) return;
+    disp.style.display = 'block';
+    var name = json.theory || q;
+    var body = '<div style="text-align:center;padding:14px 16px;background:linear-gradient(135deg,rgba(94,92,230,.24),rgba(21,24,45,.5));border:1px solid rgba(130,128,255,.3);border-radius:12px">'
+      + '<div style="font-size:11px;color:#a5a5f0;margin-bottom:4px">AI 生成 · 已结合题库资料 · 建议对照教材核验</div>'
+      + '<div style="font-size:19px;font-weight:800;color:#fff">' + esc(name) + '</div>'
+      + (json.overview ? '<div style="font-size:12px;color:#c9c9e8;margin-top:8px;line-height:1.7;text-align:left">' + esc(json.overview) + '</div>' : '')
+      + '</div>';
+    if (json.assumptions && json.assumptions.length) body += arrow() + sec('📋', '前提假设', items(json.assumptions), 'rgba(96,165,250,.4)');
+    if (json.mechanisms && json.mechanisms.length) body += arrow() + sec('⚙️', '核心机制', items(json.mechanisms, true), 'rgba(74,222,128,.4)');
+    if (json.inferences && json.inferences.length) body += arrow() + sec('🧭', '理论推论', items(json.inferences, true), 'rgba(251,191,36,.4)');
+    var hasP = json.pros && json.pros.length, hasC = json.cons && json.cons.length;
+    if (hasP || hasC) body += arrow() + '<div style="display:grid;grid-template-columns:1fr 1fr;gap:10px">'
+      + sec('✅', '贡献', items(json.pros), 'rgba(74,222,128,.35)') + sec('⚠️', '局限', items(json.cons), 'rgba(248,113,113,.35)') + '</div>';
+    if (json.policy && json.policy.length) body += arrow() + sec('🏛', '政策与现实含义', items(json.policy), 'rgba(167,139,250,.4)');
+
+    disp.innerHTML = '<div style="padding:10px 0">'
+      + '<div style="display:flex;align-items:center;gap:10px;max-width:860px;margin:0 auto 8px"><div style="font-size:14px;font-weight:700;color:#ddd;flex:1">🤖 AI框架图 · ' + esc(name) + '</div>'
+      + '<button class="ai-btn ai-btn-sm" onclick="tvExportPNG()" style="padding:5px 14px;font-size:12px">⬇ 导出PNG</button></div>'
+      + '<div id="tvFwHost" style="max-width:860px;margin:0 auto;display:flex;flex-direction:column;background:#101024;border-radius:14px;padding:18px">' + body + '</div></div>';
+
+    /* 侧栏一次性填充, 不再有第二段"生成中"死等 */
+    fillSide('tvizKeypoints', json.keypoints || json.mechanisms);
+    fillSide('tvizElements', json.assumptions);
+    fillSide('tvizExam', json.examtips ? [].concat(json.examtips) : []);
+    var rel = document.getElementById('tvizRelated');
+    if (rel) rel.innerHTML = (json.related && json.related.length)
+      ? json.related.slice(0, 5).map(function(t){ return '<span class="tviz-chip" style="font-size:12px" onclick="tvShowFramework(\'' + esc(t) + '\')||tvisAsk(\'' + esc(t) + '\')">' + esc(t) + '</span>'; }).join(' ') : '—';
+    var qs = document.getElementById('tvizQuestions');
+    if (qs) qs.innerHTML = (json.questions && json.questions.length)
+      ? json.questions.slice(0, 4).map(function(x){ return '<div style="font-size:12px;color:var(--ts);padding:2px 0">' + esc(x) + '</div>'; }).join('') : '—';
+    var hd = document.getElementById('tvis-hero-desc');
+    if (hd) hd.textContent = '当前：' + name + ' · AI框架图(已结合题库资料)';
+  };
+
+  /* 全新 tvisGen: 本地77优先 → 图形关键词 → AI(RAG喂料+一次JSON) */
+  tvisGen = function(force){
+    var inp = document.getElementById('tvizInput');
+    var q = inp ? inp.value.trim() : '';
+    if (!q) return;
+    var name = q.replace(/画出|的完整.*图|框架图|流程图|机制图/g, '').trim();
+    if (!force) {
+      if (KNOWLEDGE[name] && tvShowFramework(name)) return;
+      if (KNOWLEDGE[q] && tvShowFramework(q)) return;
+      for (var k in KNOWLEDGE) { if (name.length >= 4 && (k.indexOf(name) >= 0 || name.indexOf(k) >= 0)) { if (tvShowFramework(k)) return; } }
+    }
+    if (/关税.*图|配额|补贴.*图|同盟|创造|转移|J曲线|j曲线|外汇.*图|汇率.*图|供需|曲线/.test(q)) {
+      tvisRenderEconGraph(null, q);
+      var ph0 = document.getElementById('tvizPlaceholder'); if (ph0) ph0.style.display = 'none';
+      return;
+    }
+    /* 缓存 */
+    var cache = {};
+    try { cache = JSON.parse(localStorage.getItem('r434_tviz_cache2') || '{}'); } catch(e) {}
+    if (!force && cache[q]) { tvShowAIFramework(cache[q], q); return; }
+
+    var btn = document.getElementById('tvizBtn');
+    if (btn) { btn.disabled = true; btn.textContent = '生成中...'; }
+    var ph = document.getElementById('tvizPlaceholder'); if (ph) ph.style.display = 'none';
+    var disp = document.getElementById('tvizCanvasDisplay');
+    disp.style.display = 'block';
+    disp.innerHTML = '<div style="padding:28px;color:#999;font-size:13px;text-align:center">🤖 AI 正在检索题库资料并构建框架…约15-30秒</div>';
+
+    /* RAG喂料: 相关知识点+真题进prompt, 杜绝空话 */
+    var ctx = '';
+    try {
+      (ragRetrieve(q, 8) || []).forEach(function(d){
+        if (d.type === 'knowledge' && d.ref) ctx += '【知识点】' + (d.ref.name || d.id) + ': ' + (d.ref.overview || '').substring(0, 200) + ' 要点:' + (d.ref.key || []).slice(0, 4).join('；') + '\n';
+        else if (d.type === 'question' && d.ref) ctx += '【真题' + d.ref.year + '】' + d.ref.question.substring(0, 100) + '\n';
+      });
+    } catch(e) {}
+    var sys = '你是人大434国际商务考研专家。为理论「' + q + '」生成结构化框架,严格输出JSON(不要其他文字):\n'
+      + '{"theory":"规范理论名","overview":"120字以内综述(提出者+核心命题)","assumptions":["假设,每条20-50字,3-5条"],"mechanisms":["核心机制,每条25-60字,要具体有逻辑链,4-6条"],"inferences":["理论推论/可解释的现象,3-4条"],"pros":["理论贡献,2-3条"],"cons":["局限批评,2-3条"],"policy":["对中国的政策/现实含义,2-3条"],"keypoints":["答题必写采分点,4-5条"],"examtips":"一句考点提示(考法+易错点)","related":["最相关的3个理论名"],"questions":["可能的考题2道"]}\n'
+      + '要求:内容必须具体(有人名/机制/条件),禁止"企业追求利润最大化"式空话;优先使用以下题库资料:\n' + ctx;
+    fetch(DS_URL, {
+      method: 'POST', headers: {Authorization: 'Bearer ' + getAPIKey(), 'Content-Type': 'application/json'},
+      body: JSON.stringify({model: 'mimo-v2.5', messages: [{role: 'system', content: sys}, {role: 'user', content: '生成「' + q + '」的框架JSON'}], temperature: 0.25, max_tokens: 2200})
+    }).then(function(r){ if (!r.ok) throw Error('HTTP ' + r.status); return r.json(); })
+    .then(function(d){
+      var c = (d.choices && d.choices[0] && d.choices[0].message) ? d.choices[0].message.content : '';
+      var m = c.match(/\{[\s\S]*\}/);
+      if (!m) throw Error('AI输出无法解析');
+      var json = JSON.parse(m[0]);
+      if (!json.mechanisms || !json.mechanisms.length) throw Error('AI未生成有效内容');
+      cache[q] = json;
+      var keys = Object.keys(cache);
+      if (keys.length > 30) delete cache[keys[0]];
+      try { localStorage.setItem('r434_tviz_cache2', JSON.stringify(cache)); } catch(e) {}
+      tvShowAIFramework(json, q);
+    }).catch(function(err){
+      disp.innerHTML = '<div class="pcard" style="padding:24px;text-align:center"><div style="font-size:32px;margin-bottom:8px">😥</div>'
+        + '<div style="font-size:13px;color:var(--ts)">生成失败: ' + esc(err.message) + '</div>'
+        + '<div style="font-size:12px;color:var(--ts);margin-top:8px">建议: 从上方下拉框选择77个知识点(本地秒出、内容来自背诵手册), 或点重试</div>'
+        + '<button class="ai-btn ai-btn-sm" style="margin-top:10px;padding:6px 18px" onclick="tvisGen(true)">🔄 重试</button></div>';
+      ['tvizKeypoints','tvizElements','tvizRelated','tvizExam','tvizQuestions'].forEach(function(id){
+        var el = document.getElementById(id); if (el && /生成中/.test(el.textContent)) el.innerHTML = '—';
+      });
+    }).finally(function(){
+      if (btn) { btn.disabled = false; btn.textContent = '生成'; }
+    });
+  };
 })();
 (function() {
   var files = ["per_question.json","module_corpus.json"];
