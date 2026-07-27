@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<!-- v2.1 · 2026-07-27 08:20 · modular -->
+<!-- v2.1 · 2026-07-27 08:32 · modular -->
 <html lang="zh-CN">
 <head>
 <meta charset="UTF-8">
@@ -12485,6 +12485,117 @@ function _dailyBarHtml() {
       function take(type, n){ return pool.filter(function(q){ return q.type === type; }).slice(0, n); }
       mockState.questions = take('简答', 5).concat(take('论述', 3)).concat(take('案例', 2));
       mockState.answers = new Array(mockState.questions.length).fill('');
+      mockState.startTime = Date.now(); mockState.phase = 'exam'; renderMockExam();
+    });
+  };
+})();
+
+/* ---------- v3.34 模考答案逐题后台生成: 组卷只出题(快), 答案单题生成(10分题≥500字/20分题≥1000字) ---------- */
+(function(){
+  function knCard2(name){
+    if (!name) return '';
+    var K = KNOWLEDGE[name];
+    if (!K) { for (var k in KNOWLEDGE) { if (k.indexOf(name) >= 0 || name.indexOf(k) >= 0) { K = KNOWLEDGE[k]; name = k; break; } } }
+    if (!K) return '';
+    var s = '【' + name + '·手册档案】\n';
+    if (K.overview) s += '概述:' + K.overview.substring(0, 260) + '\n';
+    if (K.assumptions && K.assumptions.length) s += '假设:' + K.assumptions.join('；') + '\n';
+    if (K.key && K.key.length) s += '要点:' + K.key.join('；') + '\n';
+    if (K.evaluation_pros && K.evaluation_pros.length) s += '贡献:' + K.evaluation_pros.join('；') + '\n';
+    if (K.evaluation_cons && K.evaluation_cons.length) s += '局限:' + K.evaluation_cons.join('；') + '\n';
+    if (K.frontier) s += '前沿:' + K.frontier.substring(0, 150) + '\n';
+    return s;
+  }
+
+  function fallbackAnswer(q){
+    var K = KNOWLEDGE[q.knowledge];
+    if (!K) return '(答案生成失败, 请参考知识点: ' + (q.knowledge || '相关章节') + ')';
+    return '【要点式参考(生成失败自动降级)】\n概述: ' + (K.overview || '') + '\n要点: ' + (K.key || []).join('；')
+      + ((K.evaluation_pros || []).length ? '\n评价: ' + K.evaluation_pros.join('；') + '；局限: ' + (K.evaluation_cons || []).join('；') : '');
+  }
+
+  window._mockGenAnswers = function(){
+    var qs = mockState.questions || [];
+    var queue = qs.map(function(q, i){ return i; }).filter(function(i){ return !qs[i].answer || qs[i].answer.length < 200; });
+    var active = 0;
+    mockState._ansTotal = queue.length;
+    mockState._ansDone = 0;
+    function tick(){
+      var bar = document.getElementById('mockAnsProg');
+      if (bar) bar.textContent = '参考答案后台生成中 ' + mockState._ansDone + '/' + mockState._ansTotal + (mockState._ansDone >= mockState._ansTotal ? ' ✅全部就绪' : '');
+    }
+    function next(){
+      if (!queue.length || mockState.phase === 'ready') return;
+      if (active >= 2) return;
+      var i = queue.shift();
+      var q = qs[i];
+      active++;
+      var minLen = q.type === '简答' ? 500 : 1000;
+      var sys = RUC434_STYLE + '\n你是人大434阅卷组长，为模拟题撰写高分标准答案。\n' + knCard2(q.knowledge)
+        + '\n【硬性要求】\n1. 答案' + minLen + '字以上(这是' + (q.score || (q.type === '简答' ? 10 : 20)) + '分题的深度要求)\n'
+        + '2. 结构：' + (q.type === '简答' ? '定义先行→①②③分点要点(每点有解释)→简要评价/小结'
+            : q.type === '论述' ? '理论阐述(含提出者与假设)→逻辑机制推导→联系中国现实(具体案例或数据)→政策含义→【考点提示】'
+            : '逐问作答，每问点名引用理论(中英对照)→结合案例材料原文分析→结论启示')
+        + '\n3. 要点必须与上方手册档案一致，理论名中英对照，禁止空话套话\n4. 直接输出答案正文，不要任何前言。';
+      fetch(DS_URL, {method: 'POST', headers: {Authorization: 'Bearer ' + getAPIKey(), 'Content-Type': 'application/json'},
+        body: JSON.stringify({model: 'mimo-v2.5-pro', messages: [{role: 'system', content: sys}, {role: 'user', content: '题目(' + q.type + ')：' + q.question}], temperature: 0.3, max_tokens: 3000})
+      }).then(function(r){ if (!r.ok) throw Error('HTTP ' + r.status); return r.json(); })
+      .then(function(d){
+        var txt = (d.choices && d.choices[0] && d.choices[0].message) ? (d.choices[0].message.content || '').trim() : '';
+        q.answer = txt && txt.length > 150 ? txt : fallbackAnswer(q);
+      }).catch(function(){ q.answer = fallbackAnswer(q); })
+      .finally(function(){ active--; mockState._ansDone++; tick(); next(); });
+      next();
+    }
+    next(); next();
+    tick();
+  };
+
+  /* 重写组卷: 只出题+按题型赋分, 出题成功即启动逐题答案生成 */
+  startMockExam = function(){
+    var topics = (typeof _meCollectDir === 'function') ? _meCollectDir() : [];
+    document.getElementById('ct').innerHTML = '<div style="text-align:center;padding:80px 20px"><div class="ai-loading" style="justify-content:center"><span class="ai-dot"></span><span class="ai-dot"></span><span class="ai-dot"></span></div><div style="margin-top:16px;color:var(--ts);font-size:13px">正在按手册知识库组卷…约20-40秒<br><span style="font-size:11px">参考答案将在你答题期间逐题后台生成(10分题500字+/20分题1000字+)</span></div></div>';
+    var mk = buildMockContext(topics);
+    var dirTxt = topics.length
+      ? '\n【命题范围(考生指定，必须遵守)】至少8道题围绕：' + topics.join('、') + '。'
+      : '\n【命题范围】从上方知识库档案中的考点命题，覆盖不同部分。';
+    var sys = RUC434_STYLE + '\n你是人大434国际商务考研命题老师。本次只出题，不写答案。\n' + mk.ctx + dirTxt
+      + '\n\n【生成要求】\n1. 共10道题：简答5道、论述3道、案例2道；案例题必须有150字以上案例材料+2-3个设问\n'
+      + '2. 每道题对应上方知识库档案中的具体考点，禁止超纲；题目风格100%贴合人大434真题(参考上方真题范例)\n'
+      + '3. 至少2道结合中国现实经济\n'
+      + '4. 严格JSON输出：{"questions":[{"type":"简答|论述|案例","question":"完整题面","knowledge":"对应考点名"}]}';
+    fetch(DS_URL, {method: 'POST', headers: {Authorization: 'Bearer ' + getAPIKey(), 'Content-Type': 'application/json'},
+      body: JSON.stringify({model: 'mimo-v2.5-pro', messages: [{role: 'system', content: sys},
+        {role: 'user', content: '生成一套人大434模拟试卷(只出题)' + (topics.length ? '，命题范围：' + topics.join('、') : '')}],
+        temperature: 0.45, max_tokens: 4000})
+    }).then(function(r){ if (!r.ok) throw Error('HTTP ' + r.status); return r.json(); })
+    .then(function(d){
+      var c = d.choices[0].message.content, m = c.match(/\{[\s\S]*\}/);
+      if (!m) throw Error('AI格式错误');
+      var qs = (JSON.parse(m[0]).questions || []);
+      if (qs.length < 6) throw Error('题量不足');
+      qs.forEach(function(q){ q.score = q.type === '简答' ? 10 : 20; q.answer = ''; });
+      mockState.questions = qs;
+      mockState.answers = new Array(qs.length).fill('');
+      mockState.startTime = Date.now(); mockState.phase = 'exam'; renderMockExam();
+      var timerEl = document.getElementById('mockTimer');
+      if (timerEl && timerEl.parentElement && !document.getElementById('mockAnsProg')) {
+        timerEl.parentElement.insertAdjacentHTML('beforeend', ' <span id="mockAnsProg" style="font-size:11px;color:var(--ts)"></span>');
+      }
+      _mockGenAnswers();
+    }).catch(function(){
+      /* 回退: 真题拼卷(自带手册清洗后的标准答案) */
+      var pool = DATA.slice();
+      for (var i = pool.length - 1; i > 0; i--) { var j = Math.floor(Math.random() * (i + 1)); var t = pool[i]; pool[i] = pool[j]; pool[j] = t; }
+      if (topics.length) {
+        var hit = pool.filter(function(q){ return (q.knowledge || []).some(function(kn){ return topics.some(function(t2){ return kn.indexOf(t2) >= 0 || t2.indexOf(kn) >= 0; }); }); });
+        pool = hit.concat(pool.filter(function(q){ return hit.indexOf(q) < 0; }));
+      }
+      function take(type, n){ return pool.filter(function(q){ return q.type === type; }).slice(0, n); }
+      var qs2 = take('简答', 5).concat(take('论述', 3)).concat(take('案例', 2));
+      qs2 = qs2.map(function(q){ return { type: q.type, question: q.question, answer: q.answer || '', knowledge: (Array.isArray(q.knowledge) ? q.knowledge[0] : q.knowledge) || '', score: q.type === '简答' ? 10 : 20 }; });
+      mockState.questions = qs2;
+      mockState.answers = new Array(qs2.length).fill('');
       mockState.startTime = Date.now(); mockState.phase = 'exam'; renderMockExam();
     });
   };
