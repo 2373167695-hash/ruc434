@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<!-- v2.1 · 2026-07-27 02:55 · modular -->
+<!-- v2.1 · 2026-07-27 02:59 · modular -->
 <html lang="zh-CN">
 <head>
 <meta charset="UTF-8">
@@ -4080,67 +4080,6 @@ function showHome() {recordTrend();var bb=document.getElementById('backBtn');if(
   h += '<div class="gc" onclick="navigate(\'professors\')"><div class="ico" style="background:rgba(0,122,255,.08)">👨‍🏫</div><div class="cnt"><h4>导师研究方向</h4><p>' + pn + '位重点导师的研究领域与最新成果</p></div></div>';
   h += '<div class="gc" onclick="navigate(\'hot\')"><div class="ico" style="background:rgba(94,92,230,.08)">🔥</div><div class="cnt"><h4>热点素材解读</h4><p>跨国公司平台经济 · ESA理论与MNPs</p></div></div>';
   h += '</div>';
-  // Year × Module heatmap
-  var ymodules = ['国际贸易理论','国际贸易政策及理论','国际金融','国际投资','跨国公司经营'];
-  var years = [2011,2012,2013,2014,2015,2016,2017,2018,2019,2020,2021,2022,2023,2024,2025,2026];
-  var ymMap = {};
-  years.forEach(function(y){ymMap[y]={};ymodules.forEach(function(m){ymMap[y][m]=0;});});
-  DATA.forEach(function(q){
-    (q.knowledge||[]).forEach(function(k){
-      var _kn=KNOWLEDGE[k];
-      var mod=_kn&&_kn.module?_kn.module.split('/')[0]:'';
-      if(ymMap[q.year]&&ymMap[q.year][mod]!==undefined)ymMap[q.year][mod]++;
-    });
-  });
-  function hmColor(v){
-    if(v===0) return 'rgba(94,92,230,.04)';
-    if(v<=2) return 'rgba(94,92,230,.15)';
-    if(v<=4) return 'rgba(94,92,230,.35)';
-    if(v<=7) return 'rgba(94,92,230,.6)';
-    return 'rgba(94,92,230,.85)';
-  }
-  function hmText(v){return v>4?'#fff':'var(--pu)';}
-  function hmDot(v){return v===0?'':v<=2?'●':v<=4?'●●':v<=7?'●●●':'●●●●';}
-  
-  h += '<div class="pcard" style="margin-top:16px"><div class="pcard-hdr"><h3>📊 命题趋势热力图</h3><span style="font-size:11px;color:var(--ts)">2011—2026 · 年×模块</span></div><div class="pcard-body" style="overflow-x:auto">';
-  h += '<table style="border-collapse:separate;border-spacing:4px;width:100%;min-width:520px">';
-  // Header row
-  h += '<tr><td style="width:44px"></td>';
-  ymodules.forEach(function(m){var _sn={'国际贸易理论':'贸易理论','国际贸易政策及理论':'贸易政策','国际金融':'国际金融','国际投资':'国际投资','跨国公司经营':'跨国经营'}[m]||m;h+='<td style="padding:4px 2px;text-align:center;font-size:10px;font-weight:600;color:var(--ts);letter-spacing:.3px">'+_sn.substring(0,2)+'<br>'+_sn.substring(2,4)+'</td>';});
-  h += '<td style="width:32px"></td></tr>';
-  
-  years.forEach(function(y){
-    var total = 0;
-    h += '<tr><td style="padding:2px 8px 2px 0;text-align:right;font-size:12px;font-weight:700;color:var(--t)">'+y+'</td>';
-    ymodules.forEach(function(m){
-      var v = ymMap[y][m]||0; total += v;
-      h += '<td style="text-align:center;padding:2px">'+
-        '<div style="position:relative;display:inline-flex;align-items:center;justify-content:center;width:42px;height:42px;border-radius:12px;background:'+hmColor(v)+
-        ';transition:all .2s;cursor:default" onmouseover="this.style.transform=\'scale(1.12)\';this.style.boxShadow=\'0 4px 12px rgba(94,92,230,.25)\'" onmouseout="this.style.transform=\'\';this.style.boxShadow=\'\'"'+
-        ' title="'+y+'年 '+m+'：'+v+'题">'+
-        '<span style="font-size:15px;font-weight:800;color:'+hmText(v)+'">'+(v||hmDot(v))+'</span></div></td>';
-    });
-    h += '<td style="padding-left:6px;font-size:10px;font-weight:600;color:'+(total>5?'var(--r)':'var(--ts)')+'">'+total+'</td></tr>';
-  });
-  
-  // Module totals
-  h += '<tr style="border-top:1px solid rgba(0,0,0,.04)"><td style="padding:4px 8px 0 0;text-align:right;font-size:10px;font-weight:600;color:var(--ts)">合计</td>';
-  ymodules.forEach(function(m){
-    var mt = 0; years.forEach(function(y){mt+=ymMap[y][m]||0;});
-    h += '<td style="text-align:center;padding:4px 2px 0"><span style="font-size:11px;font-weight:700;color:var(--pu)">'+mt+'</span></td>';
-  });
-  h += '<td></td></tr>';
-  h += '</table>';
-  
-  // Legend
-  h += '<div style="display:flex;gap:20px;justify-content:center;align-items:center;margin-top:14px;padding-top:10px;border-top:1px solid rgba(0,0,0,.04)">';
-  [{v:0,l:'未涉及'},{v:1,l:'偶尔'},{v:3,l:'适中'},{v:5,l:'频繁'},{v:8,l:'密集'}].forEach(function(x){
-    h += '<div style="display:flex;align-items:center;gap:5px;font-size:10px;color:var(--ts)">'+
-      '<span style="width:14px;height:14px;border-radius:5px;background:'+hmColor(x.v)+'"></span>'+x.l+'</div>';
-  });
-  h += '</div>';
-  h += '</div></div>';
-  
   // ===== FREQUENCY TABLE (below heatmap) =====
   var freqRows = [];
   SIDEBAR.forEach(function(cat) {
