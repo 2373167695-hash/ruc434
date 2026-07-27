@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<!-- v2.1 · 2026-07-27 07:54 · modular -->
+<!-- v2.1 · 2026-07-27 08:04 · modular -->
 <html lang="zh-CN">
 <head>
 <meta charset="UTF-8">
@@ -12375,6 +12375,116 @@ function _dailyBarHtml() {
     var r = _oNav.apply(this, arguments);
     try { closeSidebar(); } catch(e) {}
     return r;
+  };
+})();
+
+/* ---------- v3.32 模考专用上下文: 主动抽样手册77条全档+近三年真题范文, 答案质量硬标准 ---------- */
+(function(){
+  function knCard(name){
+    var K = KNOWLEDGE[name];
+    if (!K) return '';
+    var s = '【' + name + '】' + (K.module || '') + '\n';
+    if (K.overview) s += '概述:' + K.overview.substring(0, 200) + '\n';
+    if (K.assumptions && K.assumptions.length) s += '假设:' + K.assumptions.slice(0, 5).join('；') + '\n';
+    if (K.key && K.key.length) s += '要点:' + K.key.slice(0, 6).join('；') + '\n';
+    if (K.evaluation_pros && K.evaluation_pros.length) s += '贡献:' + K.evaluation_pros.slice(0, 3).join('；') + '\n';
+    if (K.evaluation_cons && K.evaluation_cons.length) s += '局限:' + K.evaluation_cons.slice(0, 3).join('；') + '\n';
+    if (K.exam) s += '历年考法:' + K.exam.substring(0, 120) + '\n';
+    return s + '\n';
+  }
+
+  window.buildMockContext = function(topics){
+    var ctx = '=== 命题知识库(背诵手册档案, 题目与答案必须严格依据) ===\n\n';
+    var picked = [];
+    if (topics && topics.length) {
+      /* 定向: 指定考点全档 + 同章邻近考点 */
+      topics.forEach(function(t){
+        for (var k in KNOWLEDGE) {
+          if ((k.indexOf(t) >= 0 || t.indexOf(k) >= 0) && picked.indexOf(k) < 0) picked.push(k);
+        }
+      });
+      var mods = picked.map(function(k){ return KNOWLEDGE[k] ? KNOWLEDGE[k].module : ''; });
+      for (var k2 in KNOWLEDGE) {
+        if (picked.length >= 14) break;
+        if (picked.indexOf(k2) < 0 && mods.indexOf(KNOWLEDGE[k2].module) >= 0) picked.push(k2);
+      }
+    } else {
+      /* 随机全卷: 按五部分均衡抽样(每部分3个), 优先没考过的+高频的混合 */
+      var byPart = {};
+      Object.keys(KNOWLEDGE).forEach(function(k){
+        var p = (KNOWLEDGE[k].module || '其他').split('/')[0];
+        (byPart[p] = byPart[p] || []).push(k);
+      });
+      Object.keys(byPart).forEach(function(p){
+        var arr = byPart[p].slice();
+        for (var i = arr.length - 1; i > 0; i--) { var j = Math.floor(Math.random() * (i + 1)); var t2 = arr[i]; arr[i] = arr[j]; arr[j] = t2; }
+        picked = picked.concat(arr.slice(0, 3));
+      });
+    }
+    picked.slice(0, 15).forEach(function(k){ ctx += knCard(k); });
+
+    /* 近三年真题范文: 出题风格+答案深度的双标杆 */
+    ctx += '=== 近年真题范例(题目风格与答案深度的标杆) ===\n\n';
+    var recent = DATA.filter(function(q){ return q.year >= 2023 && q.answer && q.answer.length > 200; });
+    for (var i = recent.length - 1; i > 0; i--) { var j = Math.floor(Math.random() * (i + 1)); var t3 = recent[i]; recent[i] = recent[j]; recent[j] = t3; }
+    recent.slice(0, 4).forEach(function(q){
+      ctx += '【' + q.year + '年 ' + q.type + '】' + q.question.substring(0, 150) + '\n标准答案(节选):' + q.answer.substring(0, 500) + '\n\n';
+    });
+    return { ctx: ctx, picked: picked.slice(0, 15) };
+  };
+
+  /* 重写模考生成: 专用上下文 + 答案质量硬标准 */
+  var _prevSME = startMockExam;
+  startMockExam = function(){
+    var topics = (typeof _meCollectDir === 'function') ? _meCollectDir() : [];
+    document.getElementById('ct').innerHTML = '<div style="text-align:center;padding:80px 20px"><div class="ai-loading" style="justify-content:center"><span class="ai-dot"></span><span class="ai-dot"></span><span class="ai-dot"></span></div><div style="margin-top:16px;color:var(--ts);font-size:13px">正在按手册知识库组卷…约30-60秒</div></div>';
+    var mk = buildMockContext(topics);
+    var dirTxt = topics.length
+      ? '\n【命题范围(考生指定，必须遵守)】至少8道题围绕：' + topics.join('、') + '。'
+      : '\n【命题范围】从上方知识库档案中的考点命题，覆盖不同部分。';
+    var sys = RUC434_STYLE + '\n你是人大434国际商务考研命题老师。\n' + mk.ctx + dirTxt
+      + '\n\n【生成要求】\n'
+      + '1. 共10道题：简答5道(每题10分)、论述3道(每题20分)、案例2道(每题20分)；案例题必须有120字以上的案例材料+2-3个设问\n'
+      + '2. 每道题必须对应上方知识库档案中的具体考点，禁止超纲\n'
+      + '3. 【答案质量硬标准】answer字段必须是完整的标准答案而非提纲：\n'
+      + '   简答题答案300字以上(定义→分点要点→小结)；论述题答案600字以上(理论阐述→假设→机制→联系中国现实→政策含义)；'
+      + '案例题答案按设问逐问回答、每问必须点名引用理论名。答案要点必须与知识库档案的假设/要点/评价一致，理论名中英对照\n'
+      + '4. 至少2道题结合中国现实经济(RCEP/中美贸易/人民币国际化/供应链重构等)\n'
+      + '5. 严格JSON输出：{"questions":[{"type":"简答|论述|案例","question":"...","answer":"...","knowledge":"对应考点名"}]}';
+    fetch(DS_URL, {method: 'POST', headers: {Authorization: 'Bearer ' + getAPIKey(), 'Content-Type': 'application/json'},
+      body: JSON.stringify({model: 'mimo-v2.5-pro', messages: [{role: 'system', content: sys},
+        {role: 'user', content: '生成一套人大434模拟试卷(题目+完整标准答案)' + (topics.length ? '，命题范围：' + topics.join('、') : '')}],
+        temperature: 0.4, max_tokens: 16000})
+    }).then(function(r){ if (!r.ok) throw Error('HTTP ' + r.status); return r.json(); })
+    .then(function(d){
+      var c = d.choices[0].message.content, m = c.match(/\{[\s\S]*\}/);
+      if (!m) throw Error('AI格式错误');
+      var data = JSON.parse(m[0]);
+      var qs = data.questions || [];
+      if (qs.length < 6) throw Error('题量不足');
+      /* 答案质量兜底: 过短答案追加手册要点 */
+      qs.forEach(function(q){
+        if (q.knowledge && KNOWLEDGE[q.knowledge] && (q.answer || '').length < 150) {
+          var K = KNOWLEDGE[q.knowledge];
+          q.answer = (q.answer || '') + '\n【手册要点补充】' + (K.key || []).slice(0, 5).join('；');
+        }
+      });
+      mockState.questions = qs;
+      mockState.answers = new Array(qs.length).fill('');
+      mockState.startTime = Date.now(); mockState.phase = 'exam'; renderMockExam();
+    }).catch(function(err){
+      /* 回退: 真题拼卷(5简答3论述2案例) */
+      var pool = DATA.slice();
+      for (var i = pool.length - 1; i > 0; i--) { var j = Math.floor(Math.random() * (i + 1)); var t4 = pool[i]; pool[i] = pool[j]; pool[j] = t4; }
+      if (topics.length) {
+        var hit = pool.filter(function(q){ return (q.knowledge || []).some(function(kn){ return topics.some(function(t){ return kn.indexOf(t) >= 0 || t.indexOf(kn) >= 0; }); }); });
+        pool = hit.concat(pool.filter(function(q){ return hit.indexOf(q) < 0; }));
+      }
+      function take(type, n){ return pool.filter(function(q){ return q.type === type; }).slice(0, n); }
+      mockState.questions = take('简答', 5).concat(take('论述', 3)).concat(take('案例', 2));
+      mockState.answers = new Array(mockState.questions.length).fill('');
+      mockState.startTime = Date.now(); mockState.phase = 'exam'; renderMockExam();
+    });
   };
 })();
 (function() {
