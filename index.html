@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<!-- v2.1 · 2026-07-27 02:59 · modular -->
+<!-- v2.1 · 2026-07-27 03:08 · modular -->
 <html lang="zh-CN">
 <head>
 <meta charset="UTF-8">
@@ -8782,6 +8782,19 @@ function doAnswerCheck() {
   if (qa) {
     pointInfo = '\n\n【本题评分要点（知识点覆盖维度必须逐条核对）】\n';
     (qa.core_points||[]).forEach(function(p,i){ pointInfo += (i+1) + '. ' + p + '\n'; });
+    /* 手册锚点: 题目关联知识点的假设/要点/评价一并作为评分依据 */
+    var _q0 = DATA.find(function(x){ return x.id === qid; });
+    if (_q0 && _q0.knowledge) {
+      (Array.isArray(_q0.knowledge) ? _q0.knowledge : [_q0.knowledge]).forEach(function(knName){
+        var _kn2 = KNOWLEDGE[knName];
+        if (!_kn2) return;
+        pointInfo += '\n【背诵手册·' + knName + '(评分对照)】\n';
+        if (_kn2.assumptions && _kn2.assumptions.length) pointInfo += '假设: ' + _kn2.assumptions.slice(0,5).join('；') + '\n';
+        if (_kn2.key && _kn2.key.length) pointInfo += '要点: ' + _kn2.key.slice(0,6).join('；') + '\n';
+        if (_kn2.evaluation_pros && _kn2.evaluation_pros.length) pointInfo += '评价(优): ' + _kn2.evaluation_pros.slice(0,3).join('；') + '\n';
+        if (_kn2.evaluation_cons && _kn2.evaluation_cons.length) pointInfo += '评价(限): ' + _kn2.evaluation_cons.slice(0,3).join('；') + '\n';
+      });
+    }
     if (qa.keywords && qa.keywords.length) pointInfo += '关键术语：' + qa.keywords.join('、') + '\n';
   }
 
@@ -9310,9 +9323,12 @@ function _rvBuildQueue() {
       }
     });
   }
-  /* 4. 到期知识卡 */
+  /* 4. 到期知识卡: 学过的到期卡全部进队; 全新卡(从未学过)每日限10张防洪峰 */
+  var _newCnt = 0;
   Object.keys(KNOWLEDGE).forEach(function(kn){
     if (_cardDue(cardLog[kn])) {
+      var _isNew = !cardLog[kn];
+      if (_isNew) { _newCnt++; if (_newCnt > 10) return; }
       var item = KNOWLEDGE[kn];
       var back = (item.overview||'') + ((item.key&&item.key.length) ? ('\n\n要点：\n· '+item.key.slice(0,4).join('\n· ')) : '');
       q.push({ type:'kn', key:kn, title:'📚 知识卡 · '+(item.module||''), front:kn, back:back||'(暂无内容)' });
@@ -12058,6 +12074,94 @@ function _dailyBarHtml() {
   st.id = 'uxTheme3';
   st.textContent = css;
   document.head.appendChild(st);
+})();
+
+/* ---------- v3.27 文字AI提速: buildAIContext 全量倾倒(28.7万字符)→ RAG精准+全局概览(~3万字符) ---------- */
+(function(){
+  buildAIContext = function(query){
+    var ctx = '';
+    var totalQ = DATA.length, totalKN = Object.keys(KNOWLEDGE).length;
+    ctx += '【数据库声明】你拥有人大434完整数据库: ' + totalQ + '道真题(2011-2026)与标准答案、' + totalKN + '个知识点(四百知行背诵手册)、热点素材、导师研究方向。下方已按提问检索出最相关资料并附全库目录。\n\n';
+
+    /* 学习者画像 */
+    var doneQ = 0, starQ = 0;
+    DATA.forEach(function(q){ if (marks[q.id] && marks[q.id].done) doneQ++; if (marks[q.id] && marks[q.id].star) starQ++; });
+    ctx += '【学习者画像】已完成真题:' + doneQ + '/' + totalQ + ' 重点标记:' + starQ + ' 已浏览知识点:' + Object.keys(knowledgeViews).length + '/' + totalKN + '\n\n';
+
+    /* RAG精准命中: 相关真题全文 + 相关知识点手册全档 */
+    var hits = [];
+    try { hits = ragRetrieve(query || '', 18) || []; } catch(e) {}
+    var qn = 0, kn = 0, an = 0;
+    var qCtx = '', kCtx = '', aCtx = '';
+    hits.forEach(function(d){
+      if (d.type === 'question' && qn < 8 && d.ref) {
+        qCtx += '【' + d.ref.year + '年 第' + d.ref.num + '题 ' + d.ref.type + '】\n题目：' + d.ref.question + '\n';
+        if (d.ref.answer && d.ref.answer.length > 10) qCtx += '标准答案：' + d.ref.answer + '\n';
+        qCtx += '\n'; qn++;
+      } else if (d.type === 'knowledge' && kn < 6 && d.ref) {
+        var K = d.ref;
+        kCtx += '【' + (K.name || d.id) + '】模块:' + (K.module || '') + '\n';
+        if (K.overview) kCtx += '概述:' + K.overview + '\n';
+        if (K.assumptions && K.assumptions.length) kCtx += '假设:' + K.assumptions.join('；') + '\n';
+        if (K.key && K.key.length) kCtx += '要点:' + K.key.join('；') + '\n';
+        if (K.evaluation_pros && K.evaluation_pros.length) kCtx += '贡献:' + K.evaluation_pros.join('；') + '\n';
+        if (K.evaluation_cons && K.evaluation_cons.length) kCtx += '局限:' + K.evaluation_cons.join('；') + '\n';
+        if (K.formula) kCtx += '公式:' + K.formula + '\n';
+        if (K.exam) kCtx += '历年考察:' + K.exam + '\n';
+        if (K.frontier) kCtx += '前沿:' + K.frontier + '\n';
+        kCtx += '\n'; kn++;
+      } else if ((d.type === 'answerbank' || d.type === 'qanalysis') && an < 5 && d.ref) {
+        aCtx += '· ' + (d.ref.title || d.id) + ': ' + ((d.ref.content || d.ref.summary || '') + '').substring(0, 220) + '\n';
+        an++;
+      }
+    });
+    if (qCtx) ctx += '=== 与提问最相关的真题(含标准答案, 优先引用) ===\n\n' + qCtx;
+    if (kCtx) ctx += '=== 相关知识点(背诵手册完整档案) ===\n\n' + kCtx;
+    if (aCtx) ctx += '=== 相关语料 ===\n' + aCtx + '\n';
+
+    /* 全局视野: 77知识点目录(带一句概述) + 全部真题索引一行一题 */
+    ctx += '=== 全库目录(需要其他考点/真题时可点名调用) ===\n';
+    ctx += '【77个知识点】\n';
+    Object.keys(KNOWLEDGE).forEach(function(k){
+      ctx += k + '(' + ((KNOWLEDGE[k].module || '').split('/')[0]) + '); ';
+    });
+    ctx += '\n【真题索引】\n';
+    DATA.forEach(function(q){
+      ctx += q.id + ' ' + q.type + ':' + q.question.substring(0, 26).replace(/\n/g, '') + '… ';
+    });
+    ctx += '\n\n';
+
+    /* 热点: 标题清单 + RAG式简单匹配注入前2张全文 */
+    if (typeof HOT_TOPICS !== 'undefined' && HOT_TOPICS && HOT_TOPICS.categories) {
+      ctx += '=== 热点素材 ===\n清单: ';
+      var hotHit = 0;
+      HOT_TOPICS.categories.forEach(function(cat){
+        (cat.cards || []).forEach(function(c){ ctx += c.topic + '、'; });
+      });
+      ctx += '\n';
+      var qq = (query || '');
+      HOT_TOPICS.categories.forEach(function(cat){
+        (cat.cards || []).forEach(function(c){
+          if (hotHit >= 2) return;
+          var kw = c.topic.replace(/[“”"（(].*$/, '');
+          if (qq && kw.length >= 2 && (qq.indexOf(kw.substring(0, 4)) >= 0 || (c.key_terms || []).some(function(t){ return qq.indexOf(String(t).substring(0, 4)) >= 0; }))) {
+            ctx += '【' + c.topic + '】背景:' + (c.news_brief || '') + ' 预测题:' + (c.predicted_question || '') + ' 框架:' + (c.answer_framework || []).join('→') + '\n';
+            hotHit++;
+          }
+        });
+      });
+      ctx += '\n';
+    }
+
+    /* 答题风格范例: 2道高分标准答案(取最近年份论述) */
+    var ex = DATA.filter(function(q){ return q.type === '论述' && q.answer && q.answer.length > 300; }).slice(-2);
+    if (ex.length) {
+      ctx += '=== 答题风格范例(严格模仿其结构与语言) ===\n\n';
+      ex.forEach(function(q){ ctx += '【' + q.year + '年 第' + q.num + '题】' + q.question.substring(0, 60) + '\n标准答案:\n' + q.answer.substring(0, 900) + '\n\n'; });
+    }
+    ctx += '【风格要点】1.开门见山给定义 2.①②③分点作答 3.理论名中英对照 4.结尾【考点提示】 5.对比题用相同点/不同点框架 6.案例题引用题干信息\n\n';
+    return ctx;
+  };
 })();
 (function() {
   var files = ["per_question.json","module_corpus.json"];
