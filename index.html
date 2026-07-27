@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<!-- v2.1 · 2026-07-27 11:16 · modular -->
+<!-- v2.1 · 2026-07-27 11:27 · modular -->
 <html lang="zh-CN">
 <head>
 <meta charset="UTF-8">
@@ -12660,6 +12660,69 @@ function _dailyBarHtml() {
   + '#ct table [style*="border-radius"]{border-radius:12px !important}';
   var st = document.createElement('style');
   st.id = 'uxTheme9';
+  st.textContent = css;
+  document.head.appendChild(st);
+})();
+
+/* ---------- v3.37 Apple原生质感: 湿边亮环+干净表面+柔影+弹簧动效(visionOS配方) ---------- */
+(function(){
+  var SPRING = 'cubic-bezier(.34,1.56,.64,1)';
+  var css = ''
+  /* ===== 卡片: 干净两段渐变+全周亮环+顶缘湿光+单层柔影(撤四段渐变与重暗面) ===== */
+  + '.pcard,.gc,.today,.banner,.kn-hero{'
+  +   'background:linear-gradient(180deg, rgba(255,255,255,.11), rgba(255,255,255,.045)) !important;'
+  +   'backdrop-filter:url(#liquid-glass-filter) blur(26px) saturate(190%) !important;'
+  +   '-webkit-backdrop-filter:url(#liquid-glass-filter) blur(26px) saturate(190%) !important;'
+  +   'border:1px solid rgba(255,255,255,.24) !important;'
+  +   'box-shadow:'
+  +     'inset 0 0 0 1px rgba(255,255,255,.07),'          /* 全周内亮环(玻璃切边) */
+  +     'inset 0 2px 2px -1px rgba(255,255,255,.50),'     /* 顶缘湿光: 亮/窄/带弧 */
+  +     'inset 0 -12px 24px -14px rgba(255,255,255,.14),' /* 底部液体反光 */
+  +     '0 12px 40px rgba(0,0,0,.16) !important;'         /* 单层柔影 */
+  +   'transition:transform .5s ' + SPRING + ', box-shadow .35s ease, background .3s ease !important}'
+  + '.pcard:hover,.gc:hover{'
+  +   'transform:translateY(-3px) scale(1.004) !important;'
+  +   'background:linear-gradient(180deg, rgba(255,255,255,.14), rgba(255,255,255,.06)) !important;'
+  +   'border-color:rgba(255,255,255,.32) !important;'
+  +   'box-shadow:'
+  +     'inset 0 0 0 1px rgba(255,255,255,.09),'
+  +     'inset 0 2px 2px -1px rgba(255,255,255,.55),'
+  +     'inset 0 -12px 24px -14px rgba(255,255,255,.16),'
+  +     '0 22px 60px rgba(0,0,0,.22) !important}'
+
+  /* hero: 同配方+一层紫韵 */
+  + '.hero{'
+  +   'background:linear-gradient(180deg, rgba(150,148,255,.20), rgba(94,92,230,.08)) !important;'
+  +   'backdrop-filter:url(#liquid-glass-filter) blur(26px) saturate(190%) !important;'
+  +   '-webkit-backdrop-filter:url(#liquid-glass-filter) blur(26px) saturate(190%) !important;'
+  +   'border:1px solid rgba(200,198,255,.30) !important;'
+  +   'box-shadow:inset 0 0 0 1px rgba(255,255,255,.07), inset 0 2px 2px -1px rgba(255,255,255,.50),'
+  +     'inset 0 -12px 24px -14px rgba(200,198,255,.14), 0 12px 40px rgba(30,20,90,.20) !important}'
+
+  /* ===== 背景: 色彩更活(saturate), 玻璃背后有東西可折射 ===== */
+  + 'body::before{filter:blur(11px) brightness(.90) saturate(1.18) !important}'
+  + 'body::after{background:linear-gradient(180deg, rgba(8,10,24,.16), rgba(8,10,24,.30)) !important}'
+
+  /* ===== 按钮: 湿光胶囊+按压回弹 ===== */
+  + '.ai-btn,.btn,.btn-r,.btn-b,.mc-op,.hub-tab,.tviz-chip,.sidebar-btm button{'
+  +   'box-shadow:inset 0 0 0 1px rgba(255,255,255,.06), inset 0 1.5px 1.5px -.5px rgba(255,255,255,.45), 0 4px 14px rgba(0,0,0,.14) !important;'
+  +   'transition:transform .4s ' + SPRING + ', background .25s ease, box-shadow .25s ease !important}'
+  + '.ai-btn:hover,.btn:hover,.mc-op:hover,.hub-tab:hover{transform:translateY(-1px) scale(1.02)}'
+  + '.ai-btn:active,.btn:active,.btn-r:active,.btn-b:active,.mc-op:active,.hub-tab:active,.sidebar-btm button:active{transform:scale(.96) !important}'
+
+  /* ===== 侧栏与顶栏同配方湿光 ===== */
+  + '.sidebar{background:linear-gradient(180deg, rgba(255,255,255,.09), rgba(255,255,255,.03) 45%, rgba(16,18,40,.22)) !important;'
+  +   'box-shadow:inset 0 2px 2px -1px rgba(255,255,255,.35), inset -1px 0 0 rgba(255,255,255,.12), 8px 0 34px rgba(0,0,0,.20) !important}'
+  + '.topbar{background:linear-gradient(180deg, rgba(255,255,255,.13), rgba(255,255,255,.05)) !important;'
+  +   'border:1px solid rgba(255,255,255,.22) !important;'
+  +   'box-shadow:inset 0 0 0 1px rgba(255,255,255,.06), inset 0 2px 2px -1px rgba(255,255,255,.50), 0 10px 34px rgba(0,0,0,.18) !important}'
+
+  /* ===== 排版苹果化: 系统字体栈+标题字重对比+紧字距 ===== */
+  + 'body{font-family:-apple-system,BlinkMacSystemFont,"SF Pro SC","SF Pro Display","PingFang SC","Helvetica Neue",sans-serif !important}'
+  + '.hero h1,.pcard h3,.gc h3,.section-title{font-weight:700 !important;letter-spacing:-.02em !important}'
+  + '.hero p,.pcard,.gc{letter-spacing:.01em}';
+  var st = document.createElement('style');
+  st.id = 'uxTheme10';
   st.textContent = css;
   document.head.appendChild(st);
 })();
