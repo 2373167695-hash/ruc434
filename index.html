@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<!-- v2.1 · 2026-07-27 11:27 · modular -->
+<!-- v2.1 · 2026-07-27 11:54 · modular -->
 <html lang="zh-CN">
 <head>
 <meta charset="UTF-8">
@@ -12170,7 +12170,7 @@ function _dailyBarHtml() {
 (function(){
   var old2 = document.getElementById('uxTheme2');
   if (old2) old2.remove();  /* 撤掉v3.24深色实底方案 */
-  var GLASS = 'url(#liquid-glass-filter) blur(18px) saturate(170%)';
+  var GLASS = 'blur(18px) saturate(170%)';
   var css = ''
   /* ===== 背景: 轻模糊保留氛围, 遮罩大幅调低 ===== */
   + 'body::before{filter:blur(9px) brightness(.88) saturate(1.08) !important;transform:scale(1.05)}'
@@ -12195,7 +12195,7 @@ function _dailyBarHtml() {
   + '.hero svg{transform:scale(.82);transform-origin:left center}'
 
   /* 侧栏与聊天气泡同制式 */
-  + '.sidebar{background:rgba(20,22,44,.42) !important;backdrop-filter:url(#liquid-glass-filter) blur(28px) saturate(160%) !important;-webkit-backdrop-filter:url(#liquid-glass-filter) blur(28px) saturate(160%) !important;border-right:1px solid rgba(255,255,255,.09)}'
+  + '.sidebar{background:rgba(20,22,44,.42) !important;backdrop-filter:blur(28px) saturate(160%) !important;-webkit-backdrop-filter:blur(28px) saturate(160%) !important;border-right:1px solid rgba(255,255,255,.09)}'
   + '.chat-msg.assistant,.ai-msg{background:rgba(255,255,255,.08);backdrop-filter:blur(14px)}'
 
   /* ===== token统一(沿袭) ===== */
@@ -12274,8 +12274,8 @@ function _dailyBarHtml() {
   /* ===== 侧栏本体: 白系微透+纵向光衰+强折射, 右缘折射亮线 ===== */
   + '.sidebar{'
   +   'background:linear-gradient(172deg, rgba(255,255,255,.085) 0%, rgba(255,255,255,.035) 30%, rgba(16,18,40,.30) 100%) !important;'
-  +   'backdrop-filter:url(#liquid-glass-filter) blur(30px) saturate(170%) !important;'
-  +   '-webkit-backdrop-filter:url(#liquid-glass-filter) blur(30px) saturate(170%) !important;'
+  +   'backdrop-filter:blur(30px) saturate(170%) !important;'
+  +   '-webkit-backdrop-filter:blur(30px) saturate(170%) !important;'
   +   'border-right:1px solid rgba(255,255,255,.13) !important;'
   +   'box-shadow:inset 0 1.5px 0 rgba(255,255,255,.18), inset -1px 0 0 rgba(255,255,255,.09), 6px 0 30px rgba(0,0,0,.28) !important}'
   /* 头部: 底缘细光分隔 */
@@ -12319,8 +12319,8 @@ function _dailyBarHtml() {
 
   /* ===== 顶栏液态化 ===== */
   + '.topbar{background:linear-gradient(180deg, rgba(255,255,255,.10), rgba(255,255,255,.04)) !important;'
-  +   'backdrop-filter:url(#liquid-glass-filter) blur(26px) saturate(170%) !important;'
-  +   '-webkit-backdrop-filter:url(#liquid-glass-filter) blur(26px) saturate(170%) !important;'
+  +   'backdrop-filter:blur(26px) saturate(170%) !important;'
+  +   '-webkit-backdrop-filter:blur(26px) saturate(170%) !important;'
   +   'border:1px solid rgba(255,255,255,.15) !important;'
   +   'box-shadow:inset 0 1.5px 0 rgba(255,255,255,.22), 0 8px 26px rgba(0,0,0,.24) !important}'
   + '.tb-center input{background:rgba(255,255,255,.09) !important;border:1px solid rgba(255,255,255,.16) !important;'
@@ -12341,8 +12341,8 @@ function _dailyBarHtml() {
   /* ===== 覆盖层与弹窗玻璃化(AI补要点弹层/登录框/quiz盒等通用) ===== */
   + '#mcAiOv .pcard,.login-box,.quiz-box{'
   +   'background:linear-gradient(135deg, rgba(255,255,255,.12), rgba(24,26,52,.46)) !important;'
-  +   'backdrop-filter:url(#liquid-glass-filter) blur(26px) saturate(165%) !important;'
-  +   '-webkit-backdrop-filter:url(#liquid-glass-filter) blur(26px) saturate(165%) !important;'
+  +   'backdrop-filter:blur(26px) saturate(165%) !important;'
+  +   '-webkit-backdrop-filter:blur(26px) saturate(165%) !important;'
   +   'border:1px solid rgba(255,255,255,.18) !important;border-radius:18px !important;'
   +   'box-shadow:inset 0 1.5px 0 rgba(255,255,255,.24), inset -4px -8px 18px rgba(8,10,26,.22), 0 24px 60px rgba(0,0,0,.45) !important}'
 
@@ -12671,8 +12671,8 @@ function _dailyBarHtml() {
   /* ===== 卡片: 干净两段渐变+全周亮环+顶缘湿光+单层柔影(撤四段渐变与重暗面) ===== */
   + '.pcard,.gc,.today,.banner,.kn-hero{'
   +   'background:linear-gradient(180deg, rgba(255,255,255,.11), rgba(255,255,255,.045)) !important;'
-  +   'backdrop-filter:url(#liquid-glass-filter) blur(26px) saturate(190%) !important;'
-  +   '-webkit-backdrop-filter:url(#liquid-glass-filter) blur(26px) saturate(190%) !important;'
+  +   'backdrop-filter:blur(26px) saturate(190%) !important;'
+  +   '-webkit-backdrop-filter:blur(26px) saturate(190%) !important;'
   +   'border:1px solid rgba(255,255,255,.24) !important;'
   +   'box-shadow:'
   +     'inset 0 0 0 1px rgba(255,255,255,.07),'          /* 全周内亮环(玻璃切边) */
@@ -12693,8 +12693,8 @@ function _dailyBarHtml() {
   /* hero: 同配方+一层紫韵 */
   + '.hero{'
   +   'background:linear-gradient(180deg, rgba(150,148,255,.20), rgba(94,92,230,.08)) !important;'
-  +   'backdrop-filter:url(#liquid-glass-filter) blur(26px) saturate(190%) !important;'
-  +   '-webkit-backdrop-filter:url(#liquid-glass-filter) blur(26px) saturate(190%) !important;'
+  +   'backdrop-filter:blur(26px) saturate(190%) !important;'
+  +   '-webkit-backdrop-filter:blur(26px) saturate(190%) !important;'
   +   'border:1px solid rgba(200,198,255,.30) !important;'
   +   'box-shadow:inset 0 0 0 1px rgba(255,255,255,.07), inset 0 2px 2px -1px rgba(255,255,255,.50),'
   +     'inset 0 -12px 24px -14px rgba(200,198,255,.14), 0 12px 40px rgba(30,20,90,.20) !important}'
@@ -12723,6 +12723,82 @@ function _dailyBarHtml() {
   + '.hero p,.pcard,.gc{letter-spacing:.01em}';
   var st = document.createElement('style');
   st.id = 'uxTheme10';
+  st.textContent = css;
+  document.head.appendChild(st);
+})();
+
+/* ---------- v3.38 计时器玻璃配方全站移植: 透而不白(暗膜可读)+135°棱边描边+背景清晰反差 ---------- */
+(function(){
+  var CARDS = '.pcard,.gc,.today,.banner,.kn-hero';
+  /* 光学层(计时器 --glass-optics 原方): 顶部斜射高光+底缘透光+斜角光泽+白膜+暗色可读膜 */
+  var OPTICS = 'radial-gradient(120% 55% at 18% -8%, rgba(255,255,255,.22), transparent 50%),'
+    + 'radial-gradient(90% 40% at 50% 110%, rgba(255,255,255,.12), transparent 55%),'
+    + 'linear-gradient(128deg, rgba(255,255,255,.09) 0%, rgba(255,255,255,.02) 30%, transparent 55%, rgba(255,255,255,.05) 100%),'
+    + 'linear-gradient(180deg, rgba(255,255,255,.06), rgba(255,255,255,.02)),'
+    + 'linear-gradient(rgba(8,10,24,.38), rgba(8,10,24,.38))';
+  var OPTICS_HERO = 'radial-gradient(120% 55% at 18% -8%, rgba(200,198,255,.26), transparent 50%),'
+    + 'radial-gradient(90% 40% at 50% 110%, rgba(150,148,255,.14), transparent 55%),'
+    + 'linear-gradient(128deg, rgba(255,255,255,.09) 0%, rgba(255,255,255,.02) 30%, transparent 55%, rgba(255,255,255,.05) 100%),'
+    + 'linear-gradient(180deg, rgba(120,118,240,.10), rgba(94,92,230,.04)),'
+    + 'linear-gradient(rgba(14,12,40,.40), rgba(14,12,40,.40))';
+  /* 内光(三边内描光+右下厚度暗面) + 外影(近影+大浮影) */
+  var INSET = 'inset 0 1.5px 0 rgba(255,255,255,.35), inset 1px 0 0 rgba(255,255,255,.12), inset 0 -1px 0 rgba(255,255,255,.14), inset -6px -10px 24px rgba(0,0,0,.30)';
+  var OUTER = '0 2px 6px rgba(0,0,0,.30), 0 40px 80px rgba(0,0,0,.44)';
+  var OUTER_H = '0 3px 8px rgba(0,0,0,.32), 0 52px 100px rgba(0,0,0,.50)';
+  var RIM = 'linear-gradient(135deg, rgba(255,255,255,.60) 0%, rgba(255,255,255,.14) 30%, rgba(255,255,255,.04) 55%, rgba(255,255,255,.32) 100%)';
+
+  var css = ''
+  /* ===== 背景: 清晰锐利(玻璃内外反差是玻璃感来源) ===== */
+  + 'body::before{filter:blur(2px) brightness(.94) saturate(1.08) !important;transform:none !important}'
+  + 'body::after{background:rgba(0,0,0,.20) !important}'
+
+  /* ===== 卡片: 光学层background版(透而不白, 暗膜保证可读) ===== */
+  + CARDS + '{'
+  +   'background:' + OPTICS + ' !important;'
+  +   'backdrop-filter:blur(13px) saturate(165%) !important;'
+  +   '-webkit-backdrop-filter:blur(13px) saturate(165%) !important;'
+  +   'border:none !important;'
+  +   'box-shadow:' + INSET + ', ' + OUTER + ' !important;'
+  +   'transition:box-shadow .35s ease, transform .5s cubic-bezier(.34,1.56,.64,1) !important}'
+  + '.pcard:hover,.gc:hover{'
+  +   'background:' + OPTICS + ' !important;'
+  +   'transform:translateY(-2px);'
+  +   'box-shadow:' + INSET + ', ' + OUTER_H + ', 0 0 0 2px rgba(94,92,230,.10) !important}'
+
+  /* ===== 135°棱边描边(mask挖空, 打磨玻璃切边) ===== */
+  + '.pcard::before,.gc::before,.today::before,.banner::before,.kn-hero::before,.hero::before{'
+  +   'content:"" !important;position:absolute !important;top:0 !important;left:0 !important;right:0 !important;bottom:0 !important;'
+  +   'height:auto !important;width:auto !important;border-radius:inherit !important;padding:1.2px !important;'
+  +   'background:' + RIM + ' !important;'
+  +   '-webkit-mask:linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);'
+  +   '-webkit-mask-composite:xor;mask-composite:exclude;'
+  +   'pointer-events:none;z-index:2}'
+
+  /* ===== hero: 紫韵光学层 ===== */
+  + '.hero{background:' + OPTICS_HERO + ' !important;'
+  +   'backdrop-filter:blur(13px) saturate(165%) !important;'
+  +   '-webkit-backdrop-filter:blur(13px) saturate(165%) !important;'
+  +   'border:none !important;'
+  +   'box-shadow:' + INSET + ', 0 2px 6px rgba(0,0,0,.30), 0 40px 80px rgba(20,12,70,.46) !important}'
+
+  /* ===== 侧栏/顶栏: 同族光学(暗膜略重) ===== */
+  + '.sidebar{background:linear-gradient(180deg, rgba(255,255,255,.05), rgba(255,255,255,.015) 40%, transparent),'
+  +   'linear-gradient(rgba(8,10,24,.44), rgba(8,10,24,.44)) !important;'
+  +   'backdrop-filter:blur(20px) saturate(160%) !important;'
+  +   '-webkit-backdrop-filter:blur(20px) saturate(160%) !important;'
+  +   'box-shadow:inset 0 1.5px 0 rgba(255,255,255,.28), inset -1px 0 0 rgba(255,255,255,.10), 8px 0 40px rgba(0,0,0,.30) !important}'
+  + '.topbar{background:radial-gradient(120% 100% at 20% -20%, rgba(255,255,255,.16), transparent 55%),'
+  +   'linear-gradient(rgba(8,10,24,.34), rgba(8,10,24,.34)) !important;'
+  +   'border:1px solid rgba(255,255,255,.14) !important;'
+  +   'box-shadow:inset 0 1.5px 0 rgba(255,255,255,.30), 0 10px 34px rgba(0,0,0,.26) !important}'
+
+  /* ===== 深色内格(计时器.stat风格): 统计块/内部小卡去白换深 ===== */
+  + '#ct [style*="background:rgba(255,255,255,.0"] [style*="text-align:center"],.q-block,.pcard-section{'
+  +   'background:rgba(10,12,28,.32) !important;border:1px solid rgba(255,255,255,.07)}'
+  /* 表单深格同族 */
+  + '#ct input:not([type="checkbox"]):not([type="radio"]),#ct textarea,#ct select{background:rgba(10,12,28,.34) !important;border:1px solid rgba(255,255,255,.10) !important}';
+  var st = document.createElement('style');
+  st.id = 'uxTheme11';
   st.textContent = css;
   document.head.appendChild(st);
 })();
