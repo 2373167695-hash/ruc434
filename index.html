@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<!-- v2.1 · 2026-07-27 13:02 · modular -->
+<!-- v2.1 · 2026-07-27 13:06 · modular -->
 <html lang="zh-CN">
 <head>
 <meta charset="UTF-8">
@@ -13029,12 +13029,17 @@ function _dailyBarHtml() {
       var rect = img.getBoundingClientRect();
       if (!rect.width) continue;
       if (rect.bottom < -400 || rect.top > window.innerHeight + 400) { img.style.filter = 'none'; continue; }
-      var W = Math.max(2, Math.round(rect.width));
-      var H = Math.max(2, Math.round(rect.height));
-      var id = ensureFilter(img, W, H);
       alignBackground(img, rect);
-      /* 高透: blur2.5 提亮1.04, 不调暗 */
-      img.style.filter = 'url(#' + id + ') blur(2.5px) saturate(1.12)';
+      if (cards[i].classList.contains('hero')) {
+        /* 仅hero保留SVG透镜(CPU滤镜太贵, 只给一张大卡) */
+        var W = Math.max(2, Math.round(rect.width));
+        var H = Math.max(2, Math.round(rect.height));
+        var id = ensureFilter(img, W, H);
+        img.style.filter = 'url(#' + id + ') blur(2.5px) saturate(1.12)';
+      } else {
+        /* 其余卡: 纯CSS blur(GPU硬件加速), 保留卡内糊/卡外清反差 */
+        img.style.filter = 'blur(14px) saturate(1.12)';
+      }
     }
   }
   /* 滚动中零JS(小层随卡片滚动, 合成器自理); 停止160ms后一次性重对齐 */
