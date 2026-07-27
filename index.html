@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<!-- v2.1 · 2026-07-27 03:35 · modular -->
+<!-- v2.1 · 2026-07-27 07:08 · modular -->
 <html lang="zh-CN">
 <head>
 <meta charset="UTF-8">
@@ -12162,6 +12162,55 @@ function _dailyBarHtml() {
     ctx += '【风格要点】1.开门见山给定义 2.①②③分点作答 3.理论名中英对照 4.结尾【考点提示】 5.对比题用相同点/不同点框架 6.案例题引用题干信息\n\n';
     return ctx;
   };
+})();
+
+/* ---------- v3.28 液态玻璃复兴: 背景透回来, 卡片轻薄透光+原生liquid-glass滤镜+边缘高光 ---------- */
+(function(){
+  var old2 = document.getElementById('uxTheme2');
+  if (old2) old2.remove();  /* 撤掉v3.24深色实底方案 */
+  var GLASS = 'url(#liquid-glass-filter) blur(18px) saturate(170%)';
+  var css = ''
+  /* ===== 背景: 轻模糊保留氛围, 遮罩大幅调低 ===== */
+  + 'body::before{filter:blur(9px) brightness(.88) saturate(1.08) !important;transform:scale(1.05)}'
+  + 'body::after{background:linear-gradient(180deg,rgba(8,10,24,.20),rgba(8,10,24,.34)) !important}'
+  + ':root{--t:#f4f5fa;--ts:rgba(236,239,250,.66)}'
+
+  /* ===== 液态玻璃卡片: 白系微透 + 原生SVG滤镜 + 双缘高光 ===== */
+  + '.pcard,.gc,.today,.banner,.kn-hero{'
+  +   'background:rgba(255,255,255,.07) !important;'
+  +   'backdrop-filter:' + GLASS + ' !important;-webkit-backdrop-filter:' + GLASS + ' !important;'
+  +   'border:1px solid rgba(255,255,255,.15) !important;border-radius:16px !important;'
+  +   'box-shadow:inset 0 1px 0 rgba(255,255,255,.20), inset 0 -1px 0 rgba(255,255,255,.05), 0 8px 30px rgba(0,0,0,.22) !important}'
+  + '.pcard:hover,.gc:hover{background:rgba(255,255,255,.10) !important;border-color:rgba(190,190,255,.30) !important}'
+
+  /* hero: 紫光液态玻璃 */
+  + '.hero{background:linear-gradient(135deg,rgba(94,92,230,.30),rgba(255,255,255,.05)) !important;'
+  +   'backdrop-filter:' + GLASS + ' !important;-webkit-backdrop-filter:' + GLASS + ' !important;'
+  +   'border:1px solid rgba(150,148,255,.30) !important;border-radius:16px !important;'
+  +   'box-shadow:inset 0 1px 0 rgba(255,255,255,.24), 0 8px 30px rgba(0,0,0,.22) !important;'
+  +   'padding:20px 26px !important}'
+  + '.hero h1{font-size:21px !important;letter-spacing:0}'
+  + '.hero svg{transform:scale(.82);transform-origin:left center}'
+
+  /* 侧栏与聊天气泡同制式 */
+  + '.sidebar{background:rgba(20,22,44,.42) !important;backdrop-filter:url(#liquid-glass-filter) blur(28px) saturate(160%) !important;-webkit-backdrop-filter:url(#liquid-glass-filter) blur(28px) saturate(160%) !important;border-right:1px solid rgba(255,255,255,.09)}'
+  + '.chat-msg.assistant,.ai-msg{background:rgba(255,255,255,.08);backdrop-filter:blur(14px)}'
+
+  /* ===== token统一(沿袭) ===== */
+  + '.pcard,.gc,.kn-body,.chat-msg,.ai-msg{line-height:1.75}'
+  + '.mc-op,.hub-tab,.tviz-chip,.pcard-ref{font-size:12px !important;padding:6px 14px !important;border-radius:10px !important;line-height:1.4}'
+  + '.mc-op:hover,.hub-tab:hover,.tviz-chip:hover{border-color:var(--pu);color:var(--t)}'
+  + '.rv-kbd-hint,.vc-status,.call-sub,.hub-tabs .ht-label{font-size:12px !important}'
+  + '.ai-btn{border-radius:10px !important}'
+  /* 弹层归位/滚动/焦点(沿袭) */
+  + '#bkRemind{left:16px !important;right:auto !important;bottom:16px !important}'
+  + '.mc-toast{bottom:84px}'
+  + '.content::-webkit-scrollbar{width:8px}.content::-webkit-scrollbar-thumb{background:rgba(255,255,255,.16);border-radius:4px}'
+  + 'button:focus-visible,[contenteditable]:focus-visible,input:focus-visible,textarea:focus-visible{outline:2px solid rgba(94,92,230,.55);outline-offset:1px}';
+  var st = document.createElement('style');
+  st.id = 'uxTheme4';
+  st.textContent = css;
+  document.head.appendChild(st);
 })();
 (function() {
   var files = ["per_question.json","module_corpus.json"];
