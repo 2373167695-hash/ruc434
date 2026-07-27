@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<!-- v2.1 · 2026-07-27 10:57 · modular -->
+<!-- v2.1 · 2026-07-27 11:16 · modular -->
 <html lang="zh-CN">
 <head>
 <meta charset="UTF-8">
@@ -12630,6 +12630,36 @@ function _dailyBarHtml() {
   + '#ct table [style*="border-radius"]{border-radius:10px !important}';
   var st = document.createElement('style');
   st.id = 'uxTheme8';
+  st.textContent = css;
+  document.head.appendChild(st);
+})();
+
+/* ---------- v3.36 R角加码: 卡片28/hero弹层32/内联全频段升档(视觉可感知的圆润) ---------- */
+(function(){
+  var css = ''
+  /* ===== 阶梯加码 ===== */
+  + '.pcard,.gc,.today,.banner,.kn-hero{border-radius:28px !important}'
+  + '.hero{border-radius:32px !important}'
+  + '#mcAiOv .pcard,.login-box,.quiz-box{border-radius:32px !important}'
+  + '.chat-msg,.ai-msg,.chat-msg.assistant,.chat-msg.user{border-radius:22px !important}'
+  + '#ct input:not([type="checkbox"]):not([type="radio"]),#ct textarea,#ct select{border-radius:18px !important}'
+  + '.ni{border-radius:14px !important}'
+  + '.sidebar{border-top-right-radius:28px;border-bottom-right-radius:28px}'
+  + '.topbar{border-radius:999px !important}'
+
+  /* ===== 内联全频段升档(上版只覆盖≤12px, 这次14-20px也升) ===== */
+  + '#ct [style*="border-radius:14px"],#ct [style*="border-radius:15px"],#ct [style*="border-radius:16px"]{border-radius:20px !important}'
+  + '#ct [style*="border-radius:18px"],#ct [style*="border-radius:20px"]{border-radius:24px !important}'
+  /* 上版的低频段再抬一档 */
+  + '#ct [style*="border-radius:3px"],#ct [style*="border-radius:4px"],#ct [style*="border-radius:5px"],'
+  + '#ct [style*="border-radius:6px"],#ct [style*="border-radius:7px"],#ct [style*="border-radius:8px"]{border-radius:16px !important}'
+  + '#ct [style*="border-radius:10px"],#ct [style*="border-radius:12px"]{border-radius:18px !important}'
+  /* 常见内部块类 */
+  + '.q-block,.pcard-section,.q-answer-filled,.kn-body>div,details>div{border-radius:20px !important}'
+  /* 表格徽章保持克制 */
+  + '#ct table [style*="border-radius"]{border-radius:12px !important}';
+  var st = document.createElement('style');
+  st.id = 'uxTheme9';
   st.textContent = css;
   document.head.appendChild(st);
 })();
