@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<!-- v2.1 · 2026-07-27 07:18 · modular -->
+<!-- v2.1 · 2026-07-27 07:32 · modular -->
 <html lang="zh-CN">
 <head>
 <meta charset="UTF-8">
@@ -7181,7 +7181,7 @@ function startMockExam() {
 
 function renderMockExam() {
   var qs = mockState.questions, m = Math.floor((Date.now()-mockState.startTime)/60000);
-  var h = '<div style="position:sticky;top:16px;z-index:10;background:rgba(21,24,45,.88);border:1px solid rgba(255,255,255,.10);backdrop-filter:blur(20px);border-radius:16px;padding:12px 20px;margin-bottom:20px;display:flex;justify-content:space-between;align-items:center;border:.5px solid rgba(255,255,255,.4)">' +
+  var h = '<div style="position:sticky;top:16px;z-index:10;background:rgba(255,255,255,.09);border:1px solid rgba(255,255,255,.18);box-shadow:inset 0 1px 0 rgba(255,255,255,.20), 0 6px 18px rgba(0,0,0,.28);backdrop-filter:blur(20px);border-radius:16px;padding:12px 20px;margin-bottom:20px;display:flex;justify-content:space-between;align-items:center;border:.5px solid rgba(255,255,255,.4)">' +
     '<div><strong>⏱ <span id="mockTimer">' + m + '分钟</span></strong> | ' + qs.length + '题 | 总分150</div>' +
     '<div style="display:flex;gap:8px"><button class="ai-btn ai-btn-sm" onclick="mockExportBlank()" style="padding:8px 14px;font-size:12px">📄 导出试卷</button>' +
     '<button class="btn btn-r" onclick="submitMockExam()" style="padding:8px 20px;font-size:13px">提交批改</button></div></div>';
@@ -9979,7 +9979,7 @@ function _dailyBarHtml() {
     + '.mc-maptoggle{font-size:10px;color:var(--ts);cursor:pointer;flex:0 0 auto;user-select:none}'
     + '.mc-mapops{display:none;position:absolute;left:0;top:100%;margin-top:3px;gap:3px;z-index:40}'
     + '.mc-mapnode:focus-within .mc-mapops{display:flex}'
-    + '.mc-mapop{padding:2px 8px;font-size:11px;background:rgba(20,20,40,.95);border:1px solid var(--bdr);border-radius:5px;color:var(--t);cursor:pointer;white-space:nowrap}'
+    + '.mc-mapop{padding:2px 8px;font-size:11px;background:rgba(255,255,255,.10);backdrop-filter:blur(22px) saturate(165%);-webkit-backdrop-filter:blur(22px) saturate(165%);box-shadow:inset 0 1px 0 rgba(255,255,255,.20), 0 4px 12px rgba(0,0,0,.30);border:1px solid rgba(255,255,255,.22);border-radius:5px;color:var(--t);cursor:pointer;white-space:nowrap}'
     + '.mc-mapop:hover{border-color:var(--pu)}';
   var st = document.createElement('style'); st.textContent = css; document.head.appendChild(st);
 
@@ -10103,7 +10103,7 @@ function _dailyBarHtml() {
 (function(){
   var css = '.mc-hl{background:rgba(251,146,60,.35);border-radius:3px}'
     + '.mc-toolbar2{display:flex;gap:6px;flex-wrap:wrap;align-items:center;margin-bottom:10px}'
-    + '.mc-toast{position:fixed;left:50%;bottom:60px;transform:translateX(-50%);background:rgba(20,20,40,.95);border:1px solid var(--pu);color:var(--t);padding:8px 18px;border-radius:20px;font-size:13px;z-index:1000;transition:opacity .4s}'
+    + '.mc-toast{position:fixed;left:50%;bottom:60px;transform:translateX(-50%);background:rgba(80,78,200,.30);backdrop-filter:blur(22px) saturate(165%);-webkit-backdrop-filter:blur(22px) saturate(165%);box-shadow:inset 0 1px 0 rgba(255,255,255,.24), 0 8px 24px rgba(0,0,0,.32);border:1px solid rgba(160,158,255,.45);color:var(--t);padding:8px 18px;border-radius:20px;font-size:13px;z-index:1000;transition:opacity .4s}'
     + '#mcSearch{flex:1;min-width:140px;background:rgba(255,255,255,.04);border:1px solid var(--bdr);border-radius:16px;padding:7px 14px;font-size:12px;color:var(--t);outline:none;font-family:inherit}';
   var st = document.createElement('style'); st.textContent = css; document.head.appendChild(st);
 
@@ -10373,7 +10373,7 @@ function _dailyBarHtml() {
     /* 全屏模式 */
     + '.mc-map.mc-map-fs{position:fixed !important;inset:0 !important;left:0 !important;transform:none !important;width:auto !important;max-height:none !important;height:auto !important;z-index:998;border-radius:0;background:#0a0a1a}'
     + '.mc-map-fsbtn{position:sticky;top:10px;left:10px;z-index:60;display:inline-block;height:0;overflow:visible}'
-    + '.mc-map-fsbtn button{padding:6px 14px;font-size:12px;border-radius:14px;border:1px solid var(--bdr);background:rgba(20,20,40,.92);color:var(--t);cursor:pointer}'
+    + '.mc-map-fsbtn button{padding:6px 14px;font-size:12px;border-radius:14px;border:1px solid var(--bdr);background:rgba(255,255,255,.10);backdrop-filter:blur(22px) saturate(165%);-webkit-backdrop-filter:blur(22px) saturate(165%);box-shadow:inset 0 1px 0 rgba(255,255,255,.20), 0 4px 12px rgba(0,0,0,.30);color:var(--t);cursor:pointer}'
     + '.mc-map-fsbtn button:hover{border-color:var(--pu)}';
   var st = document.createElement('style'); st.textContent = css; document.head.appendChild(st);
 
@@ -11046,7 +11046,7 @@ function _dailyBarHtml() {
       if (days > 7) {
         var bar = document.createElement('div');
         bar.id = 'bkRemind';
-        bar.style.cssText = 'position:fixed;bottom:16px;right:16px;z-index:900;background:rgba(20,20,40,.96);border:1px solid rgba(251,146,60,.5);border-radius:12px;padding:12px 16px;font-size:12px;color:var(--t);max-width:280px;box-shadow:0 8px 30px rgba(0,0,0,.4)';
+        bar.style.cssText = 'position:fixed;bottom:16px;right:16px;z-index:900;background:linear-gradient(140deg, rgba(255,150,90,.20), rgba(30,28,60,.40));backdrop-filter:blur(22px) saturate(165%);-webkit-backdrop-filter:blur(22px) saturate(165%);box-shadow:inset 0 1.5px 0 rgba(255,255,255,.22), 0 10px 30px rgba(0,0,0,.35);border:1px solid rgba(255,160,110,.42);border-radius:12px;padding:12px 16px;font-size:12px;color:var(--t);max-width:280px;box-shadow:0 8px 30px rgba(0,0,0,.4)';
         bar.innerHTML = '💾 <b>' + (last ? '距上次备份已超过7天' : '你还没备份过学习数据') + '</b><div style="color:var(--ts);margin:6px 0">背诵进度/错题/语料都只存在本浏览器,清缓存会全部丢失</div>'
           + '<button class="ai-btn ai-btn-sm" style="padding:5px 14px;font-size:12px" onclick="backupExport();document.getElementById(\'bkRemind\').remove()">立即导出备份</button> '
           + '<span style="cursor:pointer;color:var(--ts);font-size:11px;margin-left:8px" onclick="document.getElementById(\'bkRemind\').remove()">稍后</span>';
@@ -11307,7 +11307,7 @@ function _dailyBarHtml() {
 
 /* ---------- v3.18 电话式通话模式: VAD自动检测说话/停顿, 免按键全双工循环(全链路MiMo) ---------- */
 (function(){
-  var css = '.call-panel{position:fixed;right:20px;bottom:20px;z-index:950;background:rgba(16,16,36,.97);border:1px solid rgba(94,92,230,.5);border-radius:18px;padding:16px 18px;width:230px;box-shadow:0 12px 40px rgba(0,0,0,.5);text-align:center}'
+  var css = '.call-panel{position:fixed;right:20px;bottom:20px;z-index:950;background:linear-gradient(150deg, rgba(255,255,255,.12), rgba(40,38,90,.42));backdrop-filter:blur(22px) saturate(165%);-webkit-backdrop-filter:blur(22px) saturate(165%);border:1px solid rgba(160,158,255,.40);box-shadow:inset 0 1.5px 0 rgba(255,255,255,.25), 0 16px 44px rgba(0,0,0,.42);border-radius:18px;padding:16px 18px;width:230px;box-shadow:0 12px 40px rgba(0,0,0,.5);text-align:center}'
     + '.call-orb{width:74px;height:74px;border-radius:50%;margin:6px auto 10px;display:flex;align-items:center;justify-content:center;font-size:30px;transition:all .3s;border:2px solid transparent}'
     + '.call-orb.listening{background:rgba(74,222,128,.15);border-color:#4ade80;animation:cpulse 2s infinite}'
     + '.call-orb.recording{background:rgba(96,165,250,.2);border-color:#60a5fa;animation:cpulse .8s infinite}'
@@ -12306,6 +12306,76 @@ function _dailyBarHtml() {
   st.id = 'uxTheme6';
   st.textContent = css;
   document.head.appendChild(st);
+})();
+
+/* ---------- v3.31 侧栏交互修复 + 全站液态化总扫(顶栏/按钮/弹层/覆盖层全部归队) ---------- */
+(function(){
+  /* ===== 交互修1: 汉堡按钮永远在最上层可点(不再被backdrop盖住) ===== */
+  var css = ''
+  + '.topbar,.tb{z-index:200 !important}'
+  + '.tb-left [onclick*="toggleSidebar"],.topbar [onclick*="toggleSidebar"]{position:relative;z-index:201}'
+
+  /* ===== 顶栏液态化 ===== */
+  + '.topbar{background:linear-gradient(180deg, rgba(255,255,255,.10), rgba(255,255,255,.04)) !important;'
+  +   'backdrop-filter:url(#liquid-glass-filter) blur(26px) saturate(170%) !important;'
+  +   '-webkit-backdrop-filter:url(#liquid-glass-filter) blur(26px) saturate(170%) !important;'
+  +   'border:1px solid rgba(255,255,255,.15) !important;'
+  +   'box-shadow:inset 0 1.5px 0 rgba(255,255,255,.22), 0 8px 26px rgba(0,0,0,.24) !important}'
+  + '.tb-center input{background:rgba(255,255,255,.09) !important;border:1px solid rgba(255,255,255,.16) !important;'
+  +   'box-shadow:inset 0 1px 0 rgba(255,255,255,.14), inset 0 2px 6px rgba(0,0,0,.12);color:var(--t) !important}'
+
+  /* ===== 纯色按钮玻璃化(btn-r红/btn-b蓝/banner按钮) ===== */
+  + '.btn-r{background:linear-gradient(128deg, rgba(255,95,86,.62), rgba(220,50,42,.38)) !important;'
+  +   'border:1px solid rgba(255,140,130,.5) !important;'
+  +   'box-shadow:inset 0 1.5px 0 rgba(255,255,255,.32), inset -2px -4px 10px rgba(120,10,0,.25), 0 4px 14px rgba(255,70,60,.25) !important}'
+  + '.btn-b{background:linear-gradient(128deg, rgba(60,150,255,.60), rgba(0,100,220,.36)) !important;'
+  +   'border:1px solid rgba(120,180,255,.5) !important;'
+  +   'box-shadow:inset 0 1.5px 0 rgba(255,255,255,.32), inset -2px -4px 10px rgba(0,40,120,.25), 0 4px 14px rgba(0,120,255,.22) !important}'
+  + '.ai-btn{background:linear-gradient(128deg, rgba(130,128,255,.36), rgba(94,92,230,.18)) !important;'
+  +   'border:1px solid rgba(160,158,255,.38) !important;'
+  +   'box-shadow:inset 0 1px 0 rgba(255,255,255,.26), inset -2px -3px 8px rgba(20,15,70,.18), 0 3px 10px rgba(50,40,160,.22) !important}'
+  + '.ai-btn:hover{background:linear-gradient(128deg, rgba(140,138,255,.46), rgba(94,92,230,.26)) !important}'
+
+  /* ===== 覆盖层与弹窗玻璃化(AI补要点弹层/登录框/quiz盒等通用) ===== */
+  + '#mcAiOv .pcard,.login-box,.quiz-box{'
+  +   'background:linear-gradient(135deg, rgba(255,255,255,.12), rgba(24,26,52,.46)) !important;'
+  +   'backdrop-filter:url(#liquid-glass-filter) blur(26px) saturate(165%) !important;'
+  +   '-webkit-backdrop-filter:url(#liquid-glass-filter) blur(26px) saturate(165%) !important;'
+  +   'border:1px solid rgba(255,255,255,.18) !important;border-radius:18px !important;'
+  +   'box-shadow:inset 0 1.5px 0 rgba(255,255,255,.24), inset -4px -8px 18px rgba(8,10,26,.22), 0 24px 60px rgba(0,0,0,.45) !important}'
+
+  /* ===== AI聊天气泡玻璃(assistant白玻璃/user紫玻璃) ===== */
+  + '.chat-msg.assistant,.ai-msg-bot,.ai-msg.ai-msg-bot{background:rgba(255,255,255,.09) !important;backdrop-filter:blur(16px) saturate(150%);'
+  +   'border:1px solid rgba(255,255,255,.13);box-shadow:inset 0 1px 0 rgba(255,255,255,.14)}'
+  + '.chat-msg.user,.ai-msg-user,.ai-msg.ai-msg-user{background:linear-gradient(128deg, rgba(130,128,255,.34), rgba(94,92,230,.16)) !important;'
+  +   'border:1px solid rgba(160,158,255,.30);box-shadow:inset 0 1px 0 rgba(255,255,255,.20)}'
+
+  /* ===== 复习卡遮挡条/mask与今日主线小卡玻璃 ===== */
+  + '.mask-line{background:rgba(255,255,255,.10);border:1px solid rgba(255,255,255,.14);border-radius:8px}'
+  + '.daily-bar>div,.daily-step{box-shadow:inset 0 1px 0 rgba(255,255,255,.14)}'
+
+  /* 汉堡与顶栏图标按钮微玻璃 */
+  + '.topbar button,.tb-left button{background:rgba(255,255,255,.08);border:1px solid rgba(255,255,255,.14);border-radius:10px;'
+  +   'box-shadow:inset 0 1px 0 rgba(255,255,255,.16)}';
+  var st = document.createElement('style');
+  st.id = 'uxTheme7';
+  st.textContent = css;
+  document.head.appendChild(st);
+
+  /* ===== 交互修2: Esc关闭侧栏 ===== */
+  document.addEventListener('keydown', function(ev){
+    if (ev.key !== 'Escape') return;
+    var sb = document.querySelector('.sidebar');
+    if (sb && sb.classList.contains('open')) { ev.preventDefault(); closeSidebar(); }
+  });
+
+  /* ===== 交互修3: 侧栏点菜单跳转后自动收起(抽屉语义) ===== */
+  var _oNav = navigate;
+  navigate = function(p, topicName, skipHistory){
+    var r = _oNav.apply(this, arguments);
+    try { closeSidebar(); } catch(e) {}
+    return r;
+  };
 })();
 (function() {
   var files = ["per_question.json","module_corpus.json"];
