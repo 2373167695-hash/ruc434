@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<!-- v2.1 · 2026-07-27 12:20 · modular -->
+<!-- v2.1 · 2026-07-27 12:55 · modular -->
 <html lang="zh-CN">
 <head>
 <meta charset="UTF-8">
@@ -12864,6 +12864,224 @@ function _dailyBarHtml() {
   new MutationObserver(req).observe(ct || document.body, { childList: true, subtree: true });
   sync();
   setTimeout(sync, 300); /* 首屏图片/字体布局稳定后补一拍 */
+})();
+
+/* ---------- v3.40 透镜折射引擎(计时器原版SDF): 高透明+边缘弯曲折射, 不调暗背景与副本 ---------- */
+(function(){
+  'use strict';
+  var SVG_NS = 'http://www.w3.org/2000/svg';
+  var XLINK_NS = 'http://www.w3.org/1999/xlink';
+  var SEL = '.pcard,.gc,.today,.banner,.kn-hero,.hero';
+
+  /* 停用v3.39的blur副本层(接管) */
+  var kill = document.createElement('style');
+  kill.textContent = '.glass-bk{display:none !important}';
+  document.head.appendChild(kill);
+
+  /* 高透光学膜: 暗膜.38→.12, 白膜减半, 高光保留 */
+  var OPTICS = 'radial-gradient(120% 55% at 18% -8%, rgba(255,255,255,.18), transparent 50%),'
+    + 'radial-gradient(90% 40% at 50% 110%, rgba(255,255,255,.09), transparent 55%),'
+    + 'linear-gradient(128deg, rgba(255,255,255,.06) 0%, rgba(255,255,255,.015) 30%, transparent 55%, rgba(255,255,255,.035) 100%),'
+    + 'linear-gradient(rgba(8,10,24,.16), rgba(8,10,24,.16))';
+  var OPTICS_HERO = 'radial-gradient(120% 55% at 18% -8%, rgba(200,198,255,.20), transparent 50%),'
+    + 'radial-gradient(90% 40% at 50% 110%, rgba(150,148,255,.10), transparent 55%),'
+    + 'linear-gradient(128deg, rgba(255,255,255,.06) 0%, rgba(255,255,255,.015) 30%, transparent 55%, rgba(255,255,255,.035) 100%),'
+    + 'linear-gradient(rgba(20,16,50,.14), rgba(20,16,50,.14))';
+
+  var css = ''
+  + '.rfr{position:absolute;inset:0;z-index:-1;border-radius:inherit;overflow:hidden;pointer-events:none}'
+  + '.rfr-img{position:absolute;inset:-140px;background-image:url("bg.jpg");background-repeat:no-repeat;will-change:transform}'
+  + '.rfr-optics{position:absolute;inset:0;background:' + OPTICS + '}'
+  + '.hero>.rfr .rfr-optics{background:' + OPTICS_HERO + '}'
+  /* 背景与遮罩: 不调暗 */
+  + 'body::before{filter:brightness(.98) !important}'
+  + 'body::after{background:rgba(0,0,0,.10) !important}';
+  var st = document.createElement('style');
+  st.id = 'uxTheme13';
+  st.textContent = css;
+  document.head.appendChild(st);
+
+  /* SVG defs 容器 */
+  var svg = document.createElementNS(SVG_NS, 'svg');
+  svg.setAttribute('width', '0'); svg.setAttribute('height', '0');
+  svg.style.position = 'absolute';
+  var defs = document.createElementNS(SVG_NS, 'defs');
+  defs.id = 'lensDefs434';
+  svg.appendChild(defs);
+  document.body.appendChild(svg);
+
+  var bgImg = new Image();
+  bgImg.src = 'bg.jpg';
+
+  function roundedRectSDF(x, y, w, h, r) {
+    var qx = Math.abs(x) - w + r;
+    var qy = Math.abs(y) - h + r;
+    return Math.min(Math.max(qx, qy), 0) +
+           Math.sqrt(Math.max(qx, 0) * Math.max(qx, 0) + Math.max(qy, 0) * Math.max(qy, 0)) - r;
+  }
+  function smoothStep(e0, e1, x) {
+    var t = Math.max(0, Math.min(1, (x - e0) / (e1 - e0)));
+    return t * t * (3 - 2 * t);
+  }
+  /* SDF位移贴图: 中心清透, 边缘28px透镜弯曲带(降采样420提速) */
+  function buildMapURL(W, H, bandPx, radiusPx) {
+    var scaleDown = Math.min(1, 420 / Math.max(W, H));
+    var mw = Math.max(2, Math.round(W * scaleDown));
+    var mh = Math.max(2, Math.round(H * scaleDown));
+    var band = Math.max(2, bandPx * scaleDown);
+    var canvas = document.createElement('canvas');
+    canvas.width = mw; canvas.height = mh;
+    var ctx = canvas.getContext('2d');
+    var imageData = ctx.createImageData(mw, mh);
+    var data = imageData.data;
+    var maxAbs = 0, rawValues = [];
+    var hw = mw / 2, hh = mh / 2;
+    var innerW = Math.max(1, hw - band);
+    var innerH = Math.max(1, hh - band);
+    var r = Math.min(radiusPx * scaleDown, innerW, innerH);
+    for (var i = 0; i < data.length; i += 4) {
+      var px = (i / 4) % mw;
+      var py = Math.floor((i / 4) / mw);
+      var cx = px - hw + 0.5;
+      var cy = py - hh + 0.5;
+      var dist = roundedRectSDF(cx, cy, innerW, innerH, r);
+      var disp = smoothStep(0, band, dist);
+      var len = Math.sqrt(cx * cx + cy * cy) || 1;
+      var dx = -(cx / len) * disp;
+      var dy = -(cy / len) * disp;
+      maxAbs = Math.max(maxAbs, Math.abs(dx), Math.abs(dy));
+      rawValues.push(dx, dy);
+    }
+    maxAbs = maxAbs || 1;
+    var idx = 0;
+    for (var j = 0; j < data.length; j += 4) {
+      data[j] = Math.max(0, Math.min(255, (rawValues[idx++] / maxAbs * 0.5 + 0.5) * 255));
+      data[j + 1] = Math.max(0, Math.min(255, (rawValues[idx++] / maxAbs * 0.5 + 0.5) * 255));
+      data[j + 2] = 0;
+      data[j + 3] = 255;
+    }
+    ctx.putImageData(imageData, 0, 0);
+    return canvas.toDataURL();
+  }
+
+  var lensSeq = 0;
+  function ensureFilter(el, W, H) {
+    var id = el.getAttribute('data-lens');
+    var filter = id && document.getElementById(id);
+    if (!filter) {
+      id = 'lens434_' + (++lensSeq);
+      el.setAttribute('data-lens', id);
+      filter = document.createElementNS(SVG_NS, 'filter');
+      filter.setAttribute('id', id);
+      filter.setAttribute('filterUnits', 'userSpaceOnUse');
+      filter.setAttribute('color-interpolation-filters', 'sRGB');
+      var feImage = document.createElementNS(SVG_NS, 'feImage');
+      feImage.setAttribute('result', 'map');
+      feImage.setAttribute('preserveAspectRatio', 'none');
+      var feDisp = document.createElementNS(SVG_NS, 'feDisplacementMap');
+      feDisp.setAttribute('in', 'SourceGraphic');
+      feDisp.setAttribute('in2', 'map');
+      feDisp.setAttribute('xChannelSelector', 'R');
+      feDisp.setAttribute('yChannelSelector', 'G');
+      filter.appendChild(feImage);
+      filter.appendChild(feDisp);
+      defs.appendChild(filter);
+    }
+    /* 尺寸没变则跳过贴图重建 */
+    if (filter.getAttribute('data-wh') !== W + 'x' + H) {
+      filter.setAttribute('data-wh', W + 'x' + H);
+      filter.setAttribute('x', '0'); filter.setAttribute('y', '0');
+      filter.setAttribute('width', W); filter.setAttribute('height', H);
+      var img = filter.firstChild;
+      img.setAttribute('width', W); img.setAttribute('height', H);
+      img.setAttributeNS(XLINK_NS, 'href', buildMapURL(W, H, 28, 34));
+      filter.lastChild.setAttribute('scale', 44);
+    }
+    return id;
+  }
+
+  /* 背景副本与视口cover逐像素对齐(计时器原方) */
+  function alignBackground(el, rect) {
+    if (!bgImg.naturalWidth) return;
+    var vw = window.innerWidth, vh = window.innerHeight;
+    var s = Math.max(vw / bgImg.naturalWidth, vh / bgImg.naturalHeight);
+    var dw = bgImg.naturalWidth * s, dh = bgImg.naturalHeight * s;
+    el.style.backgroundSize = dw + 'px ' + dh + 'px';
+    el.style.backgroundPosition = ((vw - dw) / 2 - rect.left) + 'px ' + ((vh - dh) / 2 - rect.top) + 'px';
+  }
+
+  function mount(card){
+    var last = card.lastElementChild;
+    if (last && last.classList && last.classList.contains('rfr')) return last;
+    var rf = document.createElement('div');
+    rf.className = 'rfr';
+    rf.innerHTML = '<div class="rfr-img"></div><div class="rfr-optics"></div>';
+    card.appendChild(rf);
+    return rf;
+  }
+
+  function apply(){
+    var cards = document.querySelectorAll(SEL);
+    for (var i = 0; i < cards.length; i++) {
+      var rf = mount(cards[i]);
+      var img = rf.firstElementChild;
+      var rect = img.getBoundingClientRect();
+      if (!rect.width) continue;
+      var W = Math.max(2, Math.round(rect.width));
+      var H = Math.max(2, Math.round(rect.height));
+      var id = ensureFilter(img, W, H);
+      img.style.transform = '';
+      var pr = rf.getBoundingClientRect();
+      rf.setAttribute('data-bx', pr.left);
+      rf.setAttribute('data-by', pr.top);
+      alignBackground(img, rect);
+      /* 高透: blur2.5 提亮1.04, 不调暗 */
+      img.style.filter = 'url(#' + id + ') blur(2.5px) saturate(1.12)';
+    }
+  }
+  /* 滚动: transform平移已滤镜位图(合成器零重绘), 超余量或停止后重算基准 */
+  function realign(){
+    var vh = window.innerHeight;
+    var rfs = document.querySelectorAll('.rfr');
+    for (var i = 0; i < rfs.length; i++) {
+      var rf = rfs[i];
+      var r2 = rf.getBoundingClientRect();
+      if (!r2.width || r2.bottom < -160 || r2.top > vh + 160) continue;
+      var bx = parseFloat(rf.getAttribute('data-bx') || '0');
+      var by = parseFloat(rf.getAttribute('data-by') || '0');
+      var dx = bx - r2.left, dy = by - r2.top;
+      var img = rf.firstElementChild;
+      if (Math.abs(dx) > 130 || Math.abs(dy) > 130) {
+        /* 超出余量: 就地重定基准 */
+        img.style.transform = '';
+        rf.setAttribute('data-bx', r2.left);
+        rf.setAttribute('data-by', r2.top);
+        alignBackground(img, img.getBoundingClientRect());
+      } else {
+        img.style.transform = 'translate(' + dx + 'px,' + dy + 'px)';
+      }
+    }
+  }
+  var pend = false, settleTimer = null;
+  function reqAlign(){
+    if (!pend) {
+      pend = true;
+      requestAnimationFrame(function(){ pend = false; realign(); });
+    }
+    clearTimeout(settleTimer);
+    settleTimer = setTimeout(apply, 160); /* 滚动停止: 统一重定基准 */
+  }
+  var applyTimer = null;
+  function reqApply(){
+    clearTimeout(applyTimer);
+    applyTimer = setTimeout(apply, 220);
+  }
+  document.addEventListener('scroll', reqAlign, true);
+  window.addEventListener('resize', reqApply);
+  new MutationObserver(reqApply).observe(document.getElementById('ct') || document.body, { childList: true, subtree: true });
+  bgImg.onload = apply;
+  apply();
+  window.__lensApply434 = apply;
 })();
 (function() {
   var files = ["per_question.json","module_corpus.json"];
