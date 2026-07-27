@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<!-- v2.1 · 2026-07-27 11:54 · modular -->
+<!-- v2.1 · 2026-07-27 12:20 · modular -->
 <html lang="zh-CN">
 <head>
 <meta charset="UTF-8">
@@ -12801,6 +12801,69 @@ function _dailyBarHtml() {
   st.id = 'uxTheme11';
   st.textContent = css;
   document.head.appendChild(st);
+})();
+
+/* ---------- v3.39 真折射引擎: 卡内视口对齐背景副本+blur22(替代无效的backdrop-filter), 滚动同步 ---------- */
+(function(){
+  var SEL = '.pcard,.gc,.today,.banner,.kn-hero,.hero';
+  var PAD = 60; /* 副本外扩, 防blur边缘透明圈 */
+  var OPTICS = 'radial-gradient(120% 55% at 18% -8%, rgba(255,255,255,.22), transparent 50%),'
+    + 'radial-gradient(90% 40% at 50% 110%, rgba(255,255,255,.12), transparent 55%),'
+    + 'linear-gradient(128deg, rgba(255,255,255,.09) 0%, rgba(255,255,255,.02) 30%, transparent 55%, rgba(255,255,255,.05) 100%),'
+    + 'linear-gradient(180deg, rgba(255,255,255,.06), rgba(255,255,255,.02)),'
+    + 'linear-gradient(rgba(8,10,24,.38), rgba(8,10,24,.38))';
+  var OPTICS_HERO = 'radial-gradient(120% 55% at 18% -8%, rgba(200,198,255,.26), transparent 50%),'
+    + 'radial-gradient(90% 40% at 50% 110%, rgba(150,148,255,.14), transparent 55%),'
+    + 'linear-gradient(128deg, rgba(255,255,255,.09) 0%, rgba(255,255,255,.02) 30%, transparent 55%, rgba(255,255,255,.05) 100%),'
+    + 'linear-gradient(180deg, rgba(120,118,240,.10), rgba(94,92,230,.04)),'
+    + 'linear-gradient(rgba(14,12,40,.40), rgba(14,12,40,.40))';
+
+  var css = ''
+  + SEL + '{background:transparent !important;backdrop-filter:none !important;-webkit-backdrop-filter:none !important;isolation:isolate}'
+  + '.glass-bk{position:absolute;inset:0;z-index:-1;border-radius:inherit;overflow:hidden;pointer-events:none}'
+  + '.glass-bk-img{position:absolute;top:0;left:0;background:url("bg.jpg") center/cover no-repeat;'
+  +   'filter:blur(22px) saturate(1.5) brightness(.92);will-change:transform}'
+  + '.glass-bk-optics{position:absolute;inset:0;background:' + OPTICS + '}'
+  + '.hero .glass-bk-optics{background:' + OPTICS_HERO + '}'
+  + '.pcard:hover .glass-bk-optics,.gc:hover .glass-bk-optics{box-shadow:inset 0 0 0 999px rgba(255,255,255,.03)}';
+  var st = document.createElement('style');
+  st.id = 'uxTheme12';
+  st.textContent = css;
+  document.head.appendChild(st);
+
+  function mount(el){
+    if (el.firstElementChild && el.firstElementChild.classList && el.firstElementChild.classList.contains('glass-bk')) return;
+    var bk = document.createElement('div');
+    bk.className = 'glass-bk';
+    bk.innerHTML = '<div class="glass-bk-img"></div><div class="glass-bk-optics"></div>';
+    el.insertBefore(bk, el.firstChild);
+  }
+  function sync(){
+    var vw = window.innerWidth, vh = window.innerHeight;
+    var w = (vw + PAD * 2) + 'px', h = (vh + PAD * 2) + 'px';
+    var els = document.querySelectorAll(SEL);
+    for (var i = 0; i < els.length; i++) {
+      var el = els[i];
+      mount(el);
+      var r = el.getBoundingClientRect();
+      if (r.bottom < -PAD || r.top > vh + PAD || !r.width) continue; /* 视口外不更新 */
+      var img = el.firstElementChild.firstElementChild;
+      if (img.style.width !== w) { img.style.width = w; img.style.height = h; }
+      img.style.transform = 'translate(' + (-r.left - PAD) + 'px,' + (-r.top - PAD) + 'px)';
+    }
+  }
+  var pending = false;
+  function req(){
+    if (pending) return;
+    pending = true;
+    requestAnimationFrame(function(){ pending = false; sync(); });
+  }
+  document.addEventListener('scroll', req, true);
+  window.addEventListener('resize', req);
+  var ct = document.getElementById('ct');
+  new MutationObserver(req).observe(ct || document.body, { childList: true, subtree: true });
+  sync();
+  setTimeout(sync, 300); /* 首屏图片/字体布局稳定后补一拍 */
 })();
 (function() {
   var files = ["per_question.json","module_corpus.json"];
