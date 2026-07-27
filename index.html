@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<!-- v2.1 · 2026-07-27 02:45 · modular -->
+<!-- v2.1 · 2026-07-27 02:55 · modular -->
 <html lang="zh-CN">
 <head>
 <meta charset="UTF-8">
@@ -314,7 +314,7 @@ body.sb-collapsed .sidebar.open ~ .sidebar-backdrop{display:block}
 .kn-tabs{display:flex;gap:0;margin-bottom:18px;background:rgba(0,0,0,.03);border-radius:14px;overflow:hidden;padding:3px}
 .kn-tab{flex:1;padding:10px 16px;text-align:center;font-size:13px;font-weight:600;cursor:pointer;transition:var(--transition);border-radius:12px;color:var(--ts);background:transparent}
 .kn-tab:hover{color:var(--t)}
-.kn-tab.active{color:var(--t);background:rgba(255,255,255,.8);box-shadow:0 1px 4px rgba(0,0,0,.08)}
+.kn-tab.active{color:var(--t);background:rgba(94,92,230,.28);box-shadow:inset 0 1px 0 rgba(255,255,255,.10)}
 .kn-tab .count{font-size:11px;font-weight:400;color:var(--ts);margin-left:4px}
 .kn-content{display:block}.kn-content.hidden{display:none}
 
@@ -7242,7 +7242,7 @@ function startMockExam() {
 
 function renderMockExam() {
   var qs = mockState.questions, m = Math.floor((Date.now()-mockState.startTime)/60000);
-  var h = '<div style="position:sticky;top:16px;z-index:10;background:rgba(255,255,255,.85);backdrop-filter:blur(20px);border-radius:16px;padding:12px 20px;margin-bottom:20px;display:flex;justify-content:space-between;align-items:center;border:.5px solid rgba(255,255,255,.4)">' +
+  var h = '<div style="position:sticky;top:16px;z-index:10;background:rgba(21,24,45,.88);border:1px solid rgba(255,255,255,.10);backdrop-filter:blur(20px);border-radius:16px;padding:12px 20px;margin-bottom:20px;display:flex;justify-content:space-between;align-items:center;border:.5px solid rgba(255,255,255,.4)">' +
     '<div><strong>⏱ <span id="mockTimer">' + m + '分钟</span></strong> | ' + qs.length + '题 | 总分150</div>' +
     '<div style="display:flex;gap:8px"><button class="ai-btn ai-btn-sm" onclick="mockExportBlank()" style="padding:8px 14px;font-size:12px">📄 导出试卷</button>' +
     '<button class="btn btn-r" onclick="submitMockExam()" style="padding:8px 20px;font-size:13px">提交批改</button></div></div>';
@@ -12081,6 +12081,44 @@ function _dailyBarHtml() {
       if (btn) { btn.disabled = false; btn.textContent = '生成'; }
     });
   };
+})();
+
+/* ---------- v3.26 全站UI统一: 原生控件深色化兜底 + 角落白底收编(不深入用不到的地方) ---------- */
+(function(){
+  var css = ''
+  /* ===== 所有表单控件全局深色兜底(不写背景的裸控件不再刺白) ===== */
+  + '#ct input[type=text],#ct input[type=search],#ct input:not([type]),#ct textarea,#ct select,'
+  + '.ai-chat-textarea,.tviz-input,.selector,#chat-q,#gs,#mcSearch,#aqSearch,#graphSearch,#aiExplainInput{'
+  +   'background:rgba(255,255,255,.05) !important;color:var(--t) !important;'
+  +   'border:1px solid rgba(255,255,255,.14) !important;border-radius:10px;'
+  +   'caret-color:var(--pu);}'
+  + '#ct input::placeholder,#ct textarea::placeholder{color:rgba(235,238,248,.38) !important}'
+  + '#ct input:focus,#ct textarea:focus,#ct select:focus{border-color:rgba(94,92,230,.6) !important;outline:none}'
+  /* 下拉选项面板(浏览器渲染的option在深色下也可读) */
+  + '#ct select option{background:#141830;color:var(--t)}'
+  /* 复选框着色 */
+  + '#ct input[type=checkbox]{accent-color:var(--pu)}'
+
+  /* ===== 模考答题框: #ccc/#e0e0e0 亮边虚框 → 深色 ===== */
+  + '.q-block .q-answer{border-color:rgba(255,255,255,.18) !important;background:rgba(255,255,255,.03)}'
+  + '.q-block .q-answer-filled{border-color:rgba(255,255,255,.12) !important;background:rgba(255,255,255,.03)}'
+  + '.q-block .q-text,.q-block .q-head{color:var(--t)}'
+
+  /* ===== 打印/导出预览类容器若用白底, 屏幕上先统一(打印时另有@media print不受影响) ===== */
+  + '.print-sheet,.export-card{background:rgba(21,24,45,.9);color:var(--t)}'
+
+  /* ===== 杂项角落: 分隔线/代码块/表格统一到设计色 ===== */
+  + '#ct hr{border-color:rgba(255,255,255,.10)}'
+  + '#ct pre,#ct code{background:rgba(255,255,255,.06);color:#e8e8f4;border-radius:6px}'
+  + '#ct table{border-color:rgba(255,255,255,.12)}'
+  + '#ct th{background:rgba(94,92,230,.16);color:var(--t)}'
+  + '#ct td,#ct th{border-color:rgba(255,255,255,.10) !important}'
+  /* 通用小徽标/标签统一圆角 */
+  + '.score-tag,.tag,.badge{border-radius:6px}';
+  var st = document.createElement('style');
+  st.id = 'uxTheme3';
+  st.textContent = css;
+  document.head.appendChild(st);
 })();
 (function() {
   var files = ["per_question.json","module_corpus.json"];
