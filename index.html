@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<!-- v2.1 · 2026-07-27 13:14 · modular -->
+<!-- v2.1 · 2026-07-27 14:23 · modular -->
 <html lang="zh-CN">
 <head>
 <meta charset="UTF-8">
@@ -13064,25 +13064,25 @@ function _dailyBarHtml() {
   /* 背景图放body真实背景层(backdrop-filter从此采样得到); 原::before图层停用 */
   + 'body{background:url("bg.jpg") center/cover no-repeat fixed !important}'
   + 'body::before{display:none !important}'
-  + 'body::after{background:rgba(6,8,20,.22) !important}'
+  + 'body::after{background:rgba(6,8,20,.12) !important}'
   /* 清理历代副本层 */
   + '.glass-bk,.rfr{display:none !important}'
 
   /* 卡片: 原生玻璃(GPU) + 保留棱边/高光/暗面 */
   + '.pcard,.gc,.today,.banner,.kn-hero{'
-  +   'background:rgba(14,16,34,.34) !important;'
-  +   'backdrop-filter:blur(18px) saturate(1.45) !important;-webkit-backdrop-filter:blur(18px) saturate(1.45) !important;'
+  +   'background:linear-gradient(180deg, rgba(255,255,255,.10), rgba(255,255,255,.03)), rgba(14,16,34,.14) !important;'
+  +   'backdrop-filter:blur(20px) saturate(1.5) !important;-webkit-backdrop-filter:blur(20px) saturate(1.5) !important;'
   +   'box-shadow:inset 0 1.5px 0 rgba(255,255,255,.30), inset 1px 0 0 rgba(255,255,255,.10), inset 0 -1px 0 rgba(255,255,255,.10),'
   +     'inset -6px -10px 24px rgba(0,0,0,.20), 0 2px 6px rgba(0,0,0,.25), 0 24px 55px rgba(0,0,0,.35) !important}'
   + '.hero{'
-  +   'background:linear-gradient(135deg, rgba(94,92,230,.26), rgba(20,16,50,.30)) !important;'
+  +   'background:linear-gradient(135deg, rgba(130,128,255,.22), rgba(94,92,230,.08)) !important;'
   +   'backdrop-filter:blur(18px) saturate(1.45) !important;-webkit-backdrop-filter:blur(18px) saturate(1.45) !important;'
   +   'box-shadow:inset 0 1.5px 0 rgba(255,255,255,.32), inset -6px -10px 26px rgba(20,10,70,.24),'
   +     '0 2px 6px rgba(0,0,0,.25), 0 24px 55px rgba(24,14,80,.38) !important}'
 
   /* 侧栏/顶栏同族原生玻璃 */
-  + '.sidebar{background:rgba(12,14,30,.42) !important;backdrop-filter:blur(24px) saturate(1.4) !important;-webkit-backdrop-filter:blur(24px) saturate(1.4) !important}'
-  + '.topbar{background:rgba(14,16,34,.34) !important;backdrop-filter:blur(20px) saturate(1.45) !important;-webkit-backdrop-filter:blur(20px) saturate(1.45) !important}';
+  + '.sidebar{background:rgba(12,14,30,.26) !important;backdrop-filter:blur(24px) saturate(1.4) !important;-webkit-backdrop-filter:blur(24px) saturate(1.4) !important}'
+  + '.topbar{background:rgba(255,255,255,.08) !important;backdrop-filter:blur(20px) saturate(1.45) !important;-webkit-backdrop-filter:blur(20px) saturate(1.45) !important}';
   var st = document.createElement('style');
   st.id = 'uxTheme14';
   st.textContent = css;
