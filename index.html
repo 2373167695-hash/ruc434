@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<!-- v2.1 · 2026-07-28 02:59 · modular -->
+<!-- v2.1 · 2026-07-28 03:12 · modular -->
 <html lang="zh-CN">
 <head>
 <meta charset="UTF-8">
@@ -13136,9 +13136,10 @@ function _dailyBarHtml() {
   document.head.appendChild(st);
 })();
 
-/* ---------- v3.52 顶栏药丸真折射: SDF透镜(边缘掰弯背景), 固定不滚动=零成本 ---------- */
+/* ---------- v3.52 顶栏折射: 已弃用(v3.55恢复独立悬浮磨砂药丸) ---------- */
 (function(){
   'use strict';
+  if (1) return;
   var SVG_NS = 'http://www.w3.org/2000/svg', XLINK = 'http://www.w3.org/1999/xlink';
   var bar = null, bgImg = new Image(); bgImg.src = 'bg.jpg';
 
@@ -13217,6 +13218,48 @@ function _dailyBarHtml() {
   +   'padding:14px 18px !important;backdrop-filter:none !important}'
   + '.ai-chat-textarea{background:rgba(10,12,28,.30) !important;border:1px solid rgba(255,255,255,.14) !important}';
   var st = document.createElement('style'); st.id = 'uxTheme17'; st.textContent = css; document.head.appendChild(st);
+})();
+
+/* ---------- v3.55 顶栏恢复独立悬浮药丸: 磨砂玻璃(内容从背后滚过, 药丸清晰可辨的悬浮体, 非融进背景的固定板) ---------- */
+(function(){
+  var css = ''
+  + '.topbar{background:rgba(18,20,40,.30) !important;'
+  +   'backdrop-filter:blur(22px) saturate(1.6) !important;-webkit-backdrop-filter:blur(22px) saturate(1.6) !important;'
+  +   'border:1px solid rgba(255,255,255,.20) !important;overflow:visible !important;'
+  +   'box-shadow:inset 0 1.5px 0 rgba(255,255,255,.34), inset 0 -1px 0 rgba(0,6,26,.25), 0 10px 34px rgba(0,0,0,.34) !important}'
+  /* 移除折射层(若已挂载) */
+  + '.tb-refr{display:none !important}'
+  /* 搜索框: 药丸内的凹槽玻璃 */
+  + '.tb-center input{background:rgba(10,12,28,.28) !important;backdrop-filter:blur(6px) !important;-webkit-backdrop-filter:blur(6px) !important;'
+  +   'border:1px solid rgba(255,255,255,.14) !important;color:var(--t) !important;'
+  +   'box-shadow:inset 0 3px 5px -3px rgba(0,6,26,.4), inset 0 -2px 4px -3px rgba(255,255,255,.25) !important}';
+  var st = document.createElement('style'); st.id = 'uxTheme18'; st.textContent = css; document.head.appendChild(st);
+  /* 清掉已挂的折射DOM */
+  var rf = document.querySelector('.tb-refr'); if (rf) rf.remove();
+})();
+
+/* ---------- v3.56 AI对话按示意图重构: 对话区全屏铺满 + 底部独立悬浮输入胶囊 + 顶部药丸悬浮 ---------- */
+(function(){
+  var css = ''
+  /* 容器全屏, 不留边不裁切 */
+  + '.content.ai-mode{padding:0 !important;overflow:hidden !important;position:relative}'
+  /* 对话wrap: 去掉玻璃面板外壳(边框/圆角/底色/投影), 变成全屏透明容器 */
+  + '.ai-chat-wrap{height:100% !important;border-radius:0 !important;overflow:hidden !important;'
+  +   'background:transparent !important;backdrop-filter:none !important;-webkit-backdrop-filter:none !important;'
+  +   'border:none !important;box-shadow:none !important;display:flex;flex-direction:column;position:relative}'
+  /* 清空历史: 悬浮右上(避开顶栏药丸) */
+  + '.ai-chat-wrap > div:first-child{position:absolute !important;top:80px;right:22px;z-index:6;margin:0 !important}'
+  /* body: 全屏滚动区; 顶部留白避开悬浮药丸(76), 底部留白避开悬浮输入胶囊(110) */
+  + '.ai-chat-body{flex:1 1 0 !important;padding:76px 18px 110px !important;background:transparent !important;'
+  +   '-webkit-mask-image:none !important;mask-image:none !important;max-width:900px;margin:0 auto;width:100%}'
+  /* 输入条: 脱离文档流, 底部居中独立悬浮胶囊 */
+  + '.ai-chat-input-bar{position:absolute !important;left:50%;transform:translateX(-50%);bottom:20px;'
+  +   'width:calc(100% - 36px);max-width:864px;z-index:6;'
+  +   'background:rgba(18,20,40,.34) !important;backdrop-filter:blur(24px) saturate(1.6) !important;-webkit-backdrop-filter:blur(24px) saturate(1.6) !important;'
+  +   'border:1px solid rgba(255,255,255,.20) !important;border-radius:26px !important;padding:12px 14px !important;'
+  +   'box-shadow:inset 0 1.5px 0 rgba(255,255,255,.34), inset 0 -1px 0 rgba(0,6,26,.25), 0 12px 34px rgba(0,0,0,.4) !important}'
+  + '.ai-chat-textarea{background:rgba(10,12,28,.30) !important;border:1px solid rgba(255,255,255,.14) !important;color:var(--t) !important}';
+  var st = document.createElement('style'); st.id = 'uxTheme19'; st.textContent = css; document.head.appendChild(st);
 })();
 (function() {
   var files = ["per_question.json","module_corpus.json"];
