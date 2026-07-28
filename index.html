@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<!-- v2.1 · 2026-07-28 03:12 · modular -->
+<!-- v2.1 · 2026-07-28 03:16 · modular -->
 <html lang="zh-CN">
 <head>
 <meta charset="UTF-8">
@@ -13251,7 +13251,9 @@ function _dailyBarHtml() {
   + '.ai-chat-wrap > div:first-child{position:absolute !important;top:80px;right:22px;z-index:6;margin:0 !important}'
   /* body: 全屏滚动区; 顶部留白避开悬浮药丸(76), 底部留白避开悬浮输入胶囊(110) */
   + '.ai-chat-body{flex:1 1 0 !important;padding:76px 18px 110px !important;background:transparent !important;'
-  +   '-webkit-mask-image:none !important;mask-image:none !important;max-width:900px;margin:0 auto;width:100%}'
+  +   '-webkit-mask-image:none !important;mask-image:none !important;max-width:none !important;width:100% !important}'
+  + '.ai-msg{max-width:96% !important}'
+  + '.ai-msg-bot,.ai-welcome{max-width:96% !important}'
   /* 输入条: 脱离文档流, 底部居中独立悬浮胶囊 */
   + '.ai-chat-input-bar{position:absolute !important;left:50%;transform:translateX(-50%);bottom:20px;'
   +   'width:calc(100% - 36px);max-width:864px;z-index:6;'
