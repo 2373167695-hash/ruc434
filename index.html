@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<!-- v2.1 · 2026-07-28 02:50 · modular -->
+<!-- v2.1 · 2026-07-28 02:59 · modular -->
 <html lang="zh-CN">
 <head>
 <meta charset="UTF-8">
@@ -13188,7 +13188,7 @@ function _dailyBarHtml() {
     if(!rf){rf=document.createElement('div');rf.className='tb-refr';rf.innerHTML='<div class="tb-refr-img"></div><div class="tb-refr-optics"></div>';bar.insertBefore(rf,bar.firstChild);}
     var img=rf.firstElementChild,rect=img.getBoundingClientRect();if(!rect.width)return;
     var W=Math.max(2,Math.round(rect.width)),H=Math.max(2,Math.round(rect.height));
-    ensure(W,H);align(img,rect);img.style.filter='url(#tbLens) blur(1.5px) saturate(1.3)';
+    ensure(W,H);align(img,rect);img.style.filter='url(#tbLens) blur(15px) saturate(1.15) brightness(.94)';
   }
   bgImg.onload=apply;apply();setTimeout(apply,300);
   addEventListener('resize',function(){clearTimeout(window.__tbT);window.__tbT=setTimeout(apply,150);});
