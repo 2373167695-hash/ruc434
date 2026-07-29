@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<!-- v2.1 · 2026-07-29 10:15 · modular -->
+<!-- v2.1 · 2026-07-29 12:41 · modular -->
 <html lang="zh-CN">
 <head>
 <meta charset="UTF-8">
@@ -5081,7 +5081,10 @@ function buildAIContext(query) {
       });
     }
   }
-  
+
+  var _prof = (typeof buildStudyProfile === 'function') ? buildStudyProfile() : '';
+  if (_prof) ctx += '\n' + _prof + '\n(回答时可结合该考生的薄弱环节给出针对性建议)\n';
+
   return ctx;
 }
 
@@ -6116,6 +6119,10 @@ function showMacro() {
     '<div class="sts"><div class="st">📅 更新: <strong>' + (MACRO_DATA.update_date || '最新') + '</strong></div>' +
     '<div class="st">📈 覆盖 <strong>' + indicators.length + '</strong>项指标</div>' +
     '<div class="st">📆 近 <strong>12</strong>个月数据</div></div></div>';
+
+  // ===== LAYER 0: 实时行情+财经头条(后端Cron每日刷新, 供论述题"联系实际") =====
+  h += '<div id="liveMacro" style="margin-bottom:16px"></div>';
+  setTimeout(loadLiveMacro, 30);
   
   // Metric cards
   h += '<div class="dash-hero">';
@@ -10340,7 +10347,8 @@ function doAnswerCheck() {
     + '输出格式（JSON）：\n'
     + '{"knowledge":得分,"logic":得分,"terms":得分,"realworld":得分,"total":总分,"strengths":"优点...","weaknesses":"不足...","improvement":"改进建议...","modelAnswer":"完整参考答案（按人大434答题规范，定义先行→分点展开→结论，包含中英文术语对照，800字左右）..."}\n\n'
     + '规则：严格按照评分标准给分，不要手软；必须给出具体、可操作的改进建议；modelAnswer必须是完整的论述型答案，不是要点罗列，结构规范、可直接用于背诵。只输出JSON，不要其他文字。';
-  var userMsg = '【题目】\n' + q + '\n\n【学生答案】\n' + a + refInfo + pointInfo;
+  var _prof = (typeof buildStudyProfile === 'function') ? buildStudyProfile() : '';
+  var userMsg = '【题目】\n' + q + '\n\n【学生答案】\n' + a + refInfo + pointInfo + (_prof ? '\n\n' + _prof + '\n(评语请特别关注该考生的历史薄弱维度是否在本次答案中改善)' : '');
 
   fetch(DS_URL, {
     method:'POST', headers:{Authorization:'Bearer '+getAPIKey(),'Content-Type':'application/json'},
@@ -12497,7 +12505,27 @@ function _dailyBarHtml() {
     return blob;
   }
 
-  /* ---- 全量云同步: 追加 blob 字段(老Worker会忽略, 新Worker会存) ---- */
+  /* per-key 修改时间戳: 值变化即打 now, 供服务端按 key 合并(多设备不互覆) */
+  function _blobTsMap(){
+    var ts = {}, snap = {};
+    try { ts = JSON.parse(localStorage.getItem('r434_blobts') || '{}'); } catch(e) {}
+    try { snap = JSON.parse(localStorage.getItem('r434_blobsnap') || '{}'); } catch(e) {}
+    var now = Date.now(), changed = false;
+    KEYS.forEach(function(k){
+      var v = localStorage.getItem(k);
+      if (v === null) return;
+      var sig = v.length + ':' + v.slice(0, 32) + v.slice(-32); /* 轻量签名, 避免存全量快照 */
+      if (snap[k] !== sig) { ts[k] = now; snap[k] = sig; changed = true; }
+      else if (!ts[k]) { ts[k] = now; changed = true; }
+    });
+    if (changed) {
+      try { localStorage.setItem('r434_blobts', JSON.stringify(ts)); } catch(e) {}
+      try { localStorage.setItem('r434_blobsnap', JSON.stringify(snap)); } catch(e) {}
+    }
+    return ts;
+  }
+
+  /* ---- 全量云同步: blob + blobTs(per-key时间戳), 服务端按key取更新一方 ---- */
   var _oSync = syncToCloud;
   syncToCloud = function(){
     _oSync();
@@ -12509,23 +12537,42 @@ function _dailyBarHtml() {
         fetch(SYNC_URL + '/sync', {
           method: 'POST',
           headers: {'Authorization': 'Bearer ' + token, 'Content-Type': 'application/json'},
-          body: JSON.stringify({ blob: collectAll(), blobVer: Date.now() })
+          body: JSON.stringify({ blob: collectAll(), blobTs: _blobTsMap(), blobVer: Date.now() })
         }).catch(function(){});
       } catch(e) {}
     }, 3000);
   };
 
-  /* ---- 云端恢复: 若 /data 返回 blob 且本地为空则回填 ---- */
+  /* ---- 云端恢复: 按 key 时间戳合并——远端某 key 比本地新则回填, 反之保留本地 ---- */
   window._restoreBlob = function(data){
     if (!data || !data.blob) return 0;
     var n = 0;
+    var localTs = {}, snap = {};
+    try { localTs = JSON.parse(localStorage.getItem('r434_blobts') || '{}'); } catch(e) {}
+    try { snap = JSON.parse(localStorage.getItem('r434_blobsnap') || '{}'); } catch(e) {}
+    var remoteTs = data.blobTs || {};
+    var hasRemoteTs = data.blobTs && typeof data.blobTs === 'object';
     for (var k in data.blob) {
       if (KEYS.indexOf(k) < 0) continue;
       var local = localStorage.getItem(k);
-      /* 本地无数据或本地明显更空时才回填, 不覆盖更新的本地数据 */
-      if (local === null || (local.length < 10 && data.blob[k].length > local.length)) {
-        try { localStorage.setItem(k, data.blob[k]); n++; } catch(e) {}
+      var take = false;
+      if (hasRemoteTs) {
+        /* 时间戳可比: 远端更新 或 本地无该key → 回填 */
+        take = (local === null) || ((remoteTs[k] || 0) > (localTs[k] || 0));
+      } else {
+        /* 旧数据无时间戳: 沿用保守策略(本地空才回填) */
+        take = (local === null) || (local.length < 10 && data.blob[k].length > local.length);
       }
+      if (take) {
+        try {
+          localStorage.setItem(k, data.blob[k]); n++;
+          if (hasRemoteTs) { localTs[k] = remoteTs[k] || Date.now(); var v = data.blob[k]; snap[k] = v.length + ':' + v.slice(0, 32) + v.slice(-32); }
+        } catch(e) {}
+      }
+    }
+    if (hasRemoteTs) {
+      try { localStorage.setItem('r434_blobts', JSON.stringify(localTs)); } catch(e) {}
+      try { localStorage.setItem('r434_blobsnap', JSON.stringify(snap)); } catch(e) {}
     }
     return n;
   };
@@ -14083,9 +14130,11 @@ function _dailyBarHtml() {
     var topics = (typeof _meCollectDir === 'function') ? _meCollectDir() : [];
     document.getElementById('ct').innerHTML = '<div style="text-align:center;padding:80px 20px"><div class="ai-loading" style="justify-content:center"><span class="ai-dot"></span><span class="ai-dot"></span><span class="ai-dot"></span></div><div style="margin-top:16px;color:var(--ts);font-size:13px">正在按手册知识库组卷…约20-40秒<br><span style="font-size:11px">参考答案将在你答题期间逐题后台生成(10分题500字+/20分题1000字+)</span></div></div>';
     var mk = buildMockContext(topics);
+    var _prof = (typeof buildStudyProfile === 'function') ? buildStudyProfile() : '';
     var dirTxt = topics.length
       ? '\n【命题范围(考生指定，必须遵守)】至少8道题围绕：' + topics.join('、') + '。'
       : '\n【命题范围】从上方知识库档案中的考点命题，覆盖不同部分。';
+    if (_prof) dirTxt += '\n' + _prof + '\n【因材命题要求】结合以上考生画像，对其薄弱模块/低分维度适当加权命题(但不牺牲整卷覆盖面)。';
     var sys = RUC434_STYLE + '\n你是人大434国际商务考研命题老师。本次只出题，不写答案。\n' + mk.ctx + dirTxt
       + '\n\n【生成要求】\n1. 共10道题：简答5道、论述3道、案例2道；案例题必须有150字以上案例材料+2-3个设问\n'
       + '2. 每道题对应上方知识库档案中的具体考点，禁止超纲；题目风格100%贴合人大434真题(参考上方真题范例)\n'
@@ -15263,6 +15312,81 @@ function drawScoreTrends() {
         borderColor:'#4ade80', backgroundColor:'rgba(48,209,88,.14)', fill:true, tension:.3, pointRadius:3}]},
       options: Object.assign({}, base, {scales: Object.assign({}, base.scales, {y: Object.assign({}, base.scales.y, {min:0, max:150})})})});
   }
+}
+/* ---------- v3.66 个人考情画像: 聚合批改四维/模考/知识浏览/错题, 供模考出题·批改·助手因材施教 ---------- */
+function buildStudyProfile() {
+  try {
+    var ac = [], mock = [];
+    try { ac = JSON.parse(localStorage.getItem('r434_acscores') || '[]'); } catch(e) {}
+    try { mock = JSON.parse(localStorage.getItem('r434_mock') || '[]'); } catch(e) {}
+    var parts = [];
+
+    /* 批改四维得分率 + 最弱维度 */
+    if (ac.length) {
+      var dims = [['knowledge','知识点覆盖',4],['logic','逻辑结构',3],['terms','术语准确',2],['realworld','实际联系',1]];
+      var rates = dims.map(function(d){ return {name:d[1], rate: ac.reduce(function(a,r){return a+(r[d[0]]||0);},0)/ac.length/d[2]*100}; });
+      var weakest = rates.slice().sort(function(a,b){return a.rate-b.rate;})[0];
+      var avg = ac.reduce(function(a,r){return a+(r.total||0);},0)/ac.length;
+      parts.push('批改平均' + avg.toFixed(1) + '/10(' + ac.length + '次)，四维得分率: ' + rates.map(function(r){return r.name+r.rate.toFixed(0)+'%';}).join('、') + '；最弱维度: ' + weakest.name + '(' + weakest.rate.toFixed(0) + '%)');
+    }
+    /* 模考近况 */
+    if (mock.length) {
+      var mavg = mock.reduce(function(a,r){return a+(r.total||0);},0)/mock.length;
+      parts.push('模考平均' + mavg.toFixed(0) + '/150(' + mock.length + '场，最近' + (mock[0].total||0) + '分)');
+    }
+    /* 薄弱模块: 按五大部分浏览覆盖率, 取最低 */
+    if (typeof KNOWLEDGE_NAV !== 'undefined' && KNOWLEDGE_NAV.sections) {
+      var mods = [];
+      KNOWLEDGE_NAV.sections.forEach(function(sec){
+        var tot = 0, seen = 0;
+        (sec.chapters||[]).forEach(function(ch){(ch.groups||[]).forEach(function(g){(g.topics||[]).forEach(function(t){ tot++; if (knowledgeViews[t.key]||knowledgeViews[t.name]) seen++; });});});
+        if (tot) mods.push({name: sec.name, rate: seen/tot*100});
+      });
+      mods.sort(function(a,b){return a.rate-b.rate;});
+      var weak = mods.filter(function(m){return m.rate < 40;}).slice(0,2).map(function(m){return m.name+'('+m.rate.toFixed(0)+'%)';});
+      if (weak.length) parts.push('浏览覆盖薄弱模块: ' + weak.join('、'));
+    }
+    /* 错题积压 */
+    var due = (typeof getDueWrongCount === 'function') ? getDueWrongCount() : 0;
+    if (due > 0) parts.push('错题待复习: ' + due + '道');
+
+    if (!parts.length) return '';
+    return '【考生学情画像(仅供因材施教参考)】\n- ' + parts.join('\n- ');
+  } catch(e) { return ''; }
+}
+/* ---------- v3.66 实时行情+财经头条卡片: 拉 Worker /macro(KV, Cron每日刷新) ---------- */
+function loadLiveMacro() {
+  var box = document.getElementById('liveMacro');
+  if (!box) return;
+  box.innerHTML = '<div class="pcard"><div class="pcard-body" style="color:var(--ts);font-size:12px;padding:14px">⏳ 加载实时行情…</div></div>';
+  fetch(SYNC_URL + '/macro').then(function(r){ return r.json(); }).then(function(d){
+    box.innerHTML = renderLiveMacro(d);
+  }).catch(function(){ box.innerHTML = ''; });
+}
+
+function renderLiveMacro(d) {
+  if (!d || (!d.fx && !d.news)) return '';
+  var h = '';
+  if (d.fx) {
+    var ago = d.fx.ts ? Math.round((Date.now() - d.fx.ts) / 3600000) : null;
+    var cells = [['USD/CNY', d.fx.usd_cny], ['EUR/USD', d.fx.eur_usd], ['USD/JPY', d.fx.usd_jpy], ['GBP/USD', d.fx.gbp_usd], ['CNY/JPY', d.fx.cny_jpy]];
+    h += '<div class="pcard" style="margin-bottom:12px"><div class="pcard-hdr"><h3>💱 实时汇率</h3>' +
+      '<span style="font-size:11px;color:var(--ts)">' + (ago != null ? (ago <= 0 ? '刚刚' : ago + '小时前') : '') + ' · 参考价</span></div>' +
+      '<div class="pcard-body"><div class="stats" style="display:flex;gap:10px;flex-wrap:wrap">';
+    cells.forEach(function(c){
+      if (c[1] == null) return;
+      h += '<div class="stat" style="flex:1;min-width:92px;padding:12px 8px;text-align:center"><div class="num pu" style="font-size:19px;font-weight:800">' + c[1] + '</div><div class="lbl" style="font-size:11px;color:var(--ts)">' + c[0] + '</div></div>';
+    });
+    h += '</div></div></div>';
+  }
+  if (d.news && d.news.items && d.news.items.length) {
+    h += '<div class="pcard"><div class="pcard-hdr"><h3>📰 财经头条</h3><span style="font-size:11px;color:var(--ts)">' + escapeHtml(d.news.src || '') + '</span></div><div class="pcard-body">';
+    d.news.items.forEach(function(it){
+      h += '<a href="' + escapeHtml(it.l) + '" target="_blank" rel="noopener" style="display:block;padding:8px 4px;border-bottom:.5px solid var(--bdr);font-size:13px;color:var(--t);text-decoration:none;transition:var(--transition)" onmouseover="this.style.color=\'#a5b4fc\'" onmouseout="this.style.color=\'var(--t)\'">· ' + escapeHtml(it.t) + '</a>';
+    });
+    h += '<div style="font-size:11px;color:var(--ts);margin-top:8px">💡 论述题"联系实际"可引用以上时政热点</div></div></div>';
+  }
+  return h;
 }
 (function() {
   var files = ["per_question.json","module_corpus.json","answer-bank.json","hot-topics.json","material-library.json"].concat(['knowledge_ext.json']);
