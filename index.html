@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<!-- v2.1 · 2026-07-29 12:41 · modular -->
+<!-- v2.1 · 2026-07-29 14:41 · modular -->
 <html lang="zh-CN">
 <head>
 <meta charset="UTF-8">
@@ -5888,7 +5888,19 @@ function sendAIMessage() {
   chatBody.scrollTop = chatBody.scrollHeight;
   chatHistory.push({role: 'user', content: q});
   var ctx = buildAIContext(q);
-  var sys = RUC434_STYLE + "\n你是人大434国际商务考研AI助手。你的数据库中已包含完整的历年真题和标准答案，你随时可以引用任何一道真题。请严格遵循以上写作风格，参考数据库中的真题答案、知识点和热点素材回答问题。公式请用$...$包裹。\n" + ctx + "\n\n要求：必须参考数据库中的真实真题和答案来回答；贴合人大434风格、结构化、分点作答、术语中英文对照、结尾有考点提示。";
+  var sys = "你是中国人民大学434国际商务考研的资深辅导老师，专业、严谨、有洞察力。语言精准、清晰、有分寸感——把学理逻辑讲透，而不是背模板、也不是插科打诨。\n\n"
+    + "【硬性要求：理论必须忠于资料库，严禁自由发挥】\n"
+    + "· 凡涉及理论的定义、假设、核心要点、评价（贡献/局限）、公式，必须严格依据下方【资料库】中该知识点手册档案的原文表述，尽量原话引用其关键定义与要点，不得凭记忆改写、简化或杜撰；\n"
+    + "· 若资料库未收录所问理论，如实说明『手册档案暂未收录该点』并给出审慎说明，绝不编造定义或来源；\n"
+    + "· 举例或联系现实时可适当发挥，但理论内核必须与档案一致。\n\n"
+    + "【表达风格】\n"
+    + "· 【开场硬性规定】禁止口语化或寒暄式开场，开头第一句即以专业判断、定义或结论直接切入；严禁出现『咱们』『大白话』『底牌』『聊聊』『说白了』『说人话』『翻出来』等口语/网络化措辞，全文保持研究生学术书面语；\n"
+    + "· 保持研究生学术语域：术语准确、首次出现附中英文对照，公式用$...$包裹；避免口水话、避免过度打比方、避免网络化或夸张语气；\n"
+    + "· 【排版要求】层级标题一律采用中文学术分级序号：第一级用『一、二、三、』，第二级用『（一）（二）（三）』，第三级用『1. 2. 3.』，第四级用『（1）（2）（3）』；禁止使用 Markdown 的 # 号标题和 * 星号列表符。关键理论名与术语用**加粗**，必要时用表格对比，公式用$...$包裹；层次分明、疏密得当，避免整段无分隔的大段白文；篇幅按问题大小把握，不必为凑格式硬加套路化结尾。\n"
+    + "· 当学生要求『这道题怎么答/帮我拟答案/批改我的答案』时，切换到下方【作答规范】给出规范化范答。\n\n"
+    + "【资料库（按本次提问检索命中，理论表述以此为准）】\n"
+    + ctx
+    + "\n【作答规范（仅当学生要你示范或批改考试答案时启用）】\n" + RUC434_STYLE;
   var msgs = [{role: 'system', content: sys}];
   chatHistory.slice(-10).forEach(function(h) { msgs.push({role: h.role, content: h.content}); });
   fetch(DS_URL, {
@@ -13670,11 +13682,11 @@ function _dailyBarHtml() {
     var qn = 0, kn = 0, an = 0;
     var qCtx = '', kCtx = '', aCtx = '';
     hits.forEach(function(d){
-      if (d.type === 'question' && qn < 8 && d.ref) {
+      if (d.type === 'question' && qn < 10 && d.ref) {
         qCtx += '【' + d.ref.year + '年 第' + d.ref.num + '题 ' + d.ref.type + '】\n题目：' + d.ref.question + '\n';
         if (d.ref.answer && d.ref.answer.length > 10) qCtx += '标准答案：' + d.ref.answer + '\n';
         qCtx += '\n'; qn++;
-      } else if (d.type === 'knowledge' && kn < 6 && d.ref) {
+      } else if (d.type === 'knowledge' && kn < 0 && d.ref) {
         var K = d.ref;
         kCtx += '【' + (K.name || d.id) + '】模块:' + (K.module || '') + '\n';
         if (K.overview) kCtx += '概述:' + K.overview + '\n';
@@ -13692,16 +13704,24 @@ function _dailyBarHtml() {
       }
     });
     if (qCtx) ctx += '=== 与提问最相关的真题(含标准答案, 优先引用) ===\n\n' + qCtx;
-    if (kCtx) ctx += '=== 相关知识点(背诵手册完整档案) ===\n\n' + kCtx;
+    /* 方案A: 91知识点手册档案全量常驻——理论定义/假设/要点/评价的唯一权威来源, 保证"引用原文"永不落空 */
+    ctx += '=== 全部知识点·手册档案（共' + Object.keys(KNOWLEDGE).length + '个；理论的定义、假设、要点、评价、公式均以此为准，回答涉及理论时必须引用下方原文表述，不得改写或杜撰） ===\n\n';
+    for (var _kk in KNOWLEDGE) {
+      var _K = KNOWLEDGE[_kk];
+      ctx += '【' + (_K.name || _kk) + '】' + (_K.module ? ' 模块:' + _K.module : '') + '\n';
+      if (_K.overview) ctx += '概述:' + _K.overview + '\n';
+      if (_K.assumptions && _K.assumptions.length) ctx += '假设:' + _K.assumptions.join('；') + '\n';
+      if (_K.key && _K.key.length) ctx += '要点:' + _K.key.join('；') + '\n';
+      if (_K.evaluation_pros && _K.evaluation_pros.length) ctx += '贡献:' + _K.evaluation_pros.join('；') + '\n';
+      if (_K.evaluation_cons && _K.evaluation_cons.length) ctx += '局限:' + _K.evaluation_cons.join('；') + '\n';
+      if (_K.formula) ctx += '公式:' + _K.formula + '\n';
+      if (_K.exam) ctx += '历年考察:' + _K.exam + '\n';
+      ctx += '\n';
+    }
     if (aCtx) ctx += '=== 相关语料 ===\n' + aCtx + '\n';
 
-    /* 全局视野: 77知识点目录(带一句概述) + 全部真题索引一行一题 */
-    ctx += '=== 全库目录(需要其他考点/真题时可点名调用) ===\n';
-    ctx += '【77个知识点】\n';
-    Object.keys(KNOWLEDGE).forEach(function(k){
-      ctx += k + '(' + ((KNOWLEDGE[k].module || '').split('/')[0]) + '); ';
-    });
-    ctx += '\n【真题索引】\n';
+    /* 全局视野: 全部真题索引一行一题(知识点已全量注入, 无需再列目录) */
+    ctx += '=== 全部真题索引(需要其他真题时可点名调用) ===\n【真题索引】\n';
     DATA.forEach(function(q){
       ctx += q.id + ' ' + q.type + ':' + q.question.substring(0, 26).replace(/\n/g, '') + '… ';
     });
@@ -14072,12 +14092,14 @@ function _dailyBarHtml() {
     if (!K) { for (var k in KNOWLEDGE) { if (k.indexOf(name) >= 0 || name.indexOf(k) >= 0) { K = KNOWLEDGE[k]; name = k; break; } } }
     if (!K) return '';
     var s = '【' + name + '·手册档案】\n';
-    if (K.overview) s += '概述:' + K.overview.substring(0, 260) + '\n';
+    if (K.overview) s += '概述:' + K.overview + '\n';
     if (K.assumptions && K.assumptions.length) s += '假设:' + K.assumptions.join('；') + '\n';
     if (K.key && K.key.length) s += '要点:' + K.key.join('；') + '\n';
     if (K.evaluation_pros && K.evaluation_pros.length) s += '贡献:' + K.evaluation_pros.join('；') + '\n';
     if (K.evaluation_cons && K.evaluation_cons.length) s += '局限:' + K.evaluation_cons.join('；') + '\n';
     if (K.frontier) s += '前沿:' + K.frontier.substring(0, 150) + '\n';
+    if (K.exam) s += '历年考察:' + K.exam + '\n';
+    if (K.full_text) s += '手册原文节选:' + K.full_text.substring(0, 1200) + '\n';
     return s;
   }
 
@@ -14105,14 +14127,21 @@ function _dailyBarHtml() {
       var q = qs[i];
       active++;
       var minLen = q.type === '简答' ? 500 : 1000;
-      var sys = RUC434_STYLE + '\n你是人大434阅卷组长，为模拟题撰写高分标准答案。\n' + knCard2(q.knowledge)
-        + '\n【硬性要求】\n1. 答案' + minLen + '字以上(这是' + (q.score || (q.type === '简答' ? 10 : 20)) + '分题的深度要求)\n'
-        + '2. 结构：' + (q.type === '简答' ? '定义先行→①②③分点要点(每点有解释)→简要评价/小结'
-            : q.type === '论述' ? '理论阐述(含提出者与假设)→逻辑机制推导→联系中国现实(具体案例或数据)→政策含义→【考点提示】'
-            : '逐问作答，每问点名引用理论(中英对照)→结合案例材料原文分析→结论启示')
-        + '\n3. 要点必须与上方手册档案一致，理论名中英对照，禁止空话套话\n4. 直接输出答案正文，不要任何前言。';
+      /* 注入同题型真题标准答案作为行文范例——补足"真题味" */
+      var _styleRef = '';
+      var _ex = DATA.filter(function(x){ return x.type === q.type && x.answer && x.answer.length > 300; }).slice(-2);
+      if (_ex.length) {
+        _styleRef = '\n=== 同题型真题标准答案范例(严格模仿其行文口吻、术语密度、结构层次与论证深度) ===\n';
+        _ex.forEach(function(x){ _styleRef += '【' + x.year + '年 第' + x.num + '题·' + x.type + '】\n' + x.answer.substring(0, 1000) + '\n\n'; });
+      }
+      var sys = RUC434_STYLE + '\n你是人大434阅卷组长，为模拟题撰写可直接背诵的高分标准答案。\n' + knCard2(q.knowledge) + _styleRef
+        + '\n【硬性要求】\n1. 篇幅：本题为' + (q.score || (q.type === '简答' ? 10 : 20)) + '分题，答案必须' + minLen + '字以上，写满写透、宁长勿短；\n'
+        + '2. 结构严谨：' + (q.type === '简答' ? '定义先行(理论名中英对照)→①②③核心要点分点(每点先亮观点再展开解释)→简要评价/小结'
+            : q.type === '论述' ? '①理论阐述(提出者+假设前提)→②逻辑机制推导(层层递进)→③联系中国现实(具体案例或数据)→④政策含义→⑤【考点提示】'
+            : '按设问逐问作答，每问：点名引用理论(中英对照)→结合案例材料原文分析→结论启示')
+        + '\n3. 理论内核必须与上方手册档案一致且可溯源，理论名中英对照，专业术语密集，严禁空话套话与口水化表达；\n4. 行文向上方真题范例看齐，直接输出答案正文，不要"好的"之类前言。';
       fetch(DS_URL, {method: 'POST', headers: {Authorization: 'Bearer ' + getAPIKey(), 'Content-Type': 'application/json'},
-        body: JSON.stringify({model: 'mimo-v2.5-pro', messages: [{role: 'system', content: sys}, {role: 'user', content: '题目(' + q.type + ')：' + q.question}], temperature: 0.3, max_tokens: 3000})
+        body: JSON.stringify({model: 'mimo-v2.5-pro', messages: [{role: 'system', content: sys}, {role: 'user', content: '题目(' + q.type + ')：' + q.question}], temperature: 0.35, max_tokens: 6000})
       }).then(function(r){ if (!r.ok) throw Error('HTTP ' + r.status); return r.json(); })
       .then(function(d){
         var txt = (d.choices && d.choices[0] && d.choices[0].message) ? (d.choices[0].message.content || '').trim() : '';
