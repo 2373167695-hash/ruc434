@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<!-- v2.1 · 2026-07-30 08:02 · modular -->
+<!-- v2.1 · 2026-07-30 08:24 · modular -->
 <html lang="zh-CN">
 <head>
 <meta charset="UTF-8">
@@ -14176,6 +14176,22 @@ function loadDailyAI() {
     return s;
   }
 
+  /* 健壮考点解析: AI写的考点名→真实KNOWLEDGE键, 保证手册档案能喂进答案生成 */
+  function _resolveKn(name){
+    if (!name) return '';
+    if (KNOWLEDGE[name]) return name;
+    var keys = Object.keys(KNOWLEDGE), best = '', bestLen = 0;
+    keys.forEach(function(k){ if (k.indexOf(name) >= 0 || name.indexOf(k) >= 0) { if (k.length > bestLen) { best = k; bestLen = k.length; } } });
+    if (best) return best;
+    var norm = function(x){ return (x || '').replace(/[（(][^）)]*[）)]/g, '').replace(/[^\u4e00-\u9fa5A-Za-z]/g, '').toLowerCase(); };
+    var nn = norm(name);
+    if (nn) { keys.forEach(function(k){ var nk = norm(k); if (nk && (nk.indexOf(nn) >= 0 || nn.indexOf(nk) >= 0)) { if (nk.length > bestLen) { best = k; bestLen = nk.length; } } }); if (best) return best; }
+    var grams = function(x){ x = norm(x); var g = {}; for (var i = 0; i < x.length - 1; i++) g[x.substr(i, 2)] = 1; return g; };
+    var ng = grams(name), bestScore = 0;
+    keys.forEach(function(k){ var kg = grams(k), inter = 0, tot = 0; for (var g in kg) { tot++; if (ng[g]) inter++; } var sc = tot ? inter / tot : 0; if (sc > bestScore && sc >= 0.4) { bestScore = sc; best = k; } });
+    return best;
+  }
+
   function fallbackAnswer(q){
     var K = KNOWLEDGE[q.knowledge];
     if (!K) return '(答案生成失败, 请参考知识点: ' + (q.knowledge || '相关章节') + ')';
@@ -14207,12 +14223,15 @@ function loadDailyAI() {
         _styleRef = '\n=== 同题型真题标准答案范例(严格模仿其行文口吻、术语密度、结构层次与论证深度) ===\n';
         _ex.forEach(function(x){ _styleRef += '【' + x.year + '年 第' + x.num + '题·' + x.type + '】\n' + x.answer.substring(0, 1000) + '\n\n'; });
       }
-      var sys = RUC434_STYLE + '\n你是人大434阅卷组长，为模拟题撰写可直接背诵的高分标准答案。\n' + knCard2(q.knowledge) + _styleRef
+      var _knReal = _resolveKn(q.knowledge);
+      if (_knReal) q.knowledge = _knReal; /* 回写真实键, 供兜底补充与"看详情"跳转 */
+      var _card = knCard2(q.knowledge);
+      var sys = RUC434_STYLE + '\n你是人大434阅卷组长，为模拟题撰写可直接背诵的高分标准答案。\n' + _card + _styleRef
         + '\n【硬性要求】\n1. 篇幅：本题为' + (q.score || (q.type === '简答' ? 10 : 20)) + '分题，答案必须' + minLen + '字以上，写满写透、宁长勿短；\n'
         + '2. 结构严谨：' + (q.type === '简答' ? '定义先行(理论名中英对照)→①②③核心要点分点(每点先亮观点再展开解释)→简要评价/小结'
             : q.type === '论述' ? '①理论阐述(提出者+假设前提)→②逻辑机制推导(层层递进)→③联系中国现实(具体案例或数据)→④政策含义→⑤【考点提示】'
             : '按设问逐问作答，每问：点名引用理论(中英对照)→结合案例材料原文分析→结论启示')
-        + '\n3. 理论内核必须与上方手册档案一致且可溯源，理论名中英对照，专业术语密集，严禁空话套话与口水化表达；\n4. 行文向上方真题范例看齐，直接输出答案正文，不要"好的"之类前言。';
+        + '\n3. 【理论必须忠于手册档案·严禁自由发挥】答案中理论的定义、假设、核心要点、贡献与局限，必须直接取自上方【手册档案】的原文表述(可自然串接、扩写成段)，不得改写成你自己的话、不得脱离档案另起理论框架、更不得杜撰；档案未收录的内容不要编造；理论名中英对照、专业术语密集；\n4. 行文向上方真题范例看齐，直接输出答案正文，不要"好的"之类前言。';
       fetch(DS_URL, {method: 'POST', headers: {Authorization: 'Bearer ' + getAPIKey(), 'Content-Type': 'application/json'},
         body: JSON.stringify({model: AI_MODEL, messages: [{role: 'system', content: sys}, {role: 'user', content: '题目(' + q.type + ')：' + q.question}], temperature: 0.35, max_tokens: 6000})
       }).then(function(r){ if (!r.ok) throw Error('HTTP ' + r.status); return r.json(); })
@@ -14241,7 +14260,8 @@ function loadDailyAI() {
       + '\n\n【生成要求】\n1. 共10道题：简答5道、论述3道、案例2道；案例题必须有150字以上案例材料+2-3个设问\n'
       + '2. 每道题对应上方知识库档案中的具体考点，禁止超纲；题目风格100%贴合人大434真题(参考上方真题范例)\n'
       + '3. 至少2道结合中国现实经济\n'
-      + '4. 严格JSON输出：{"questions":[{"type":"简答|论述|案例","question":"完整题面","knowledge":"对应考点名"}]}';
+      + '4. 【考点名硬性规范】每题 knowledge 字段必须原样照抄以下考点名之一(逐字一致，不得改写/翻译/简称/自造)：' + (mk.picked || []).join('、') + '\n'
+      + '5. 严格JSON输出：{"questions":[{"type":"简答|论述|案例","question":"完整题面","knowledge":"必须是上方列出的考点名原文"}]}';
     fetch(DS_URL, {method: 'POST', headers: {Authorization: 'Bearer ' + getAPIKey(), 'Content-Type': 'application/json'},
       body: JSON.stringify({model: AI_MODEL, messages: [{role: 'system', content: sys},
         {role: 'user', content: '生成一套人大434模拟试卷(只出题)' + (topics.length ? '，命题范围：' + topics.join('、') : '')}],
