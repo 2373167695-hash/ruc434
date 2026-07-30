@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<!-- v2.1 · 2026-07-30 13:22 · modular -->
+<!-- v2.1 · 2026-07-30 15:03 · modular -->
 <html lang="zh-CN">
 <head>
 <meta charset="UTF-8">
@@ -14249,7 +14249,7 @@ function loadDailyAI() {
   /* 重写组卷: 只出题+按题型赋分, 出题成功即启动逐题答案生成 */
   startMockExam = function(){
     var topics = (typeof _meCollectDir === 'function') ? _meCollectDir() : [];
-    document.getElementById('ct').innerHTML = '<div style="text-align:center;padding:80px 20px"><div class="ai-loading" style="justify-content:center"><span class="ai-dot"></span><span class="ai-dot"></span><span class="ai-dot"></span></div><div style="margin-top:16px;color:var(--ts);font-size:13px">正在按手册知识库组卷…约20-40秒<br><span style="font-size:11px">参考答案将在你答题期间逐题后台生成(10分题500字+/20分题1000字+)</span></div></div>';
+    document.getElementById('ct').innerHTML = '<div style="text-align:center;padding:80px 20px"><div class="ai-loading" style="justify-content:center"><span class="ai-dot"></span><span class="ai-dot"></span><span class="ai-dot"></span></div><div style="margin-top:16px;color:var(--ts);font-size:13px">正在按手册知识库组卷…已开启深度思考(先分析考点再命题)，约40-70秒<br><span style="font-size:11px">参考答案将在你答题期间逐题后台生成(10分题500字+/20分题1000字+)</span></div></div>';
     var mk = buildMockContext(topics);
     var _prof = (typeof buildStudyProfile === 'function') ? buildStudyProfile() : '';
     var dirTxt = topics.length
@@ -14257,7 +14257,7 @@ function loadDailyAI() {
       : '\n【命题范围】从上方知识库档案中的考点命题，覆盖不同部分。';
     if (_prof) dirTxt += '\n' + _prof + '\n【因材命题要求】结合以上考生画像，对其薄弱模块/低分维度适当加权命题(但不牺牲整卷覆盖面)。';
     var sys = RUC434_STYLE + '\n你是人大434国际商务考研命题老师。本次只出题，不写答案。\n' + mk.ctx + dirTxt
-      + '\n\n【生成要求】\n1. 共10道题：简答5道、论述3道、案例2道；案例题必须有150字以上案例材料+2-3个设问\n'
+      + '\n\n【出题前必须先分析(命出好题的前提)】动笔前先在思考中对每个拟考知识点做考察分析：①该理论的核心张力/最易被追问之处；②人大434历年偏好的考察角度(定义辨析/理论对比/适用边界/联系中国现实)；③它与哪个理论易混可对比；④能接上的现实议题(汇率、人民币、RCEP、全球价值链为高频)。再据此命题——题目要考『是否真理解』(会用、会辨析、会联系现实)而非『是否背过定义』。\n【生成要求】\n1. 共10道题：简答5道、论述3道、案例2道；案例题必须有150字以上案例材料+2-3个设问\n'
       + '2. 每道题对应上方知识库档案中的具体考点，禁止超纲；题目风格100%贴合人大434真题(参考上方真题范例)\n'
       + '3. 至少2道结合中国现实经济\n'
       + '4. 【考点名硬性规范】每题 knowledge 字段必须原样照抄以下考点名之一(逐字一致，不得改写/翻译/简称/自造)：' + (mk.picked || []).join('、') + '\n'
@@ -14265,7 +14265,7 @@ function loadDailyAI() {
     fetch(DS_URL, {method: 'POST', headers: {Authorization: 'Bearer ' + getAPIKey(), 'Content-Type': 'application/json'},
       body: JSON.stringify({model: AI_MODEL, messages: [{role: 'system', content: sys},
         {role: 'user', content: '生成一套人大434模拟试卷(只出题)' + (topics.length ? '，命题范围：' + topics.join('、') : '')}],
-        temperature: 0.45, max_tokens: 4000})
+        max_tokens: 9000, thinking: {type: 'enabled'}})
     }).then(function(r){ if (!r.ok) throw Error('HTTP ' + r.status); return r.json(); })
     .then(function(d){
       var c = d.choices[0].message.content, m = c.match(/\{[\s\S]*\}/);
