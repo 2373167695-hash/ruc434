@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<!-- v2.1 · 2026-07-30 08:24 · modular -->
+<!-- v2.1 · 2026-07-30 13:22 · modular -->
 <html lang="zh-CN">
 <head>
 <meta charset="UTF-8">
@@ -11015,7 +11015,7 @@ function _dailyBarHtml() {
   /* B: 一键开刷——碎片时间秒进速刷题流(最低摩擦入口) */
   h += '<div onclick="navigate(\'drill\')" class="pcard" style="margin-bottom:16px;cursor:pointer;background:linear-gradient(128deg,rgba(130,128,255,.30),rgba(94,92,230,.14))"><div class="pcard-body" style="display:flex;align-items:center;gap:14px">'
     + '<div style="font-size:34px">⚡</div>'
-    + '<div style="flex:1"><div style="font-size:17px;font-weight:800;color:#fff">开刷 · 速刷模式</div><div style="font-size:12px;color:#c9c9e8;margin-top:3px">碎片时间随手一刷 · 考点客观题秒出秒判 · 无需打字·离线可用</div></div>'
+    + '<div style="flex:1"><div style="font-size:17px;font-weight:800;color:#fff">开刷 · 速刷闪卡</div><div style="font-size:12px;color:#c9c9e8;margin-top:3px">碎片时间随手一刷 · 真题主动回忆+手册答案自查 · 离线可用</div></div>'
     + '<div style="font-size:22px;color:#c9c9e8">▶</div></div></div>';
   h += '<div class="pcard" style="margin-bottom:16px"><div class="pcard-body">';
   h += '<h3 style="margin:0 0 12px">📅 今日主线 <span style="font-size:12px;color:var(--ts);font-weight:400">先清复习队列，再写一道题</span></h3>';
@@ -15510,9 +15510,8 @@ function renderLiveMacro(d) {
   }
   return h;
 }
-/* ---------- v3.68 速刷模式: 91知识点本地生成客观题(考点归属/要点辨析), 秒出秒判, 离线可用, 弱项加权 ---------- */
+/* ---------- v3.69 速刷·主观闪卡: 真题→脑中回忆→划开手册标准答案自查→自评(会/熟/不会), 主动回忆式训练 ---------- */
 (function(){
-  /* 路由拦截 drill */
   var _oNav = navigate;
   navigate = function(p, t, sk){ if (p === 'drill') { try { _oNav('', undefined, true); } catch(e){} showDrill(); return; } return _oNav.apply(this, arguments); };
 
@@ -15527,7 +15526,7 @@ function renderLiveMacro(d) {
           if (items[i].textContent.indexOf('统一复习') >= 0 && !items[i].querySelector('[data-drill]')) {
             var a = document.createElement('div'); a.className = 'ni'; a.setAttribute('data-drill','1');
             a.style.cssText = 'padding:8px 12px;cursor:pointer;font-size:13px;border-radius:8px';
-            a.innerHTML = '⚡ 速刷模式'; a.onclick = function(){ navigate('drill'); };
+            a.innerHTML = '⚡ 速刷闪卡'; a.onclick = function(){ navigate('drill'); };
             items[i].insertBefore(a, items[i].firstChild);
             break;
           }
@@ -15536,102 +15535,86 @@ function renderLiveMacro(d) {
     };
   }
 
-  var _drill = { q: null, right: 0, total: 0, streak: 0 };
+  var _drill = { q: null, type: '简答', revealed: false, done: 0, recent: [] };
 
-  function _pick(arr, n, exclude){
-    var pool = arr.filter(function(x){ return !exclude || exclude.indexOf(x) < 0; });
-    for (var i = pool.length - 1; i > 0; i--) { var j = Math.floor(Math.random()*(i+1)); var t = pool[i]; pool[i]=pool[j]; pool[j]=t; }
-    return pool.slice(0, n);
-  }
+  function _rateLoad(){ try { return JSON.parse(localStorage.getItem('r434_drill2') || '{}'); } catch(e) { return {}; } }
+  function _rateSave(m){ try { localStorage.setItem('r434_drill2', JSON.stringify(m)); if (typeof saveState === 'function') saveState(); } catch(e){} }
 
-  /* 出一道题: 弱项(未浏览)优先, 两种题型交替 */
-  function _genDrill(){
-    var names = Object.keys(KNOWLEDGE).filter(function(k){ return (KNOWLEDGE[k].key || []).length; });
-    if (names.length < 4) return null;
-    /* 弱项加权: 未浏览过的考点抽中概率更高 */
-    var unseen = names.filter(function(k){ return !knowledgeViews[k] && !knowledgeViews[(KNOWLEDGE[k].name||k)]; });
-    var target = (unseen.length && Math.random() < 0.7) ? unseen[Math.floor(Math.random()*unseen.length)] : names[Math.floor(Math.random()*names.length)];
-    var K = KNOWLEDGE[target];
-    var mode = Math.random() < 0.5 ? 'belong' : 'which';
-    if (mode === 'belong') {
-      /* 显示一条要点 → 问属于哪个考点 */
-      var kp = _pick(K.key, 1)[0];
-      var distract = _pick(names, 3, [target]);
-      var opts = _pick([target].concat(distract), 4);
-      return { mode: mode, stem: '下列表述属于哪个知识点／理论？\n\n「' + kp + '」', options: opts, answer: target, module: K.module || '' };
-    } else {
-      /* 显示考点名 → 问哪条是它的核心要点 */
-      var correctKey = _pick(K.key, 1)[0];
-      var others = _pick(names, 3, [target]);
-      var wrongKeys = others.map(function(nm){ var ks = KNOWLEDGE[nm].key || []; return ks.length ? ks[Math.floor(Math.random()*ks.length)] : nm; });
-      var opts2 = _pick([correctKey].concat(wrongKeys), 4);
-      return { mode: mode, stem: '【' + (K.name || target) + '】的核心要点是下列哪一条？', options: opts2, answer: correctKey, module: K.module || '', target: target };
-    }
+  /* 选题: 按题型过滤 + 弱项/自评加权(没做过>不会>熟>会), 避开最近5题 */
+  function _pickQ(){
+    var pool = DATA.filter(function(q){ return (q.answer || '').length > 80 && (_drill.type === '全部' || q.type === _drill.type); });
+    if (!pool.length) pool = DATA.filter(function(q){ return (q.answer || '').length > 80; });
+    if (!pool.length) return null;
+    var rates = _rateLoad();
+    var w = function(q){
+      var r = rates[q.id];
+      var base = !r ? 5 : (r.rate === '不会' ? 4 : r.rate === '熟' ? 2 : 0.6); /* 会=低权重, 不会=高权重 */
+      if (_drill.recent.indexOf(q.id) >= 0) base *= 0.05; /* 刚出过的几乎不再抽 */
+      return base;
+    };
+    var tot = 0; pool.forEach(function(q){ tot += w(q); });
+    var r = Math.random() * tot, acc = 0, chosen = pool[0];
+    for (var i = 0; i < pool.length; i++) { acc += w(pool[i]); if (r <= acc) { chosen = pool[i]; break; } }
+    _drill.recent.push(chosen.id); if (_drill.recent.length > 5) _drill.recent.shift();
+    return chosen;
   }
 
   window.showDrill = function(){
-    var bc = document.getElementById('bc'); if (bc) { bc.style.display = ''; bc.innerHTML = '<span>⚡ 速刷模式</span>'; }
+    var bc = document.getElementById('bc'); if (bc) { bc.style.display = ''; bc.innerHTML = '<span>⚡ 速刷闪卡</span>'; }
     var bb = document.getElementById('backBtn'); if (bb) bb.style.display = 'block';
-    _drill.q = _genDrill();
+    _drill.q = _pickQ(); _drill.revealed = false;
     _render();
   };
 
   function _render(){
     var ct = document.getElementById('ct'); if (!ct) return;
     var q = _drill.q;
-    if (!q) { ct.innerHTML = '<div class="hero"><h1>⚡ 速刷模式</h1><div class="desc">知识点数据加载中，请稍候重试…</div></div>'; return; }
-    var acc = _drill.total ? Math.round(_drill.right / _drill.total * 100) : 0;
-    var h = '<div class="hero" style="margin-bottom:12px"><h1>⚡ 速刷模式</h1>'
-      + '<div class="desc">碎片时间随手刷 · 秒出秒判 · 数据源自背诵手册</div>'
-      + '<div class="sts" style="margin-top:10px"><div class="st">本轮 <strong>' + _drill.right + '/' + _drill.total + '</strong>（' + acc + '%）</div>'
-      + '<div class="st">🔥 连对 <strong>' + _drill.streak + '</strong></div></div></div>';
+    var rates = _rateLoad();
+    var mastered = 0, weak = 0; for (var k in rates) { if (rates[k].rate === '会') mastered++; else if (rates[k].rate === '不会') weak++; }
+    var types = ['简答','论述','案例','全部'];
+    var chips = types.map(function(t){
+      var on = _drill.type === t;
+      return '<span onclick="drillSetType(\'' + t + '\')" style="cursor:pointer;padding:5px 14px;border-radius:20px;font-size:12px;margin-right:8px;' + (on ? 'background:rgba(130,128,255,.35);color:#fff;font-weight:700' : 'background:rgba(255,255,255,.06);color:var(--ts)') + '">' + t + '</span>';
+    }).join('');
+    var h = '<div class="hero" style="margin-bottom:12px"><h1>⚡ 速刷闪卡</h1>'
+      + '<div class="desc">真题主动回忆 · 先自己想，再划开手册标准答案自查</div>'
+      + '<div style="margin-top:12px">' + chips + '</div>'
+      + '<div class="sts" style="margin-top:10px"><div class="st">本轮已刷 <strong>' + _drill.done + '</strong></div>'
+      + '<div class="st">✅ 标记会 <strong>' + mastered + '</strong></div><div class="st">🔴 待攻克 <strong>' + weak + '</strong></div></div></div>';
+    if (!q) { ct.innerHTML = h + '<div class="pcard"><div class="pcard-body">暂无可用题目。</div></div>'; return; }
     h += '<div class="pcard"><div class="pcard-body">';
-    h += '<div style="font-size:15px;line-height:1.9;white-space:pre-wrap;margin-bottom:16px">' + escapeHtml(q.stem) + '</div>';
-    h += '<div id="drillOpts">';
-    q.options.forEach(function(opt, i){
-      h += '<div class="drill-opt" data-i="' + i + '" onclick="drillAnswer(' + i + ')" style="padding:12px 16px;margin-bottom:10px;border-radius:12px;background:rgba(255,255,255,.05);border:1px solid rgba(255,255,255,.12);cursor:pointer;font-size:14px;line-height:1.7;transition:var(--transition)">'
-        + String.fromCharCode(65 + i) + '. ' + escapeHtml(opt) + '</div>';
-    });
-    h += '</div>';
-    h += '<div id="drillFb" style="display:none;margin-top:6px"></div>';
-    h += '</div></div>';
-    ct.innerHTML = h;
-    ct.scrollTop = 0;
-  }
-
-  window.drillAnswer = function(i){
-    var q = _drill.q; if (!q || q._done) return;
-    q._done = true;
-    var chosen = q.options[i];
-    var correct = (chosen === q.answer);
-    _drill.total++;
-    if (correct) { _drill.right++; _drill.streak++; } else { _drill.streak = 0; }
-    var opts = document.querySelectorAll('#drillOpts .drill-opt');
-    opts.forEach(function(el){
-      var oi = parseInt(el.getAttribute('data-i'));
-      el.onclick = null; el.style.cursor = 'default';
-      if (q.options[oi] === q.answer) { el.style.background = 'rgba(48,209,88,.18)'; el.style.borderColor = 'rgba(48,209,88,.5)'; el.style.color = '#4ade80'; }
-      else if (oi === i) { el.style.background = 'rgba(255,69,58,.15)'; el.style.borderColor = 'rgba(255,69,58,.45)'; el.style.color = '#ff8a80'; }
-      else { el.style.opacity = '.55'; }
-    });
-    /* 归属题答对/答错都把该考点计入已浏览(轻量学习信号) */
-    var knName = q.target || q.answer;
-    if (KNOWLEDGE[knName]) { knowledgeViews[knName] = (knowledgeViews[knName] || 0) + 1; try { localStorage.setItem('r434_kv', JSON.stringify(knowledgeViews)); saveState(); } catch(e){} }
-    var fb = document.getElementById('drillFb');
-    if (fb) {
-      fb.style.display = 'block';
-      var jumpName = q.target || q.answer;
-      fb.innerHTML = '<div style="padding:12px 14px;border-radius:12px;background:' + (correct ? 'rgba(48,209,88,.10);border:1px solid rgba(48,209,88,.25)' : 'rgba(255,159,10,.10);border:1px solid rgba(255,159,10,.25)') + '">'
-        + '<div style="font-size:14px;font-weight:700;color:' + (correct ? '#4ade80' : '#fbbf24') + '">' + (correct ? '✓ 答对了' : '✗ 答错了，正确答案已高亮') + '</div>'
-        + '<div style="font-size:12px;color:var(--ts);margin-top:6px">所属：' + escapeHtml(q.module) + '</div>'
-        + '<div style="margin-top:10px;display:flex;gap:10px">'
-        + '<button class="btn btn-gen" onclick="drillNext()" style="padding:9px 22px;font-size:14px">下一题 →</button>'
-        + '<button class="ai-btn ai-btn-sm" onclick="navigate(\'kn:' + escapeHtml(jumpName).replace(/\'/g,"\\\'") + '\',\'' + escapeHtml(jumpName).replace(/\'/g,"\\\'") + '\')" style="padding:9px 18px;font-size:13px">📖 看详情</button>'
+    h += '<div style="display:flex;align-items:center;gap:8px;margin-bottom:10px"><span class="score-tag" style="background:rgba(130,128,255,.25);color:#c9c9e8;padding:3px 10px;border-radius:6px;font-size:12px">' + escapeHtml(q.type) + (q.score ? ' ' + q.score + '分' : '') + '</span><span style="font-size:12px;color:var(--ts)">' + escapeHtml((q.year || '') + '年真题') + '</span></div>';
+    h += '<div style="font-size:16px;line-height:1.9;white-space:pre-wrap;font-weight:600;color:var(--t)">' + escapeHtml(q.question) + '</div>';
+    if (!_drill.revealed) {
+      h += '<div style="margin-top:18px;padding:20px;text-align:center;background:rgba(10,12,28,.25);border-radius:12px;border:1px dashed rgba(255,255,255,.15)">'
+        + '<div style="font-size:13px;color:var(--ts);margin-bottom:14px">先在脑子里/草稿纸上过一遍答题要点……</div>'
+        + '<button class="btn btn-gen" onclick="drillReveal()" style="padding:11px 30px;font-size:15px">👁 划开标准答案</button></div>';
+    } else {
+      h += '<div style="margin-top:16px;border-top:1px solid rgba(255,255,255,.1);padding-top:14px">'
+        + '<div style="font-size:13px;font-weight:700;color:#4ade80;margin-bottom:8px">📖 手册标准答案</div>'
+        + '<div style="font-size:14px;line-height:1.9">' + renderMarkdown(q.answer || '') + '</div></div>';
+      h += '<div style="margin-top:16px"><div style="font-size:13px;color:var(--ts);margin-bottom:10px">对照后自评（决定它多久后再出现）：</div>'
+        + '<div style="display:flex;gap:10px;flex-wrap:wrap">'
+        + '<button onclick="drillRate(\'会\')" style="flex:1;min-width:90px;padding:11px;border-radius:12px;border:1px solid rgba(48,209,88,.4);background:rgba(48,209,88,.12);color:#4ade80;font-size:14px;cursor:pointer;font-weight:700">✅ 会了</button>'
+        + '<button onclick="drillRate(\'熟\')" style="flex:1;min-width:90px;padding:11px;border-radius:12px;border:1px solid rgba(255,159,10,.4);background:rgba(255,159,10,.12);color:#fbbf24;font-size:14px;cursor:pointer;font-weight:700">🤔 不太熟</button>'
+        + '<button onclick="drillRate(\'不会\')" style="flex:1;min-width:90px;padding:11px;border-radius:12px;border:1px solid rgba(255,69,58,.4);background:rgba(255,69,58,.12);color:#ff8a80;font-size:14px;cursor:pointer;font-weight:700">❌ 不会</button>'
         + '</div></div>';
     }
-  };
+    h += '</div></div>';
+    ct.innerHTML = h; ct.scrollTop = 0;
+  }
 
-  window.drillNext = function(){ _drill.q = _genDrill(); _render(); };
+  window.drillSetType = function(t){ _drill.type = t; _drill.recent = []; _drill.q = _pickQ(); _drill.revealed = false; _render(); };
+  window.drillReveal = function(){ _drill.revealed = true; _render(); };
+  window.drillRate = function(r){
+    var q = _drill.q; if (!q) return;
+    var m = _rateLoad();
+    m[q.id] = { rate: r, ts: Date.now() };
+    _rateSave(m);
+    _drill.done++;
+    _drill.q = _pickQ(); _drill.revealed = false; _render();
+  };
+  window.drillNext = function(){ _drill.q = _pickQ(); _drill.revealed = false; _render(); };
 })();
 (function() {
   var files = ["per_question.json","module_corpus.json","answer-bank.json","hot-topics.json","material-library.json"].concat(['knowledge_ext.json']);
