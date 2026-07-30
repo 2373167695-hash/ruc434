@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<!-- v2.1 · 2026-07-30 15:03 · modular -->
+<!-- v2.1 · 2026-07-30 15:20 · modular -->
 <html lang="zh-CN">
 <head>
 <meta charset="UTF-8">
@@ -15535,21 +15535,21 @@ function renderLiveMacro(d) {
     };
   }
 
-  var _drill = { q: null, type: '简答', revealed: false, done: 0, recent: [] };
+  var _drill = { q: null, type: '简答', revealed: false, done: 0, recent: [], aiNext: null, loading: false };
 
   function _rateLoad(){ try { return JSON.parse(localStorage.getItem('r434_drill2') || '{}'); } catch(e) { return {}; } }
   function _rateSave(m){ try { localStorage.setItem('r434_drill2', JSON.stringify(m)); if (typeof saveState === 'function') saveState(); } catch(e){} }
+  function _isAI(){ return _drill.type === '\U0001F916AI新题'; }
 
-  /* 选题: 按题型过滤 + 弱项/自评加权(没做过>不会>熟>会), 避开最近5题 */
   function _pickQ(){
-    var pool = DATA.filter(function(q){ return (q.answer || '').length > 80 && (_drill.type === '全部' || q.type === _drill.type); });
+    var pool = DATA.filter(function(q){ return (q.answer || '').length > 80 && (_drill.type === '全部' || _isAI() || q.type === _drill.type); });
     if (!pool.length) pool = DATA.filter(function(q){ return (q.answer || '').length > 80; });
     if (!pool.length) return null;
     var rates = _rateLoad();
     var w = function(q){
       var r = rates[q.id];
-      var base = !r ? 5 : (r.rate === '不会' ? 4 : r.rate === '熟' ? 2 : 0.6); /* 会=低权重, 不会=高权重 */
-      if (_drill.recent.indexOf(q.id) >= 0) base *= 0.05; /* 刚出过的几乎不再抽 */
+      var base = !r ? 5 : (r.rate === '不会' ? 4 : r.rate === '熟' ? 2 : 0.6);
+      if (_drill.recent.indexOf(q.id) >= 0) base *= 0.05;
       return base;
     };
     var tot = 0; pool.forEach(function(q){ tot += w(q); });
@@ -15559,41 +15559,92 @@ function renderLiveMacro(d) {
     return chosen;
   }
 
+  /* AI出题: 推理式(深度思考)+手册接地, 现出一道新题及标准答案 */
+  function _knCardDrill(kn){
+    var K = KNOWLEDGE[kn]; if (!K) return '';
+    var s = '【' + kn + '·手册档案】\n';
+    if (K.overview) s += '概述:' + K.overview + '\n';
+    if (K.assumptions && K.assumptions.length) s += '假设:' + K.assumptions.join('；') + '\n';
+    if (K.key && K.key.length) s += '要点:' + K.key.join('；') + '\n';
+    if (K.evaluation_pros && K.evaluation_pros.length) s += '贡献:' + K.evaluation_pros.join('；') + '\n';
+    if (K.evaluation_cons && K.evaluation_cons.length) s += '局限:' + K.evaluation_cons.join('；') + '\n';
+    if (K.exam) s += '历年考察:' + K.exam + '\n';
+    return s;
+  }
+  function _genAICard(){
+    var names = Object.keys(KNOWLEDGE).filter(function(k){ return (KNOWLEDGE[k].key || []).length; });
+    if (!names.length) return Promise.reject('no-kn');
+    var kn = names[Math.floor(Math.random() * names.length)];
+    var wantType = Math.random() < 0.6 ? '简答' : '论述';
+    var minLen = wantType === '简答' ? 400 : 800;
+    var sys = (typeof RUC434_STYLE !== 'undefined' ? RUC434_STYLE : '')
+      + '\n你是人大434国际商务考研命题老师。请围绕考点【' + kn + '】命 1 道' + wantType + '题并写出标准答案。\n' + _knCardDrill(kn)
+      + '\n【出题前先分析】先想清该考点的核心张力、人大偏好的考察角度(定义辨析/理论对比/适用边界/联系中国现实)、易混对比与现实接口，再命题；题目要考“是否真理解”(会用、会辨析、会联系现实)而非“背没背过”。'
+      + '\n【风格】贴合人大434真题：简答极短直问(用“简述/如何/为什么/比较”)；论述可复合并结合中国现实(汇率、人民币、RCEP、全球价值链为高频)；禁用“试论述/浅析/谈谈你的理解”等。'
+      + '\n【答案】理论的定义/假设/要点/评价必须直接依据上方手册档案原文表述，理论名中英对照，答案≥' + minLen + '字，结构清晰。'
+      + '\n严格JSON输出(不要任何其他文字)：{"type":"' + wantType + '","question":"完整题面","answer":"标准答案正文","knowledge":"' + kn + '"}';
+    return fetch(DS_URL, { method: 'POST', headers: { Authorization: 'Bearer ' + getAPIKey(), 'Content-Type': 'application/json' },
+      body: JSON.stringify({ model: AI_MODEL, messages: [{ role: 'system', content: sys }, { role: 'user', content: '命一道【' + kn + '】的' + wantType + '题(含标准答案)' }], max_tokens: 7000, thinking: { type: 'enabled' } })
+    }).then(function(r){ if (!r.ok) throw Error('HTTP ' + r.status); return r.json(); })
+    .then(function(d){
+      var c = (d.choices && d.choices[0] && d.choices[0].message) ? (d.choices[0].message.content || '') : '';
+      var m = c.match(/\{[\s\S]*\}/); if (!m) throw Error('parse');
+      var o = JSON.parse(m[0]);
+      if (!o.question || !o.answer) throw Error('empty');
+      return { type: o.type || wantType, question: o.question, answer: o.answer, knowledge: o.knowledge || kn, ai: true };
+    });
+  }
+
   window.showDrill = function(){
     var bc = document.getElementById('bc'); if (bc) { bc.style.display = ''; bc.innerHTML = '<span>⚡ 速刷闪卡</span>'; }
     var bb = document.getElementById('backBtn'); if (bb) bb.style.display = 'block';
-    _drill.q = _pickQ(); _drill.revealed = false;
-    _render();
+    _drill.revealed = false;
+    if (_isAI()) { _loadAICard(); } else { _drill.q = _pickQ(); _render(); }
   };
+
+  function _loadAICard(){
+    _drill.revealed = false;
+    if (_drill.aiNext) { _drill.q = _drill.aiNext; _drill.aiNext = null; _drill.loading = false; _render(); _prefetchAI(); return; }
+    _drill.loading = true; _drill.q = null; _render();
+    _genAICard().then(function(card){ if (!_isAI()) return; _drill.loading = false; _drill.q = card; _render(); _prefetchAI(); })
+      .catch(function(){ _drill.loading = false; _drill.q = _pickQ(); if (_drill.q) _drill.q._aiFail = true; _render(); });
+  }
+  function _prefetchAI(){ if (!_isAI() || _drill.aiNext) return; _genAICard().then(function(c){ _drill.aiNext = c; }).catch(function(){}); }
 
   function _render(){
     var ct = document.getElementById('ct'); if (!ct) return;
     var q = _drill.q;
     var rates = _rateLoad();
     var mastered = 0, weak = 0; for (var k in rates) { if (rates[k].rate === '会') mastered++; else if (rates[k].rate === '不会') weak++; }
-    var types = ['简答','论述','案例','全部'];
+    var types = ['简答','论述','案例','全部','\U0001F916AI新题'];
     var chips = types.map(function(t){
       var on = _drill.type === t;
-      return '<span onclick="drillSetType(\'' + t + '\')" style="cursor:pointer;padding:5px 14px;border-radius:20px;font-size:12px;margin-right:8px;' + (on ? 'background:rgba(130,128,255,.35);color:#fff;font-weight:700' : 'background:rgba(255,255,255,.06);color:var(--ts)') + '">' + t + '</span>';
+      return '<span onclick="drillSetType(\'' + t + '\')" style="cursor:pointer;padding:5px 14px;border-radius:20px;font-size:12px;margin-right:8px;margin-bottom:6px;display:inline-block;' + (on ? 'background:rgba(130,128,255,.35);color:#fff;font-weight:700' : 'background:rgba(255,255,255,.06);color:var(--ts)') + '">' + t + '</span>';
     }).join('');
     var h = '<div class="hero" style="margin-bottom:12px"><h1>⚡ 速刷闪卡</h1>'
-      + '<div class="desc">真题主动回忆 · 先自己想，再划开手册标准答案自查</div>'
+      + '<div class="desc">' + (_isAI() ? 'AI 推理式命题 · 手册接地的全新题目(需联网, 稍候)' : '真题主动回忆 · 先自己想，再划开手册标准答案自查') + '</div>'
       + '<div style="margin-top:12px">' + chips + '</div>'
       + '<div class="sts" style="margin-top:10px"><div class="st">本轮已刷 <strong>' + _drill.done + '</strong></div>'
       + '<div class="st">✅ 标记会 <strong>' + mastered + '</strong></div><div class="st">🔴 待攻克 <strong>' + weak + '</strong></div></div></div>';
+    if (_drill.loading) {
+      h += '<div class="pcard"><div class="pcard-body" style="text-align:center;padding:50px 20px"><div class="ai-loading" style="justify-content:center"><span class="ai-dot"></span><span class="ai-dot"></span><span class="ai-dot"></span></div><div style="margin-top:14px;color:var(--ts);font-size:13px">🤖 AI 正在深度思考并命题…约20-40秒</div></div></div>';
+      ct.innerHTML = h; ct.scrollTop = 0; return;
+    }
     if (!q) { ct.innerHTML = h + '<div class="pcard"><div class="pcard-body">暂无可用题目。</div></div>'; return; }
+    var srcTag = q.ai ? '🤖 AI新题' : ((q.year || '') + '年真题');
     h += '<div class="pcard"><div class="pcard-body">';
-    h += '<div style="display:flex;align-items:center;gap:8px;margin-bottom:10px"><span class="score-tag" style="background:rgba(130,128,255,.25);color:#c9c9e8;padding:3px 10px;border-radius:6px;font-size:12px">' + escapeHtml(q.type) + (q.score ? ' ' + q.score + '分' : '') + '</span><span style="font-size:12px;color:var(--ts)">' + escapeHtml((q.year || '') + '年真题') + '</span></div>';
+    if (q._aiFail) h += '<div style="font-size:12px;color:#fbbf24;margin-bottom:8px">⚠️ AI 命题失败(可能离线)，已回退真题</div>';
+    h += '<div style="display:flex;align-items:center;gap:8px;margin-bottom:10px"><span class="score-tag" style="background:rgba(130,128,255,.25);color:#c9c9e8;padding:3px 10px;border-radius:6px;font-size:12px">' + escapeHtml(q.type || '') + (q.score ? ' ' + q.score + '分' : '') + '</span><span style="font-size:12px;color:var(--ts)">' + escapeHtml(srcTag) + '</span></div>';
     h += '<div style="font-size:16px;line-height:1.9;white-space:pre-wrap;font-weight:600;color:var(--t)">' + escapeHtml(q.question) + '</div>';
     if (!_drill.revealed) {
       h += '<div style="margin-top:18px;padding:20px;text-align:center;background:rgba(10,12,28,.25);border-radius:12px;border:1px dashed rgba(255,255,255,.15)">'
         + '<div style="font-size:13px;color:var(--ts);margin-bottom:14px">先在脑子里/草稿纸上过一遍答题要点……</div>'
-        + '<button class="btn btn-gen" onclick="drillReveal()" style="padding:11px 30px;font-size:15px">👁 划开标准答案</button></div>';
+        + '<button class="btn btn-gen" onclick="drillReveal()" style="padding:11px 30px;font-size:15px">👁 划开' + (q.ai ? '参考答案' : '标准答案') + '</button></div>';
     } else {
       h += '<div style="margin-top:16px;border-top:1px solid rgba(255,255,255,.1);padding-top:14px">'
-        + '<div style="font-size:13px;font-weight:700;color:#4ade80;margin-bottom:8px">📖 手册标准答案</div>'
+        + '<div style="font-size:13px;font-weight:700;color:#4ade80;margin-bottom:8px">📖 ' + (q.ai ? 'AI 参考答案(依据手册档案)' : '手册标准答案') + '</div>'
         + '<div style="font-size:14px;line-height:1.9">' + renderMarkdown(q.answer || '') + '</div></div>';
-      h += '<div style="margin-top:16px"><div style="font-size:13px;color:var(--ts);margin-bottom:10px">对照后自评（决定它多久后再出现）：</div>'
+      h += '<div style="margin-top:16px"><div style="font-size:13px;color:var(--ts);margin-bottom:10px">对照后自评：</div>'
         + '<div style="display:flex;gap:10px;flex-wrap:wrap">'
         + '<button onclick="drillRate(\'会\')" style="flex:1;min-width:90px;padding:11px;border-radius:12px;border:1px solid rgba(48,209,88,.4);background:rgba(48,209,88,.12);color:#4ade80;font-size:14px;cursor:pointer;font-weight:700">✅ 会了</button>'
         + '<button onclick="drillRate(\'熟\')" style="flex:1;min-width:90px;padding:11px;border-radius:12px;border:1px solid rgba(255,159,10,.4);background:rgba(255,159,10,.12);color:#fbbf24;font-size:14px;cursor:pointer;font-weight:700">🤔 不太熟</button>'
@@ -15604,17 +15655,16 @@ function renderLiveMacro(d) {
     ct.innerHTML = h; ct.scrollTop = 0;
   }
 
-  window.drillSetType = function(t){ _drill.type = t; _drill.recent = []; _drill.q = _pickQ(); _drill.revealed = false; _render(); };
+  window.drillSetType = function(t){ _drill.type = t; _drill.recent = []; _drill.aiNext = null; _drill.revealed = false; if (_isAI()) { _loadAICard(); } else { _drill.q = _pickQ(); _render(); } };
   window.drillReveal = function(){ _drill.revealed = true; _render(); };
   window.drillRate = function(r){
     var q = _drill.q; if (!q) return;
-    var m = _rateLoad();
-    m[q.id] = { rate: r, ts: Date.now() };
-    _rateSave(m);
+    if (q.id) { var m = _rateLoad(); m[q.id] = { rate: r, ts: Date.now() }; _rateSave(m); }
     _drill.done++;
-    _drill.q = _pickQ(); _drill.revealed = false; _render();
+    _drill.revealed = false;
+    if (_isAI()) { _loadAICard(); } else { _drill.q = _pickQ(); _render(); }
   };
-  window.drillNext = function(){ _drill.q = _pickQ(); _drill.revealed = false; _render(); };
+  window.drillNext = function(){ _drill.revealed = false; if (_isAI()) { _loadAICard(); } else { _drill.q = _pickQ(); _render(); } };
 })();
 (function() {
   var files = ["per_question.json","module_corpus.json","answer-bank.json","hot-topics.json","material-library.json"].concat(['knowledge_ext.json']);
