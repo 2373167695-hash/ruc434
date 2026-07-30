@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<!-- v2.1 · 2026-07-30 15:20 · modular -->
+<!-- v2.1 · 2026-07-30 23:10 · modular -->
 <html lang="zh-CN">
 <head>
 <meta charset="UTF-8">
@@ -15535,7 +15535,7 @@ function renderLiveMacro(d) {
     };
   }
 
-  var _drill = { q: null, type: '简答', revealed: false, done: 0, recent: [], aiNext: null, loading: false };
+  var _drill = { q: null, type: '简答', revealed: false, done: 0, recent: [], pool: [], loading: false };
 
   function _rateLoad(){ try { return JSON.parse(localStorage.getItem('r434_drill2') || '{}'); } catch(e) { return {}; } }
   function _rateSave(m){ try { localStorage.setItem('r434_drill2', JSON.stringify(m)); if (typeof saveState === 'function') saveState(); } catch(e){} }
@@ -15602,14 +15602,37 @@ function renderLiveMacro(d) {
     if (_isAI()) { _loadAICard(); } else { _drill.q = _pickQ(); _render(); }
   };
 
+  /* 拉服务端预生成题库池(秒取, 过滤最近出过的) */
+  function _fetchPool(){
+    return fetch(SYNC_URL + '/aipool?n=20').then(function(r){ return r.json(); }).then(function(d){
+      var seen = _drill.recent || [];
+      _drill.pool = (d.items || []).filter(function(x){ return seen.indexOf(x.id) < 0; });
+    }).catch(function(){ _drill.pool = _drill.pool || []; });
+  }
+  function _takePool(){
+    if (!_drill.pool || !_drill.pool.length) return null;
+    var it = _drill.pool.shift();
+    it.ai = true;
+    _drill.recent.push(it.id); if (_drill.recent.length > 8) _drill.recent.shift();
+    if (_drill.pool.length < 3) _fetchPool(); /* 快用完时后台补池 */
+    return it;
+  }
   function _loadAICard(){
     _drill.revealed = false;
-    if (_drill.aiNext) { _drill.q = _drill.aiNext; _drill.aiNext = null; _drill.loading = false; _render(); _prefetchAI(); return; }
+    /* 1. 池中有→秒取 */
+    var it = _takePool();
+    if (it) { _drill.q = it; _drill.loading = false; _render(); return; }
+    /* 2. 拉池 */
     _drill.loading = true; _drill.q = null; _render();
-    _genAICard().then(function(card){ if (!_isAI()) return; _drill.loading = false; _drill.q = card; _render(); _prefetchAI(); })
-      .catch(function(){ _drill.loading = false; _drill.q = _pickQ(); if (_drill.q) _drill.q._aiFail = true; _render(); });
+    _fetchPool().then(function(){
+      if (!_isAI()) return;
+      var it2 = _takePool();
+      if (it2) { _drill.q = it2; _drill.loading = false; _render(); return; }
+      /* 3. 池空→现场深度思考生成 */
+      _genAICard().then(function(card){ if (!_isAI()) return; _drill.loading = false; _drill.q = card; _render(); })
+        .catch(function(){ _drill.loading = false; _drill.q = _pickQ(); if (_drill.q) _drill.q._aiFail = true; _render(); });
+    });
   }
-  function _prefetchAI(){ if (!_isAI() || _drill.aiNext) return; _genAICard().then(function(c){ _drill.aiNext = c; }).catch(function(){}); }
 
   function _render(){
     var ct = document.getElementById('ct'); if (!ct) return;
@@ -15655,7 +15678,7 @@ function renderLiveMacro(d) {
     ct.innerHTML = h; ct.scrollTop = 0;
   }
 
-  window.drillSetType = function(t){ _drill.type = t; _drill.recent = []; _drill.aiNext = null; _drill.revealed = false; if (_isAI()) { _loadAICard(); } else { _drill.q = _pickQ(); _render(); } };
+  window.drillSetType = function(t){ _drill.type = t; _drill.recent = []; _drill.pool = []; _drill.revealed = false; if (_isAI()) { _loadAICard(); } else { _drill.q = _pickQ(); _render(); } };
   window.drillReveal = function(){ _drill.revealed = true; _render(); };
   window.drillRate = function(r){
     var q = _drill.q; if (!q) return;
