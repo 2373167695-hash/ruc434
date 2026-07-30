@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<!-- v2.1 · 2026-07-29 14:41 · modular -->
+<!-- v2.1 · 2026-07-30 03:16 · modular -->
 <html lang="zh-CN">
 <head>
 <meta charset="UTF-8">
@@ -13599,13 +13599,38 @@ function _dailyBarHtml() {
       + '要求:内容必须具体(有人名/机制/条件),禁止"企业追求利润最大化"式空话;优先使用以下题库资料:\n' + ctx;
     fetch(DS_URL, {
       method: 'POST', headers: {Authorization: 'Bearer ' + getAPIKey(), 'Content-Type': 'application/json'},
-      body: JSON.stringify({model: 'mimo-v2.5-pro', messages: [{role: 'system', content: sys}, {role: 'user', content: '生成「' + q + '」的框架JSON'}], temperature: 0.25, max_tokens: 2200})
+      body: JSON.stringify({model: 'mimo-v2.5-pro', messages: [{role: 'system', content: sys}, {role: 'user', content: '生成「' + q + '」的框架JSON'}], temperature: 0.25, max_tokens: 5000})
     }).then(function(r){ if (!r.ok) throw Error('HTTP ' + r.status); return r.json(); })
     .then(function(d){
       var c = (d.choices && d.choices[0] && d.choices[0].message) ? d.choices[0].message.content : '';
-      var m = c.match(/\{[\s\S]*\}/);
-      if (!m) throw Error('AI输出无法解析');
-      var json = JSON.parse(m[0]);
+      c = c.replace(/```json|```/g, ''); /* 去markdown围栏 */
+      var start = c.indexOf('{');
+      if (start < 0) throw Error('AI输出无法解析');
+      var raw = c.substring(start);
+      /* tvRepairJson: 截断JSON修复——补齐未闭合的字符串与括号, 三级回退逐段裁短重试 */
+      function tvRepairJson(str){
+        var stack = [], inStr = false, escp = false;
+        for (var i = 0; i < str.length; i++) {
+          var ch = str[i];
+          if (inStr) { if (escp) escp = false; else if (ch === '\\') escp = true; else if (ch === '"') inStr = false; continue; }
+          if (ch === '"') { inStr = true; continue; }
+          if (ch === '{' || ch === '[') stack.push(ch);
+          else if (ch === '}' || ch === ']') stack.pop();
+        }
+        var fixed = str;
+        if (inStr) fixed += '"';
+        while (stack.length) { var b = stack.pop(); fixed += (b === '{' ? '}' : ']'); }
+        return fixed;
+      }
+      var json = null;
+      var tries = [raw, raw.substring(0, raw.lastIndexOf('",') + 1), raw.substring(0, raw.lastIndexOf('"]') + 2)];
+      for (var ti = 0; ti < tries.length && !json; ti++) {
+        if (!tries[ti] || tries[ti].length < 20) continue;
+        try { json = JSON.parse(tries[ti]); } catch(e1) {
+          try { json = JSON.parse(tvRepairJson(tries[ti])); } catch(e2) {}
+        }
+      }
+      if (!json) throw Error('AI输出无法解析');
       if (!json.mechanisms || !json.mechanisms.length) throw Error('AI未生成有效内容');
       cache[q] = json;
       var keys = Object.keys(cache);
@@ -13615,7 +13640,7 @@ function _dailyBarHtml() {
     }).catch(function(err){
       disp.innerHTML = '<div class="pcard" style="padding:24px;text-align:center"><div style="font-size:32px;margin-bottom:8px">😥</div>'
         + '<div style="font-size:13px;color:var(--ts)">生成失败: ' + esc(err.message) + '</div>'
-        + '<div style="font-size:12px;color:var(--ts);margin-top:8px">建议: 从上方下拉框选择77个知识点(本地秒出、内容来自背诵手册), 或点重试</div>'
+        + '<div style="font-size:12px;color:var(--ts);margin-top:8px">建议: 从上方下拉框选择' + Object.keys(KNOWLEDGE).length + '个知识点(本地秒出、内容来自背诵手册), 或点重试</div>'
         + '<button class="ai-btn ai-btn-sm" style="margin-top:10px;padding:6px 18px" onclick="tvisGen(true)">🔄 重试</button></div>';
       ['tvizKeypoints','tvizElements','tvizRelated','tvizExam','tvizQuestions'].forEach(function(id){
         var el = document.getElementById(id); if (el && /生成中/.test(el.textContent)) el.innerHTML = '—';
