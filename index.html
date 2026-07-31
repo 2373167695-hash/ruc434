@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<!-- v2.1 · 2026-07-31 04:18 · modular -->
+<!-- v2.1 · 2026-07-31 04:25 · modular -->
 <html lang="zh-CN">
 <head>
 <meta charset="UTF-8">
@@ -4945,12 +4945,14 @@ var DS_URL = "https://api.xiaomimimo.com/v1/chat/completions";
 var AI_MODEL = "mimo-v2.5-pro", AI_ASR = "mimo-v2.5-asr", AI_TTS = "mimo-v2.5-tts";
 /* 模考专用模型(Qwen-Max), 由 /config 下发; 未配置则模考仍用 mimo */
 var MOCK_ENABLED = false, MOCK_MODEL = "", MOCK_URL = "";
+var DS_ENABLED = false, DS_MODEL = "", DS_URL2 = "";  /* DeepSeek(模考可选) */
 try {
   fetch("https://api.ruc434s.cloud/config").then(function(r){ return r.json(); }).then(function(c){
     if (c && c.model) AI_MODEL = c.model;
     if (c && c.asr) AI_ASR = c.asr;
     if (c && c.tts) AI_TTS = c.tts;
     if (c && c.mockEnabled) { MOCK_ENABLED = true; MOCK_MODEL = c.mockModel || ""; MOCK_URL = c.mockUrl || ""; }
+    if (c && c.dsEnabled) { DS_ENABLED = true; DS_MODEL = c.dsModel || ""; DS_URL2 = c.dsUrl || ""; }
   }).catch(function(){});
 } catch(e) {}
 var _apikey = null, _apikeyPromise = null, _apikeyQueue = [];
@@ -4978,6 +4980,18 @@ function getQwenKey(){
       .catch(function(){ _qwenPromise = null; return ''; });
   }
   return _qwenPromise;
+}
+/* DeepSeek(模考可选) key: 独立缓存, 走 /key?svc=deepseek */
+var _dsKey = null, _dsPromise = null;
+function getDeepSeekKey(){
+  if (_dsKey) return Promise.resolve(_dsKey);
+  if (!localStorage.getItem('r434_token')) return Promise.resolve('');
+  if (!_dsPromise) {
+    _dsPromise = fetch(SYNC_URL + '/key?svc=deepseek', {headers:{Authorization:'Bearer '+(localStorage.getItem('r434_token')||'')}})
+      .then(function(r){return r.json();}).then(function(d){ _dsKey = d.apiKey || ''; return _dsKey; })
+      .catch(function(){ _dsPromise = null; return ''; });
+  }
+  return _dsPromise;
 }
 /* ==================== AI Provider 接口层 ====================
  * 把各厂商差异(端点URL/取key方式/思考参数格式/是否流式思考)抽象成统一 provider。
@@ -5012,8 +5026,20 @@ var AI_PROVIDERS = {
       if (typeof opts.temperature === 'number') b.temperature = opts.temperature; /* thinking 靠模型自身能力 */
       return b;
     }
+  },
+  // DeepSeek: OpenAI兼容端点, key 走 /key?svc=deepseek; 文科命题/学术写作强
+  deepseek: {
+    id: 'deepseek', label: 'DeepSeek',
+    getUrl: function(){ return DS_URL2; },
+    getKey: function(){ return getDeepSeekKey(); },
+    getModel: function(){ return DS_MODEL; },
+    buildBody: function(opts){
+      var b = { model: DS_MODEL, messages: opts.messages, max_tokens: opts.max_tokens || 4000 };
+      if (typeof opts.temperature === 'number') b.temperature = opts.temperature;
+      return b;
+    }
   }
-  /* 扩展示例(DeepSeek/用户自定义)将来在此注册, 或调 registerAIProvider():
+  /* 扩展示例(用户自定义)将来在此注册, 或调 registerAIProvider():
    * deepseek: { getUrl:()=>'https://api.deepseek.com/chat/completions', getKey:()=>Promise.resolve(userKey), getModel:()=>'deepseek-chat', buildBody:... } */
 };
 /* 动态注册(供未来"模型菜单+用户自带key"使用): cfg={id,label,url,key,model,thinkParam} */
@@ -5035,6 +5061,14 @@ function registerAIProvider(cfg){
 }
 /* 场景→provider 路由(未来可由用户菜单覆盖此映射) */
 var AI_ROUTES = { mock: 'qwen' };  /* 模考默认走 qwen; 其余场景用 mimo */
+try { var _mm = localStorage.getItem('r434_mockmodel'); if (_mm) AI_ROUTES.mock = _mm; } catch(e) {}
+/* provider 可用性(供模型菜单列可选项): mimo恒可用, qwen/deepseek看是否配置 */
+function aiProviderAvailable(id){
+  if (id === 'mimo') return true;
+  if (id === 'qwen') return MOCK_ENABLED && !!MOCK_URL && !!MOCK_MODEL;
+  if (id === 'deepseek') return DS_ENABLED && !!DS_URL2 && !!DS_MODEL;
+  return !!(AI_PROVIDERS[id]);
+}
 function _providerFor(scene){
   var pid = AI_ROUTES[scene];
   if (pid && AI_PROVIDERS[pid]) return AI_PROVIDERS[pid];
@@ -5043,8 +5077,8 @@ function _providerFor(scene){
 /* 统一AI调用: aiCall(scene, opts) → fetch Promise。provider不可用(如key空)自动回退mimo。 */
 function aiCall(scene, opts){
   var prov = _providerFor(scene);
-  // qwen 未配置(MOCK_ENABLED=false 或 缺 url/model) → 回退 mimo
-  if (prov.id === 'qwen' && !(MOCK_ENABLED && MOCK_URL && MOCK_MODEL)) prov = AI_PROVIDERS.mimo;
+  // 选中的 provider 不可用 → 回退 mimo
+  if (!aiProviderAvailable(prov.id)) prov = AI_PROVIDERS.mimo;
   return prov.getKey().then(function(key){
     if (!key && prov.id !== 'mimo') { prov = AI_PROVIDERS.mimo; return prov.getKey().then(function(k2){ return _doAICall(prov, k2, opts); }); }
     return _doAICall(prov, key, opts);
@@ -15777,6 +15811,64 @@ function renderLiveMacro(d) {
     if (_isAI()) { _loadAICard(); } else { _drill.q = _pickQ(); _render(); }
   };
   window.drillNext = function(){ _drill.revealed = false; if (_isAI()) { _loadAICard(); } else { _drill.q = _pickQ(); _render(); } };
+})();
+/* ---------- v3.71 模型选择: 侧栏入口 + 浮层, 切换模考用哪个模型(mimo/qwen/deepseek) ---------- */
+(function(){
+  var _oBuildNav = (typeof buildNav === 'function') ? buildNav : null;
+  if (_oBuildNav) {
+    buildNav = function(){
+      _oBuildNav.apply(this, arguments);
+      try {
+        var groups = document.querySelectorAll('.nav6-items');
+        for (var i = 0; i < groups.length; i++) {
+          if (groups[i].textContent.indexOf('AI模考') >= 0 && !groups[i].querySelector('[data-modelpick]')) {
+            var a = document.createElement('div'); a.className = 'ni'; a.setAttribute('data-modelpick','1');
+            a.style.cssText = 'padding:8px 12px;cursor:pointer;font-size:13px;border-radius:8px';
+            a.innerHTML = '⚙ 模型选择'; a.onclick = function(){ showModelPicker(); };
+            groups[i].appendChild(a);
+            break;
+          }
+        }
+      } catch(e){}
+    };
+  }
+
+  var LABELS = { mimo: 'MiMo · 小米万亿(默认，免费)', qwen: '通义千问 Qwen-Max(文理均衡)', deepseek: 'DeepSeek(文科/学术写作强)' };
+
+  window.showModelPicker = function(){
+    var cur = (AI_ROUTES && AI_ROUTES.mock) || 'qwen';
+    if (!aiProviderAvailable(cur)) cur = 'mimo';
+    var ids = ['mimo', 'qwen', 'deepseek'];
+    var rows = '';
+    ids.forEach(function(id){
+      var ok = aiProviderAvailable(id);
+      var on = (cur === id);
+      rows += '<div ' + (ok ? 'onclick="pickModel(\'' + id + '\')"' : '') + ' style="display:flex;align-items:center;gap:12px;padding:14px 16px;margin-bottom:10px;border-radius:14px;'
+        + (on ? 'background:rgba(130,128,255,.22);border:1.5px solid rgba(148,146,255,.6)' : 'background:rgba(255,255,255,.05);border:1px solid rgba(255,255,255,.12)')
+        + (ok ? ';cursor:pointer' : ';opacity:.45;cursor:not-allowed') + '">'
+        + '<div style="font-size:20px">' + (on ? '✅' : (ok ? '⚪' : '🔒')) + '</div>'
+        + '<div style="flex:1"><div style="font-size:14px;font-weight:700;color:var(--t)">' + escapeHtml(LABELS[id]) + '</div>'
+        + (ok ? '' : '<div style="font-size:11px;color:var(--ts);margin-top:2px">未配置(需在后端设置密钥)</div>') + '</div></div>';
+    });
+    var html = '<div id="modelPickMask" onclick="if(event.target===this)closeModelPicker()" style="position:fixed;inset:0;z-index:9999;background:rgba(0,0,0,.55);display:flex;align-items:center;justify-content:center;padding:20px">'
+      + '<div style="width:100%;max-width:440px;background:rgba(20,22,40,.92);backdrop-filter:blur(24px);-webkit-backdrop-filter:blur(24px);border:1px solid rgba(255,255,255,.14);border-radius:22px;padding:22px 22px 18px;box-shadow:0 24px 70px rgba(0,0,0,.5)">'
+      + '<div style="font-size:17px;font-weight:800;color:#fff;margin-bottom:4px">⚙ AI 模考模型</div>'
+      + '<div style="font-size:12px;color:var(--ts);margin-bottom:16px">选择"AI模考出题与答案"使用的模型。其余功能(AI助手/批改/速刷)始终用 MiMo。</div>'
+      + rows
+      + '<div style="font-size:11px;color:var(--ts);margin-top:6px;line-height:1.6">切换后立即生效，下次组卷起用新模型。DeepSeek/Qwen 按量计费，MiMo 免费。</div>'
+      + '<button onclick="closeModelPicker()" style="margin-top:14px;width:100%;padding:11px;border-radius:12px;border:none;background:rgba(130,128,255,.3);color:#fff;font-size:14px;cursor:pointer;font-weight:700">完成</button>'
+      + '</div></div>';
+    var d = document.createElement('div'); d.id = 'modelPickWrap'; d.innerHTML = html;
+    document.body.appendChild(d);
+  };
+  window.pickModel = function(id){
+    if (!aiProviderAvailable(id)) return;
+    AI_ROUTES.mock = id;
+    try { localStorage.setItem('r434_mockmodel', id); } catch(e){}
+    showModelPicker.__refresh && showModelPicker.__refresh();
+    closeModelPicker(); showModelPicker(); /* 重渲染选中态 */
+  };
+  window.closeModelPicker = function(){ var w = document.getElementById('modelPickWrap'); if (w) w.parentNode.removeChild(w); };
 })();
 (function() {
   var files = ["per_question.json","module_corpus.json","answer-bank.json","hot-topics.json","material-library.json"].concat(['knowledge_ext.json']);
