@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<!-- v2.1 · 2026-07-30 23:10 · modular -->
+<!-- v2.1 · 2026-07-31 01:15 · modular -->
 <html lang="zh-CN">
 <head>
 <meta charset="UTF-8">
@@ -4943,11 +4943,14 @@ document.getElementById("sidebarInfo").textContent = "2011-2026 · " + DATA.leng
 var DS_URL = "https://api.xiaomimimo.com/v1/chat/completions";
 /* 模型热切换: 默认兜底, 启动时拉 Worker /config 覆盖——换模型只需在Cloudflare改环境变量 */
 var AI_MODEL = "mimo-v2.5-pro", AI_ASR = "mimo-v2.5-asr", AI_TTS = "mimo-v2.5-tts";
+/* 模考专用模型(Qwen-Max), 由 /config 下发; 未配置则模考仍用 mimo */
+var MOCK_ENABLED = false, MOCK_MODEL = "", MOCK_URL = "";
 try {
   fetch("https://api.ruc434s.cloud/config").then(function(r){ return r.json(); }).then(function(c){
     if (c && c.model) AI_MODEL = c.model;
     if (c && c.asr) AI_ASR = c.asr;
     if (c && c.tts) AI_TTS = c.tts;
+    if (c && c.mockEnabled) { MOCK_ENABLED = true; MOCK_MODEL = c.mockModel || ""; MOCK_URL = c.mockUrl || ""; }
   }).catch(function(){});
 } catch(e) {}
 var _apikey = null, _apikeyPromise = null, _apikeyQueue = [];
@@ -4964,6 +4967,32 @@ function getAPIKey(cb) {
   return null;
 }
 function setAPIKey(k) { _apikey = k; _apikeyPromise = null; _apikeyQueue.forEach(function(cb){cb(k);}); _apikeyQueue = []; }
+/* Qwen(模考专用) key: 独立缓存, 走 /key?svc=qwen */
+var _qwenKey = null, _qwenPromise = null;
+function getQwenKey(){
+  if (_qwenKey) return Promise.resolve(_qwenKey);
+  if (!localStorage.getItem('r434_token')) return Promise.resolve('');
+  if (!_qwenPromise) {
+    _qwenPromise = fetch(SYNC_URL + '/key?svc=qwen', {headers:{Authorization:'Bearer '+(localStorage.getItem('r434_token')||'')}})
+      .then(function(r){return r.json();}).then(function(d){ _qwenKey = d.apiKey || ''; return _qwenKey; })
+      .catch(function(){ _qwenPromise = null; return ''; });
+  }
+  return _qwenPromise;
+}
+/* 模考专用AI调用: Qwen启用则走Qwen(OpenAI兼容, thinking用enable_thinking), 否则回退mimo(thinking.type)。
+   opts: {messages, max_tokens, thinking(bool), temperature} → 返回 fetch Promise(resolve为标准OpenAI响应json) */
+function mockAICall(opts){
+  var useQwen = MOCK_ENABLED && MOCK_URL && MOCK_MODEL;
+  var keyP = useQwen ? getQwenKey() : Promise.resolve(getAPIKey());
+  return keyP.then(function(key){
+    if (useQwen && !key) { useQwen = false; key = getAPIKey(); } /* Qwen key 拿不到→回退mimo */
+    var url = useQwen ? MOCK_URL : DS_URL;
+    var body = { model: useQwen ? MOCK_MODEL : AI_MODEL, messages: opts.messages, max_tokens: opts.max_tokens || 4000 };
+    if (opts.thinking && !useQwen) { body.thinking = { type: 'enabled' }; }  /* mimo开思考; Qwen兼容模式非流式不支持思考开关, 靠qwen-max自身能力 */
+    else if (typeof opts.temperature === 'number') { body.temperature = opts.temperature; }
+    return fetch(url, { method: 'POST', headers: { Authorization: 'Bearer ' + (key||''), 'Content-Type': 'application/json' }, body: JSON.stringify(body) });
+  });
+}
 function escapeHtml(s) {
   if (!s) return '';
   return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
@@ -14232,9 +14261,8 @@ function loadDailyAI() {
             : q.type === '论述' ? '①理论阐述(提出者+假设前提)→②逻辑机制推导(层层递进)→③联系中国现实(具体案例或数据)→④政策含义→⑤【考点提示】'
             : '按设问逐问作答，每问：点名引用理论(中英对照)→结合案例材料原文分析→结论启示')
         + '\n3. 【理论必须忠于手册档案·严禁自由发挥】答案中理论的定义、假设、核心要点、贡献与局限，必须直接取自上方【手册档案】的原文表述(可自然串接、扩写成段)，不得改写成你自己的话、不得脱离档案另起理论框架、更不得杜撰；档案未收录的内容不要编造；理论名中英对照、专业术语密集；\n4. 行文向上方真题范例看齐，直接输出答案正文，不要"好的"之类前言。';
-      fetch(DS_URL, {method: 'POST', headers: {Authorization: 'Bearer ' + getAPIKey(), 'Content-Type': 'application/json'},
-        body: JSON.stringify({model: AI_MODEL, messages: [{role: 'system', content: sys}, {role: 'user', content: '题目(' + q.type + ')：' + q.question}], temperature: 0.35, max_tokens: 6000})
-      }).then(function(r){ if (!r.ok) throw Error('HTTP ' + r.status); return r.json(); })
+      mockAICall({ messages: [{role: 'system', content: sys}, {role: 'user', content: '题目(' + q.type + ')：' + q.question}], temperature: 0.35, max_tokens: 6000 })
+      .then(function(r){ if (!r.ok) throw Error('HTTP ' + r.status); return r.json(); })
       .then(function(d){
         var txt = (d.choices && d.choices[0] && d.choices[0].message) ? (d.choices[0].message.content || '').trim() : '';
         q.answer = txt && txt.length > 150 ? txt : fallbackAnswer(q);
@@ -14262,11 +14290,10 @@ function loadDailyAI() {
       + '3. 至少2道结合中国现实经济\n'
       + '4. 【考点名硬性规范】每题 knowledge 字段必须原样照抄以下考点名之一(逐字一致，不得改写/翻译/简称/自造)：' + (mk.picked || []).join('、') + '\n'
       + '5. 严格JSON输出：{"questions":[{"type":"简答|论述|案例","question":"完整题面","knowledge":"必须是上方列出的考点名原文"}]}';
-    fetch(DS_URL, {method: 'POST', headers: {Authorization: 'Bearer ' + getAPIKey(), 'Content-Type': 'application/json'},
-      body: JSON.stringify({model: AI_MODEL, messages: [{role: 'system', content: sys},
+    mockAICall({ messages: [{role: 'system', content: sys},
         {role: 'user', content: '生成一套人大434模拟试卷(只出题)' + (topics.length ? '，命题范围：' + topics.join('、') : '')}],
-        max_tokens: 9000, thinking: {type: 'enabled'}})
-    }).then(function(r){ if (!r.ok) throw Error('HTTP ' + r.status); return r.json(); })
+        max_tokens: 9000, thinking: true })
+    .then(function(r){ if (!r.ok) throw Error('HTTP ' + r.status); return r.json(); })
     .then(function(d){
       var c = d.choices[0].message.content, m = c.match(/\{[\s\S]*\}/);
       if (!m) throw Error('AI格式错误');
