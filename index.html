@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<!-- v2.1 · 2026-07-31 04:31 · modular -->
+<!-- v2.1 · 2026-07-31 06:02 · modular -->
 <html lang="zh-CN">
 <head>
 <meta charset="UTF-8">
@@ -5010,6 +5010,7 @@ var AI_PROVIDERS = {
     getModel: function(){ return AI_MODEL; },
     buildBody: function(opts){
       var b = { model: AI_MODEL, messages: opts.messages, max_tokens: opts.max_tokens || 4000 };
+      if (opts.stream) b.stream = true;
       if (opts.thinking) b.thinking = { type: 'enabled' };
       else if (typeof opts.temperature === 'number') b.temperature = opts.temperature;
       return b;
@@ -5023,6 +5024,7 @@ var AI_PROVIDERS = {
     getModel: function(){ return MOCK_MODEL; },
     buildBody: function(opts){
       var b = { model: MOCK_MODEL, messages: opts.messages, max_tokens: opts.max_tokens || 4000 };
+      if (opts.stream) b.stream = true;
       if (typeof opts.temperature === 'number') b.temperature = opts.temperature; /* thinking 靠模型自身能力 */
       return b;
     }
@@ -5035,6 +5037,7 @@ var AI_PROVIDERS = {
     getModel: function(){ return DS_MODEL; },
     buildBody: function(opts){
       var b = { model: DS_MODEL, messages: opts.messages, max_tokens: opts.max_tokens || 4000 };
+      if (opts.stream) b.stream = true;
       if (typeof opts.temperature === 'number') b.temperature = opts.temperature;
       return b;
     }
@@ -5060,8 +5063,22 @@ function registerAIProvider(cfg){
   };
 }
 /* 场景→provider 路由(未来可由用户菜单覆盖此映射) */
-var AI_ROUTES = { mock: 'qwen' };  /* 模考默认走 qwen; 其余场景用 mimo */
-try { var _mm = localStorage.getItem('r434_mockmodel'); if (_mm) AI_ROUTES.mock = _mm; } catch(e) {}
+/* 4大AI场景 → 各自可配模型。语音ASR/TTS锁定mimo, 不进此表 */
+var AI_SCENES = [
+  { key: 'chat',  label: '💬 AI助手问答', desc: '对话、理论答疑', def: 'mimo' },
+  { key: 'grade', label: '✅ 答案批改',   desc: '单题批改、模考评分', def: 'mimo' },
+  { key: 'gen',   label: '📝 AI出题',     desc: '模考出题与答案、速刷新题、框架图', def: 'qwen' },
+  { key: 'daily', label: '🗞 每日一题',   desc: '服务端每日生成(此项仅记录偏好)', def: 'mimo' }
+];
+var AI_ROUTES = {};
+AI_SCENES.forEach(function(sc){ AI_ROUTES[sc.key] = sc.def; });
+AI_ROUTES.mock = AI_ROUTES.gen;  /* 兼容旧scene名'mock'→出题类 */
+try {
+  var _rt = JSON.parse(localStorage.getItem('r434_ai_routes') || 'null');
+  if (_rt) { for (var _k in _rt) if (AI_ROUTES.hasOwnProperty(_k) || _k === 'mock') AI_ROUTES[_k] = _rt[_k]; }
+  var _oldmm = localStorage.getItem('r434_mockmodel');  /* 迁移旧单键设置 */
+  if (_oldmm && !_rt) { AI_ROUTES.gen = _oldmm; AI_ROUTES.mock = _oldmm; }
+} catch(e) {}
 /* provider 可用性(供模型菜单列可选项): mimo恒可用, qwen/deepseek看是否配置 */
 function aiProviderAvailable(id){
   if (id === 'mimo') return true;
@@ -5070,10 +5087,13 @@ function aiProviderAvailable(id){
   return !!(AI_PROVIDERS[id]);
 }
 function _providerFor(scene){
+  if (scene === 'mock') scene = 'gen';  /* 旧名兼容 */
   var pid = AI_ROUTES[scene];
   if (pid && AI_PROVIDERS[pid]) return AI_PROVIDERS[pid];
   return AI_PROVIDERS.mimo;
 }
+/* 保存路由配置 */
+function saveAIRoutes(){ try { localStorage.setItem('r434_ai_routes', JSON.stringify(AI_ROUTES)); } catch(e) {} }
 /* 统一AI调用: aiCall(scene, opts) → fetch Promise。provider不可用(如key空)自动回退mimo。 */
 function aiCall(scene, opts){
   var prov = _providerFor(scene);
@@ -5225,7 +5245,7 @@ function buildAIContext(query) {
 function aiDiagnose(){var div=document.getElementById("aiDiagnosis"),content=document.getElementById("aiDiagnosisContent");div.style.display="block";content.innerHTML="AI正在分析...";var s="浏览知识点"+Object.keys(knowledgeViews).length+"个，已做真题"+Object.values(marks).filter(function(v){return v.done}).length+"道。";callDS([{role:"system",content:"你是考研备考规划专家，擅长分析学习数据。请用中文回复。"},{role:"user",content:"学习数据："+s+"请做学习诊断，500字内，包括进度评价、薄弱模块、优先复习建议、冲刺建议。"}],"aiDiagnosisContent");}
 function aiGenerateQuestion(knowledge){var div=document.getElementById("aiQuestions"),content=document.getElementById("aiQuestionsContent");div.style.display="block";content.innerHTML="生成中...";var ctx=buildAIContext(knowledge);var sys=RUC434_STYLE+"\n你是中国人民大学434国际商务专业考研命题老师。请严格遵循以上写作风格，参考以下真题范例出题。\n\n【命题要求】\n1.题目风格必须100%贴合人大434真题的命题套路\n2.简答题10-15分,论述题20-25分,计算/案例15-20分\n3.必须结合中国经济现实或国际商务案例\n4.参考答案必须按人大434评分标准（知识点覆盖4分+逻辑结构3分+术语准确2分+实际联系1分）\n"+ctx;callDS([{role:"system",content:sys},{role:"user",content:"请为知识点["+knowledge+"]生成3道模拟题(1简答+1论述+1计算/案例),每题附参考答案要点。用【第1题】【第2题】【第3题】编号。"}],"aiQuestionsContent");}
 
-function sendChat(){var inp=document.getElementById("chat-q"),q=inp.value.trim();if(!q)return;inp.value="";var body=document.getElementById("chat-body");body.innerHTML+='<div class="chat-msg user">'+q+'</div>';var ld=document.createElement("div");ld.className="chat-msg assistant";ld.id="c-load";ld.innerHTML='<span class="chat-dot"></span><span class="chat-dot"></span><span class="chat-dot"></span>';body.appendChild(ld);body.scrollTop=body.scrollHeight;chatHistory.push({role:"user",content:q});var md=document.createElement("div");md.className="chat-msg assistant";md.id="c-resp";md.style.display="none";body.appendChild(md);var ctx=buildAIContext(q);var sys=RUC434_STYLE+"\n你是人大434国际商务考研AI助手。你的数据库中已包含完整的历年真题和标准答案，你随时可以引用任何一道真题。请严格遵循以上写作风格，参考数据库中的真题答案、知识点和热点素材回答问题。公式请用$...$包裹。\n"+ctx+"\n\n要求：必须参考数据库中的真实真题和答案来回答；贴合人大434风格、结构化、分点作答、术语中英文对照、结尾有考点提示。";var msgs=[{role:"system",content:sys}];chatHistory.slice(-10).forEach(function(h){msgs.push({role:h.role,content:h.content});});fetch(DS_URL,{method:"POST",headers:{Authorization:"Bearer "+getAPIKey(),"Content-Type":"application/json"},body:JSON.stringify({model:AI_MODEL,messages:msgs,stream:true,temperature:0.3})}).then(function(r){if(!r.ok)throw Error("HTTP "+r.status);return r.body.getReader();}).then(function(rd){var b="",t="",d=new TextDecoder(),firstChunk=true;function n(){rd.read().then(function(r){if(r.done){var lx=document.getElementById("c-load");if(lx)lx.remove();md.style.display="";md.innerHTML=renderMarkdown(t);chatHistory.push({role:"assistant",content:t});saveState();return;}b+=d.decode(r.value,{stream:true});var ls=b.split("\n");b=ls.pop()||"";ls.forEach(function(l){if(l.startsWith("data: ")){var dd=l.substring(6);if(dd=="[DONE]")return;try{var p=JSON.parse(dd);if(p.choices&&p.choices[0].delta){var x=p.choices[0].delta.content||"";if(x){if(firstChunk){firstChunk=false;var lx=document.getElementById("c-load");if(lx)lx.remove();md.style.display="";}t+=x;md.innerHTML=renderMarkdown(t);body.scrollTop=body.scrollHeight;}}}catch(e){}}});n();})}n();}).catch(function(err){var lx=document.getElementById("c-load");if(lx)lx.remove();md.style.display="";md.innerHTML="<span style=color:red>AI请求失败："+err.message+"</span>";});}
+function sendChat(){var inp=document.getElementById("chat-q"),q=inp.value.trim();if(!q)return;inp.value="";var body=document.getElementById("chat-body");body.innerHTML+='<div class="chat-msg user">'+q+'</div>';var ld=document.createElement("div");ld.className="chat-msg assistant";ld.id="c-load";ld.innerHTML='<span class="chat-dot"></span><span class="chat-dot"></span><span class="chat-dot"></span>';body.appendChild(ld);body.scrollTop=body.scrollHeight;chatHistory.push({role:"user",content:q});var md=document.createElement("div");md.className="chat-msg assistant";md.id="c-resp";md.style.display="none";body.appendChild(md);var ctx=buildAIContext(q);var sys=RUC434_STYLE+"\n你是人大434国际商务考研AI助手。你的数据库中已包含完整的历年真题和标准答案，你随时可以引用任何一道真题。请严格遵循以上写作风格，参考数据库中的真题答案、知识点和热点素材回答问题。公式请用$...$包裹。\n"+ctx+"\n\n要求：必须参考数据库中的真实真题和答案来回答；贴合人大434风格、结构化、分点作答、术语中英文对照、结尾有考点提示。";var msgs=[{role:"system",content:sys}];chatHistory.slice(-10).forEach(function(h){msgs.push({role:h.role,content:h.content});});aiCall('chat',{messages:msgs,stream:true,temperature:0.3}).then(function(r){if(!r.ok)throw Error("HTTP "+r.status);return r.body.getReader();}).then(function(rd){var b="",t="",d=new TextDecoder(),firstChunk=true;function n(){rd.read().then(function(r){if(r.done){var lx=document.getElementById("c-load");if(lx)lx.remove();md.style.display="";md.innerHTML=renderMarkdown(t);chatHistory.push({role:"assistant",content:t});saveState();return;}b+=d.decode(r.value,{stream:true});var ls=b.split("\n");b=ls.pop()||"";ls.forEach(function(l){if(l.startsWith("data: ")){var dd=l.substring(6);if(dd=="[DONE]")return;try{var p=JSON.parse(dd);if(p.choices&&p.choices[0].delta){var x=p.choices[0].delta.content||"";if(x){if(firstChunk){firstChunk=false;var lx=document.getElementById("c-load");if(lx)lx.remove();md.style.display="";}t+=x;md.innerHTML=renderMarkdown(t);body.scrollTop=body.scrollHeight;}}}catch(e){}}});n();})}n();}).catch(function(err){var lx=document.getElementById("c-load");if(lx)lx.remove();md.style.display="";md.innerHTML="<span style=color:red>AI请求失败："+err.message+"</span>";});}
 
 // ===== STATE =====
 var marks = {};
@@ -7657,11 +7677,8 @@ function aiGradeQuestion(qid, qid2) {
   sys += '\n\n【RAG检索：相关真题范例与语料】' + ragCtx;
   sys += '\n\n【学生作答】\n' + answer;
   sys += '\n\n请按以下结构输出（用markdown）：\n## 一、评分\n总分XX/10分。各维度打分：知识点覆盖(X/4)、逻辑结构(X/3)、术语准确(X/2)、实际联系(X/1)\n\n## 二、遗漏知识点\n用表格列出：| 遗漏要点 | 应该这样写 |\n\n## 三、优化重写（85分水平）\n保留学生原有思路，但补全结构、术语和遗漏点，重写一份85分水平的答案。\n\n## 四、对照分析\n| 你的版本 | 优化版本 | 差异说明 |\n\n要求：客观、具体、可操作。';
-  fetch(DS_URL, {
-    method: 'POST',
-    headers: { 'Authorization': 'Bearer ' + getAPIKey(), 'Content-Type': 'application/json' },
-    body: JSON.stringify({ model: AI_MODEL, messages: [{ role: 'user', content: sys }], stream: true, temperature: 0.3, max_tokens: 4096 })
-  }).then(function(r) { if (!r.ok) throw Error('HTTP ' + r.status); return r.body.getReader(); })
+  aiCall('grade', { messages: [{ role: 'user', content: sys }], stream: true, temperature: 0.3, max_tokens: 4096 })
+    .then(function(r) { if (!r.ok) throw Error('HTTP ' + r.status); return r.body.getReader(); })
     .then(function(rd) {
       var b = '', t = '', d = new TextDecoder();
       function n() { rd.read().then(function(r) {
@@ -8593,7 +8610,7 @@ function aiExplainFollowup() {
   // Use sendChat-style streaming
   var respEl = document.getElementById('aiExplainResp');
   var ld = aiLoading('思考中'); respEl.innerHTML = ''; respEl.appendChild(ld);
-  fetch(DS_URL,{method:'POST',headers:{Authorization:'Bearer '+getAPIKey(),'Content-Type':'application/json'},body:JSON.stringify({model:AI_MODEL,messages:msgs,stream:true,temperature:0.3})}).then(function(r){if(!r.ok)throw Error('HTTP '+r.status);return r.body.getReader();}).then(function(rd){var b='',t='',d=new TextDecoder();function n(){rd.read().then(function(r){if(r.done){respEl.innerHTML=renderMarkdown(t);aiExplainHistory.push({role:'assistant',content:t});return;}b+=d.decode(r.value,{stream:true});var ls=b.split('\n');b=ls.pop()||'';ls.forEach(function(l){if(l.startsWith('data: ')){var dd=l.substring(6);if(dd=='[DONE]')return;try{var p=JSON.parse(dd);if(p.choices&&p.choices[0].delta){var x=p.choices[0].delta.content||'';if(x){t+=x;respEl.innerHTML=renderMarkdown(t);}}}catch(e){}}});n();})}n();}).catch(function(err){respEl.innerHTML='<span style=color:red>请求失败：'+err.message+'</span>';});
+  aiCall('chat',{messages:msgs,stream:true,temperature:0.3}).then(function(r){if(!r.ok)throw Error('HTTP '+r.status);return r.body.getReader();}).then(function(rd){var b='',t='',d=new TextDecoder();function n(){rd.read().then(function(r){if(r.done){respEl.innerHTML=renderMarkdown(t);aiExplainHistory.push({role:'assistant',content:t});return;}b+=d.decode(r.value,{stream:true});var ls=b.split('\n');b=ls.pop()||'';ls.forEach(function(l){if(l.startsWith('data: ')){var dd=l.substring(6);if(dd=='[DONE]')return;try{var p=JSON.parse(dd);if(p.choices&&p.choices[0].delta){var x=p.choices[0].delta.content||'';if(x){t+=x;respEl.innerHTML=renderMarkdown(t);}}}catch(e){}}});n();})}n();}).catch(function(err){respEl.innerHTML='<span style=color:red>请求失败：'+err.message+'</span>';});
 }
 function getPageContext() {
   var ctx = {type:'home',label:'首页'};
@@ -8852,9 +8869,8 @@ function submitMockExam() {
   var g = '你是人大434考研阅卷老师。请逐题批改以下试卷，每题给出得分和简短评语。\n\n';
   mockState.questions.forEach(function(q,i){g += '第'+(i+1)+'题['+q.type+'('+q.score+'分)]：'+q.question+'\n【本题标准答案(评分基准)】：'+((q.answer||'').substring(0,800)||'(无, 按学科常识评)')+'\n学生答案：'+(mockState.answers[i]||'(未作答)')+'\n\n';});
   g += '\n评分规则：对照标准答案逐题评分，评语必须指出学生漏掉了标准答案中的哪些要点(点名要点)。\nJSON输出：{"results":[{"score":8,"max":10,"comment":"评语(含漏答要点清单)"},...],"total":85,"summary":"总体评价(100字内)"}';
-  fetch(DS_URL, {method:'POST',headers:{Authorization:'Bearer '+getAPIKey(),'Content-Type':'application/json'},
-    body:JSON.stringify({model:AI_MODEL,messages:[{role:'system',content:RUC434_STYLE},{role:'user',content:g}],stream:false,temperature:0.3})
-  }).then(function(r){return r.json();}).then(function(d){
+  aiCall('grade', {messages:[{role:'system',content:RUC434_STYLE},{role:'user',content:g}],temperature:0.3})
+  .then(function(r){return r.json();}).then(function(d){
     var c=d.choices[0].message.content,m2=c.match(/\{[\s\S]*\}/);
     var rr = m2?JSON.parse(m2[0]):{results:[],total:0,summary:'批改完成'};
     mockState._grading = rr.results || []; // save for export
@@ -10496,10 +10512,8 @@ function doAnswerCheck() {
   var _prof = (typeof buildStudyProfile === 'function') ? buildStudyProfile() : '';
   var userMsg = '【题目】\n' + q + '\n\n【学生答案】\n' + a + refInfo + pointInfo + (_prof ? '\n\n' + _prof + '\n(评语请特别关注该考生的历史薄弱维度是否在本次答案中改善)' : '');
 
-  fetch(DS_URL, {
-    method:'POST', headers:{Authorization:'Bearer '+getAPIKey(),'Content-Type':'application/json'},
-    body:JSON.stringify({model:AI_MODEL,messages:[{role:'system',content:sys},{role:'user',content:userMsg}],max_tokens:6000,temperature:0.1})
-  }).then(function(r){ if(!r.ok) throw Error('HTTP '+r.status); return r.json(); })
+  aiCall('grade', {messages:[{role:'system',content:sys},{role:'user',content:userMsg}],max_tokens:6000,temperature:0.1})
+  .then(function(r){ if(!r.ok) throw Error('HTTP '+r.status); return r.json(); })
   .then(function(d){
     var c = d.choices&&d.choices[0]&&d.choices[0].message ? d.choices[0].message.content||'' : '';
     renderAnswerCheckResult(c);
@@ -11198,7 +11212,7 @@ function loadDailyAI() {
     { name: '🧠 背诵复习', open: true, items: [
       ['review','🔄 统一复习'], ['cards','🃏 记忆卡片'], ['recite','📔 背诵打卡'], ['wrongbook','📋 错题本'] ] },
     { name: '✍️ 做题写作', open: false, items: [
-      ['allquestions','📝 全部真题'], ['answercheck','✅ 答案批改'], ['outputtrain','✍️ 输出训练'], ['mockexam','🎯 AI模考'], ['mockexam:model','⚙ 模型选择'] ] },
+      ['allquestions','📝 全部真题'], ['answercheck','✅ 答案批改'], ['outputtrain','✍️ 输出训练'], ['mockexam','🎯 AI模考'] ] },
     { name: '📚 语料库', open: false, items: [
       ['corpushub','🧠 三层语料·前沿包'], ['modcorpus','📖 模块语料'], ['mycorpus','📋 我的语料'] ] },
     { name: '📡 考情雷达', open: false, items: [
@@ -11225,7 +11239,8 @@ function loadDailyAI() {
     /* 顶部常驻三项 + 五个分组 */
     var h = '<div class="ni lv0" data-p="">🏠 今日主线</div>'
       + '<div class="ni lv0" data-p="aichat">💬 AI助手</div>'
-      + '<div class="ni lv0" data-p="stats">📊 学习统计</div>';
+      + '<div class="ni lv0" data-p="stats">📊 学习统计</div>'
+      + '<div class="ni lv0" data-p="settings:model">⚙ AI模型</div>';
     GROUPS.forEach(function(g){
       h += '<div class="nav6-group' + (g.open ? ' open' : '') + '">'
         + '<div class="nav6-hdr" onclick="this.parentElement.classList.toggle(\'open\')"><span class="nav6-arrow">▶</span>' + g.name + '<span class="nav6-count">' + g.items.length + '</span></div>'
@@ -13770,10 +13785,8 @@ function loadDailyAI() {
     var sys = '你是人大434国际商务考研专家。为理论「' + q + '」生成结构化框架,严格输出JSON(不要其他文字):\n'
       + '{"theory":"规范理论名","overview":"120字以内综述(提出者+核心命题)","assumptions":["假设,每条20-50字,3-5条"],"mechanisms":["核心机制,每条25-60字,要具体有逻辑链,4-6条"],"inferences":["理论推论/可解释的现象,3-4条"],"pros":["理论贡献,2-3条"],"cons":["局限批评,2-3条"],"policy":["对中国的政策/现实含义,2-3条"],"keypoints":["答题必写采分点,4-5条"],"examtips":"一句考点提示(考法+易错点)","related":["最相关的3个理论名"],"questions":["可能的考题2道"]}\n'
       + '要求:内容必须具体(有人名/机制/条件),禁止"企业追求利润最大化"式空话;优先使用以下题库资料:\n' + ctx;
-    fetch(DS_URL, {
-      method: 'POST', headers: {Authorization: 'Bearer ' + getAPIKey(), 'Content-Type': 'application/json'},
-      body: JSON.stringify({model: AI_MODEL, messages: [{role: 'system', content: sys}, {role: 'user', content: '生成「' + q + '」的框架JSON'}], temperature: 0.25, max_tokens: 5000})
-    }).then(function(r){ if (!r.ok) throw Error('HTTP ' + r.status); return r.json(); })
+    aiCall('gen', {messages: [{role: 'system', content: sys}, {role: 'user', content: '生成「' + q + '」的框架JSON'}], temperature: 0.25, max_tokens: 5000})
+    .then(function(r){ if (!r.ok) throw Error('HTTP ' + r.status); return r.json(); })
     .then(function(d){
       var c = (d.choices && d.choices[0] && d.choices[0].message) ? d.choices[0].message.content : '';
       c = c.replace(/```json|```/g, ''); /* 去markdown围栏 */
@@ -15815,42 +15828,44 @@ function renderLiveMacro(d) {
 /* ---------- v3.71 模型选择: 路由拦截 mockexam:model 打开浮层(入口在GROUPS写作组) ---------- */
 (function(){
   var _oNavMP = navigate;
-  navigate = function(p){ if (p === 'mockexam:model') { showModelPicker(); return; } return _oNavMP.apply(this, arguments); };
+  navigate = function(p){ if (p === 'settings:model' || p === 'mockexam:model') { showModelPicker(); return; } return _oNavMP.apply(this, arguments); };
 
-  var LABELS = { mimo: 'MiMo · 小米万亿(默认，免费)', qwen: '通义千问 Qwen-Max(文理均衡)', deepseek: 'DeepSeek(文科/学术写作强)' };
+  var PROV_LABEL = { mimo: 'MiMo', qwen: 'Qwen-Max', deepseek: 'DeepSeek' };
+  var PROV_IDS = ['mimo', 'qwen', 'deepseek'];
 
   window.showModelPicker = function(){
-    var cur = (AI_ROUTES && AI_ROUTES.mock) || 'qwen';
-    if (!aiProviderAvailable(cur)) cur = 'mimo';
-    var ids = ['mimo', 'qwen', 'deepseek'];
     var rows = '';
-    ids.forEach(function(id){
-      var ok = aiProviderAvailable(id);
-      var on = (cur === id);
-      rows += '<div ' + (ok ? 'onclick="pickModel(\'' + id + '\')"' : '') + ' style="display:flex;align-items:center;gap:12px;padding:14px 16px;margin-bottom:10px;border-radius:14px;'
-        + (on ? 'background:rgba(130,128,255,.22);border:1.5px solid rgba(148,146,255,.6)' : 'background:rgba(255,255,255,.05);border:1px solid rgba(255,255,255,.12)')
-        + (ok ? ';cursor:pointer' : ';opacity:.45;cursor:not-allowed') + '">'
-        + '<div style="font-size:20px">' + (on ? '✅' : (ok ? '⚪' : '🔒')) + '</div>'
-        + '<div style="flex:1"><div style="font-size:14px;font-weight:700;color:var(--t)">' + escapeHtml(LABELS[id]) + '</div>'
-        + (ok ? '' : '<div style="font-size:11px;color:var(--ts);margin-top:2px">未配置(需在后端设置密钥)</div>') + '</div></div>';
+    AI_SCENES.forEach(function(sc){
+      var cur = AI_ROUTES[sc.key]; if (!aiProviderAvailable(cur)) cur = 'mimo';
+      var seg = PROV_IDS.map(function(pid){
+        var ok = aiProviderAvailable(pid), on = (cur === pid);
+        return '<span ' + (ok ? 'onclick="pickSceneModel(\'' + sc.key + '\',\'' + pid + '\')"' : '') + ' title="' + (ok ? '' : '未配置密钥') + '" '
+          + 'style="flex:1;text-align:center;padding:7px 4px;font-size:12px;border-radius:9px;'
+          + (on ? 'background:rgba(130,128,255,.42);color:#fff;font-weight:700' : 'color:var(--ts)')
+          + (ok ? ';cursor:pointer' : ';opacity:.35;cursor:not-allowed') + '">' + (on ? '● ' : '') + PROV_LABEL[pid] + (ok ? '' : ' 🔒') + '</span>';
+      }).join('');
+      rows += '<div style="padding:12px 14px;margin-bottom:10px;border-radius:14px;background:rgba(255,255,255,.05);border:1px solid rgba(255,255,255,.12)">'
+        + '<div style="font-size:14px;font-weight:700;color:var(--t)">' + sc.label + '</div>'
+        + '<div style="font-size:11px;color:var(--ts);margin:2px 0 9px">' + sc.desc + '</div>'
+        + '<div style="display:flex;gap:6px;background:rgba(10,12,28,.35);border-radius:11px;padding:3px">' + seg + '</div></div>';
     });
     var html = '<div id="modelPickMask" onclick="if(event.target===this)closeModelPicker()" style="position:fixed;inset:0;z-index:9999;background:rgba(0,0,0,.55);display:flex;align-items:center;justify-content:center;padding:20px">'
-      + '<div style="width:100%;max-width:440px;background:rgba(20,22,40,.92);backdrop-filter:blur(24px);-webkit-backdrop-filter:blur(24px);border:1px solid rgba(255,255,255,.14);border-radius:22px;padding:22px 22px 18px;box-shadow:0 24px 70px rgba(0,0,0,.5)">'
-      + '<div style="font-size:17px;font-weight:800;color:#fff;margin-bottom:4px">⚙ AI 模考模型</div>'
-      + '<div style="font-size:12px;color:var(--ts);margin-bottom:16px">选择"AI模考出题与答案"使用的模型。其余功能(AI助手/批改/速刷)始终用 MiMo。</div>'
+      + '<div style="width:100%;max-width:470px;max-height:86vh;overflow:auto;background:rgba(20,22,40,.94);backdrop-filter:blur(24px);-webkit-backdrop-filter:blur(24px);border:1px solid rgba(255,255,255,.14);border-radius:22px;padding:22px 22px 18px;box-shadow:0 24px 70px rgba(0,0,0,.5)">'
+      + '<div style="font-size:17px;font-weight:800;color:#fff;margin-bottom:4px">⚙ AI 模型设置</div>'
+      + '<div style="font-size:12px;color:var(--ts);margin-bottom:16px">为每类功能分别指定模型。语音对话固定用 MiMo(仅 MiMo 支持语音)，不在此列。</div>'
       + rows
-      + '<div style="font-size:11px;color:var(--ts);margin-top:6px;line-height:1.6">切换后立即生效，下次组卷起用新模型。DeepSeek/Qwen 按量计费，MiMo 免费。</div>'
+      + '<div style="font-size:11px;color:var(--ts);margin-top:4px;line-height:1.7">· 切换即时生效(出题类下次生成起用新模型)。<br>· MiMo 免费；Qwen/DeepSeek 按量计费。<br>· 🔒 表示该模型未配置密钥。</div>'
       + '<button onclick="closeModelPicker()" style="margin-top:14px;width:100%;padding:11px;border-radius:12px;border:none;background:rgba(130,128,255,.3);color:#fff;font-size:14px;cursor:pointer;font-weight:700">完成</button>'
       + '</div></div>';
     var d = document.createElement('div'); d.id = 'modelPickWrap'; d.innerHTML = html;
     document.body.appendChild(d);
   };
-  window.pickModel = function(id){
-    if (!aiProviderAvailable(id)) return;
-    AI_ROUTES.mock = id;
-    try { localStorage.setItem('r434_mockmodel', id); } catch(e){}
-    showModelPicker.__refresh && showModelPicker.__refresh();
-    closeModelPicker(); showModelPicker(); /* 重渲染选中态 */
+  window.pickSceneModel = function(sceneKey, pid){
+    if (!aiProviderAvailable(pid)) return;
+    AI_ROUTES[sceneKey] = pid;
+    if (sceneKey === 'gen') AI_ROUTES.mock = pid;  /* 同步旧别名 */
+    saveAIRoutes();
+    closeModelPicker(); showModelPicker();  /* 重渲染选中态 */
   };
   window.closeModelPicker = function(){ var w = document.getElementById('modelPickWrap'); if (w) w.parentNode.removeChild(w); };
 })();
