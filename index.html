@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<!-- v2.1 · 2026-07-31 04:25 · modular -->
+<!-- v2.1 · 2026-07-31 04:31 · modular -->
 <html lang="zh-CN">
 <head>
 <meta charset="UTF-8">
@@ -11198,7 +11198,7 @@ function loadDailyAI() {
     { name: '🧠 背诵复习', open: true, items: [
       ['review','🔄 统一复习'], ['cards','🃏 记忆卡片'], ['recite','📔 背诵打卡'], ['wrongbook','📋 错题本'] ] },
     { name: '✍️ 做题写作', open: false, items: [
-      ['allquestions','📝 全部真题'], ['answercheck','✅ 答案批改'], ['outputtrain','✍️ 输出训练'], ['mockexam','🎯 AI模考'] ] },
+      ['allquestions','📝 全部真题'], ['answercheck','✅ 答案批改'], ['outputtrain','✍️ 输出训练'], ['mockexam','🎯 AI模考'], ['mockexam:model','⚙ 模型选择'] ] },
     { name: '📚 语料库', open: false, items: [
       ['corpushub','🧠 三层语料·前沿包'], ['modcorpus','📖 模块语料'], ['mycorpus','📋 我的语料'] ] },
     { name: '📡 考情雷达', open: false, items: [
@@ -15812,26 +15812,10 @@ function renderLiveMacro(d) {
   };
   window.drillNext = function(){ _drill.revealed = false; if (_isAI()) { _loadAICard(); } else { _drill.q = _pickQ(); _render(); } };
 })();
-/* ---------- v3.71 模型选择: 侧栏入口 + 浮层, 切换模考用哪个模型(mimo/qwen/deepseek) ---------- */
+/* ---------- v3.71 模型选择: 路由拦截 mockexam:model 打开浮层(入口在GROUPS写作组) ---------- */
 (function(){
-  var _oBuildNav = (typeof buildNav === 'function') ? buildNav : null;
-  if (_oBuildNav) {
-    buildNav = function(){
-      _oBuildNav.apply(this, arguments);
-      try {
-        var groups = document.querySelectorAll('.nav6-items');
-        for (var i = 0; i < groups.length; i++) {
-          if (groups[i].textContent.indexOf('AI模考') >= 0 && !groups[i].querySelector('[data-modelpick]')) {
-            var a = document.createElement('div'); a.className = 'ni'; a.setAttribute('data-modelpick','1');
-            a.style.cssText = 'padding:8px 12px;cursor:pointer;font-size:13px;border-radius:8px';
-            a.innerHTML = '⚙ 模型选择'; a.onclick = function(){ showModelPicker(); };
-            groups[i].appendChild(a);
-            break;
-          }
-        }
-      } catch(e){}
-    };
-  }
+  var _oNavMP = navigate;
+  navigate = function(p){ if (p === 'mockexam:model') { showModelPicker(); return; } return _oNavMP.apply(this, arguments); };
 
   var LABELS = { mimo: 'MiMo · 小米万亿(默认，免费)', qwen: '通义千问 Qwen-Max(文理均衡)', deepseek: 'DeepSeek(文科/学术写作强)' };
 
