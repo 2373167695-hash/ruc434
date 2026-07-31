@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<!-- v2.1 · 2026-07-31 01:32 · modular -->
+<!-- v2.1 · 2026-07-31 04:18 · modular -->
 <html lang="zh-CN">
 <head>
 <meta charset="UTF-8">
@@ -4979,20 +4979,82 @@ function getQwenKey(){
   }
   return _qwenPromise;
 }
-/* 模考专用AI调用: Qwen启用则走Qwen(OpenAI兼容, thinking用enable_thinking), 否则回退mimo(thinking.type)。
-   opts: {messages, max_tokens, thinking(bool), temperature} → 返回 fetch Promise(resolve为标准OpenAI响应json) */
-function mockAICall(opts){
-  var useQwen = MOCK_ENABLED && MOCK_URL && MOCK_MODEL;
-  var keyP = useQwen ? getQwenKey() : Promise.resolve(getAPIKey());
-  return keyP.then(function(key){
-    if (useQwen && !key) { useQwen = false; key = getAPIKey(); } /* Qwen key 拿不到→回退mimo */
-    var url = useQwen ? MOCK_URL : DS_URL;
-    var body = { model: useQwen ? MOCK_MODEL : AI_MODEL, messages: opts.messages, max_tokens: opts.max_tokens || 4000 };
-    if (opts.thinking && !useQwen) { body.thinking = { type: 'enabled' }; }  /* mimo开思考; Qwen兼容模式非流式不支持思考开关, 靠qwen-max自身能力 */
-    else if (typeof opts.temperature === 'number') { body.temperature = opts.temperature; }
-    return fetch(url, { method: 'POST', headers: { Authorization: 'Bearer ' + (key||''), 'Content-Type': 'application/json' }, body: JSON.stringify(body) });
+/* ==================== AI Provider 接口层 ====================
+ * 把各厂商差异(端点URL/取key方式/思考参数格式/是否流式思考)抽象成统一 provider。
+ * 未来"模型菜单+用户自带key"只需: 往 AI_PROVIDERS 注册一项, 或用 registerAIProvider() 动态加。
+ * provider 契约:
+ *   { id, label, getUrl():string, getKey():Promise<string>, model:string|fn,
+ *     buildBody(opts): 组装请求体(处理thinking/temperature差异), extractText(json):string }
+ * opts 统一格式: { messages, max_tokens, thinking(bool), temperature }
+ */
+var AI_PROVIDERS = {
+  // 小米 MiMo: 前端直连, key 走 /key; 思考用 thinking.type
+  mimo: {
+    id: 'mimo', label: 'MiMo (小米)',
+    getUrl: function(){ return DS_URL; },
+    getKey: function(){ return Promise.resolve(getAPIKey() || ''); },
+    getModel: function(){ return AI_MODEL; },
+    buildBody: function(opts){
+      var b = { model: AI_MODEL, messages: opts.messages, max_tokens: opts.max_tokens || 4000 };
+      if (opts.thinking) b.thinking = { type: 'enabled' };
+      else if (typeof opts.temperature === 'number') b.temperature = opts.temperature;
+      return b;
+    }
+  },
+  // 通义千问 Qwen: DashScope OpenAI兼容端点, key 走 /key?svc=qwen; 兼容模式非流式不支持思考开关
+  qwen: {
+    id: 'qwen', label: '通义千问 Qwen',
+    getUrl: function(){ return MOCK_URL; },
+    getKey: function(){ return getQwenKey(); },
+    getModel: function(){ return MOCK_MODEL; },
+    buildBody: function(opts){
+      var b = { model: MOCK_MODEL, messages: opts.messages, max_tokens: opts.max_tokens || 4000 };
+      if (typeof opts.temperature === 'number') b.temperature = opts.temperature; /* thinking 靠模型自身能力 */
+      return b;
+    }
+  }
+  /* 扩展示例(DeepSeek/用户自定义)将来在此注册, 或调 registerAIProvider():
+   * deepseek: { getUrl:()=>'https://api.deepseek.com/chat/completions', getKey:()=>Promise.resolve(userKey), getModel:()=>'deepseek-chat', buildBody:... } */
+};
+/* 动态注册(供未来"模型菜单+用户自带key"使用): cfg={id,label,url,key,model,thinkParam} */
+function registerAIProvider(cfg){
+  if (!cfg || !cfg.id) return;
+  AI_PROVIDERS[cfg.id] = {
+    id: cfg.id, label: cfg.label || cfg.id,
+    getUrl: function(){ return cfg.url; },
+    getKey: function(){ return Promise.resolve(cfg.key || ''); },
+    getModel: function(){ return cfg.model; },
+    buildBody: function(opts){
+      var b = { model: cfg.model, messages: opts.messages, max_tokens: opts.max_tokens || 4000 };
+      if (opts.thinking && cfg.thinkParam === 'thinking') b.thinking = { type: 'enabled' };
+      else if (opts.thinking && cfg.thinkParam === 'enable_thinking') b.enable_thinking = true;
+      else if (typeof opts.temperature === 'number') b.temperature = opts.temperature;
+      return b;
+    }
+  };
+}
+/* 场景→provider 路由(未来可由用户菜单覆盖此映射) */
+var AI_ROUTES = { mock: 'qwen' };  /* 模考默认走 qwen; 其余场景用 mimo */
+function _providerFor(scene){
+  var pid = AI_ROUTES[scene];
+  if (pid && AI_PROVIDERS[pid]) return AI_PROVIDERS[pid];
+  return AI_PROVIDERS.mimo;
+}
+/* 统一AI调用: aiCall(scene, opts) → fetch Promise。provider不可用(如key空)自动回退mimo。 */
+function aiCall(scene, opts){
+  var prov = _providerFor(scene);
+  // qwen 未配置(MOCK_ENABLED=false 或 缺 url/model) → 回退 mimo
+  if (prov.id === 'qwen' && !(MOCK_ENABLED && MOCK_URL && MOCK_MODEL)) prov = AI_PROVIDERS.mimo;
+  return prov.getKey().then(function(key){
+    if (!key && prov.id !== 'mimo') { prov = AI_PROVIDERS.mimo; return prov.getKey().then(function(k2){ return _doAICall(prov, k2, opts); }); }
+    return _doAICall(prov, key, opts);
   });
 }
+function _doAICall(prov, key, opts){
+  return fetch(prov.getUrl(), { method: 'POST', headers: { Authorization: 'Bearer ' + (key||''), 'Content-Type': 'application/json' }, body: JSON.stringify(prov.buildBody(opts)) });
+}
+/* 兼容旧调用: mockAICall = 模考场景 aiCall('mock', ...) */
+function mockAICall(opts){ return aiCall('mock', opts); }
 function escapeHtml(s) {
   if (!s) return '';
   return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
