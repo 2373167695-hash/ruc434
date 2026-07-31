@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<!-- v2.1 · 2026-07-31 07:04 · modular -->
+<!-- v2.1 · 2026-07-31 09:55 · modular -->
 <html lang="zh-CN">
 <head>
 <meta charset="UTF-8">
@@ -11337,8 +11337,12 @@ function loadDailyAI() {
   }
 
   function _meCollectDir(){
+    /* _meCollectDir 加固版: 优先 .me-dir 内, 兜底全局按 data-t 收集(排除无data-t的视图tab), 防止层级/时序导致漏收 */
     var topics = [];
-    document.querySelectorAll('.me-dir .me-chip.on').forEach(function(el){
+    var scope = document.querySelector('.me-dir') || document;
+    var chips = scope.querySelectorAll('.me-chip.on');
+    if (!chips.length && scope !== document) chips = document.querySelectorAll('.me-dir .me-chip.on');
+    chips.forEach(function(el){
       var t = el.getAttribute('data-t');
       if (t && topics.indexOf(t) < 0) topics.push(t);
     });
@@ -14389,11 +14393,17 @@ function loadDailyAI() {
     document.getElementById('ct').innerHTML = '<div style="text-align:center;padding:80px 20px"><div class="ai-loading" style="justify-content:center"><span class="ai-dot"></span><span class="ai-dot"></span><span class="ai-dot"></span></div><div style="margin-top:16px;color:var(--ts);font-size:13px">正在按手册知识库组卷…已开启深度思考(先分析考点再命题)，约40-70秒<br><span style="font-size:11px">参考答案将在你答题期间逐题后台生成(10分题500字+/20分题1000字+)</span></div></div>';
     var mk = buildMockContext(topics);
     var _prof = (typeof buildStudyProfile === 'function') ? buildStudyProfile() : '';
+    /* 组卷loading显示系统实际认到的勾选考点, 让"没按勾选"问题当场可见 */
+    if (topics.length) {
+      var _tip = document.querySelector('#ct .ai-loading');
+      if (_tip && _tip.parentElement) _tip.parentElement.insertAdjacentHTML('beforeend', '<div style="margin-top:12px;font-size:12px;color:#a5b4fc">本次命题范围已锁定：' + topics.join('、') + '</div>');
+    }
     var dirTxt = topics.length
-      ? '\n【命题范围(考生指定，必须遵守)】至少8道题围绕：' + topics.join('、') + '。'
+      ? '\n\n★★【命题范围·最高优先级·必须严格遵守】★★\n本卷10道题中，至少8道必须直接围绕以下考生指定考点命题(其余2道可为同模块邻近考点)：' + topics.join('、') + '。\n若生成的题目未覆盖上述指定考点，视为不合格。knowledge字段也必须优先取自这些指定考点。\n'
       : '\n【命题范围】从上方知识库档案中的考点命题，覆盖不同部分。';
     if (_prof) dirTxt += '\n' + _prof + '\n【因材命题要求】结合以上考生画像，对其薄弱模块/低分维度适当加权命题(但不牺牲整卷覆盖面)。';
-    var sys = RUC434_STYLE + '\n你是人大434国际商务考研命题老师。本次只出题，不写答案。\n' + mk.ctx + dirTxt
+    /* 指定考点约束前置(放知识库前, 抢占注意力), 避免被长知识库淹没 */
+    var sys = RUC434_STYLE + '\n你是人大434国际商务考研命题老师。本次只出题，不写答案。' + (topics.length ? dirTxt : '') + '\n' + mk.ctx + (topics.length ? '' : dirTxt)
       + '\n\n【出题前必须先分析(命出好题的前提)】动笔前先在思考中对每个拟考知识点做考察分析：①该理论的核心张力/最易被追问之处；②人大434历年偏好的考察角度(定义辨析/理论对比/适用边界/联系中国现实)；③它与哪个理论易混可对比；④能接上的现实议题(汇率、人民币、RCEP、全球价值链为高频)。再据此命题——题目要考『是否真理解』(会用、会辨析、会联系现实)而非『是否背过定义』。\n【生成要求】\n1. 共10道题：简答5道、论述3道、案例2道；案例题必须有150字以上案例材料+2-3个设问\n'
       + '2. 每道题对应上方知识库档案中的具体考点，禁止超纲；题目风格100%贴合人大434真题(参考上方真题范例)\n'
       + '3. 至少2道结合中国现实经济\n'
