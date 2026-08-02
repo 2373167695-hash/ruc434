@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<!-- v2.1 · 2026-08-02 09:41 · modular -->
+<!-- v2.1 · 2026-08-02 09:50 · modular -->
 <html lang="zh-CN">
 <head>
 <meta charset="UTF-8">
@@ -5873,9 +5873,8 @@ function renderLatex(text) {
 }
 function aiLoading(msg){var d=document.createElement('div');d.className='ai-loading-msg';d.innerHTML='<span class="ai-sand">⏳</span><span>'+(msg||'AI正在思考')+'</span><span class="ai-thinking" style="padding:0;background:transparent"><span class="ai-dot"></span><span class="ai-dot"></span><span class="ai-dot"></span></span>';return d;}
 function renderMarkdown(text) {
-  text = renderLatex(text);
   if (!text) return '';
-  /* mdGuardLt: 裸<防御——仅放行合法标签起始(白名单, 含KaTeX输出), 其余<一律转义, 防止 Y<A 之类被浏览器当标签吞掉 */
+  /* mdGuardLt: 裸<防御——仅放行合法标签起始(白名单), 其余<一律转义 */
   text = text.replace(/<(?!\/?(?:a|b|i|u|s|br|hr|em|strong|span|div|p|ul|ol|li|table|thead|tbody|tr|td|th|code|pre|img|svg|path|line|rect|circle|polygon|text|g|defs|math|semantics|mrow|mi|mo|mn|msup|msub|msubsup|mfrac|msqrt|mroot|mtext|mspace|mstyle|mtable|mtr|mtd|mover|munder|munderover|annotation|sup|sub|blockquote|h1|h2|h3|h4|h5|h6)[\s>\/])/gi, '&lt;');
   // Split into lines for block-level parsing
   var lines = text.split('\n');
@@ -5991,6 +5990,8 @@ function renderMarkdown(text) {
     html += '<p style="margin:4px 0;font-size:13px;line-height:1.7">' + para + '</p>';
     i++;
   }
+  /* LaTeX渲染放在最后——避免mdGuardLt转义破坏KaTeX输出的HTML */
+  html = renderLatex(html);
   return html;
 }
 
