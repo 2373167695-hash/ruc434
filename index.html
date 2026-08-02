@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<!-- v2.1 · 2026-07-31 09:55 · modular -->
+<!-- v2.1 · 2026-08-02 09:32 · modular -->
 <html lang="zh-CN">
 <head>
 <meta charset="UTF-8">
@@ -6057,11 +6057,7 @@ function sendAIMessage() {
     + "\n【作答规范（仅当学生要你示范或批改考试答案时启用）】\n" + RUC434_STYLE;
   var msgs = [{role: 'system', content: sys}];
   chatHistory.slice(-10).forEach(function(h) { msgs.push({role: h.role, content: h.content}); });
-  fetch(DS_URL, {
-    method: 'POST',
-    headers: {Authorization: 'Bearer ' + getAPIKey(), 'Content-Type': 'application/json'},
-    body: JSON.stringify({model: AI_MODEL, messages: msgs, stream: true, temperature: 0.3})
-  }).then(function(r) {
+  aiCall('chat', {messages: msgs, stream: true, temperature: 0.3}).then(function(r) {
     if (!r.ok) throw Error('HTTP ' + r.status);
     return r.body.getReader();
   }).then(function(rd) {

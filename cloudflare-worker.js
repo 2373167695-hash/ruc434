@@ -55,7 +55,7 @@ export default {
           'Accept': 'text/event-stream',
         },
         body: JSON.stringify({
-          model: 'deepseek-v4-pro',
+          model: 'deepseek-v4-flash',
           messages: messages,
           stream: true,
           temperature: 0.3,
