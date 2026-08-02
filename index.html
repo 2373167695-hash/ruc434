@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<!-- v2.1 · 2026-08-02 09:32 · modular -->
+<!-- v2.1 · 2026-08-02 09:41 · modular -->
 <html lang="zh-CN">
 <head>
 <meta charset="UTF-8">
@@ -5862,6 +5862,13 @@ function renderLatex(text) {
     try { return katex.renderToString(formula.trim(), {throwOnError: false, displayMode: false}); }
     catch(e) { return '$' + formula + '$'; }
   });
+  /* 兜底: 未被 $ 包裹的裸 LaTeX 命令 → 自动包裹后渲染 */
+  if (typeof katex !== 'undefined') {
+    text = text.replace(/(?<!\$)((?:\\frac\{[^}]*\}\{[^}]*\}|\\text\{[^}]*\}|\\[a-zA-Z]+(?:\{[^}]*\})*)(?!\$))/g, function(m) {
+      try { return katex.renderToString(m.trim(), {throwOnError: false, displayMode: false}); }
+      catch(e) { return '$' + m + '$'; }
+    });
+  }
   return text;
 }
 function aiLoading(msg){var d=document.createElement('div');d.className='ai-loading-msg';d.innerHTML='<span class="ai-sand">⏳</span><span>'+(msg||'AI正在思考')+'</span><span class="ai-thinking" style="padding:0;background:transparent"><span class="ai-dot"></span><span class="ai-dot"></span><span class="ai-dot"></span></span>';return d;}
