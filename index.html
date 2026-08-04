@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<!-- v2.1 · 2026-08-03 01:16 · modular -->
+<!-- v2.1 · 2026-08-04 09:08 · modular -->
 <html lang="zh-CN">
 <head>
 <meta charset="UTF-8">
@@ -7910,6 +7910,38 @@ function showStats() {
   }
   
   document.getElementById('ct').innerHTML = h;
+  
+  // AI 用量看板(异步加载 Worker /stats)
+  fetch(SYNC_URL + '/stats', {headers:{Authorization:'Bearer '+(localStorage.getItem('r434_token')||'')}})
+    .then(function(r){ return r.json(); })
+    .then(function(st) {
+      if (!st || !st.daily) return;
+      var daily = st.daily, days = Object.keys(daily).sort().slice(-14);
+      var totalCalls = 0, totalTokens = 0, byFunc = {};
+      days.forEach(function(d){ totalCalls += daily[d].calls||0; totalTokens += daily[d].tokens||0;
+        var bf = daily[d].byFunc||{}; for (var f in bf) byFunc[f] = (byFunc[f]||0) + bf[f];
+      });
+      var bar = '<div class="pcard" style="margin-top:16px"><div class="pcard-hdr"><h3>🤖 AI 用量看板</h3><span style="font-size:11px;color:var(--ts)">近14天 · 服务端统计</span></div><div class="pcard-body">';
+      bar += '<div class="grid" style="grid-template-columns:repeat(3,1fr);gap:12px">' +
+        '<div style="text-align:center"><div style="font-size:26px;color:var(--pu);font-weight:700">'+totalCalls+'</div><div style="font-size:11px;color:var(--ts)">AI 调用次数</div></div>' +
+        '<div style="text-align:center"><div style="font-size:26px;color:var(--pu);font-weight:700">'+(totalTokens/1000).toFixed(1)+'k</div><div style="font-size:11px;color:var(--ts)">Token 消耗</div></div>' +
+        '<div style="text-align:center"><div style="font-size:26px;color:var(--pu);font-weight:700">'+Object.keys(byFunc).length+'</div><div style="font-size:11px;color:var(--ts)">使用功能数</div></div></div>';
+      var fnLabels = {chat:'AI助手', grade:'答案批改', daily:'每日一题', aipool:'AI题库', proxy:'代理调用', mock:'模考', gen:'AI出题'};
+      bar += '<div style="margin-top:14px;font-size:12px;color:var(--ts)">按功能分布：</div><div style="display:flex;flex-wrap:wrap;gap:6px;margin-top:6px">';
+      Object.keys(byFunc).forEach(function(f){
+        bar += '<span class="rt" style="font-size:11px">'+(fnLabels[f]||f)+' ×'+byFunc[f]+'</span>';
+      });
+      bar += '</div>';
+      bar += '<div style="display:flex;align-items:flex-end;gap:4px;height:80px;margin-top:14px;padding:0 4px">';
+      var maxC = 1; days.forEach(function(d){ maxC = Math.max(maxC, daily[d].calls||0); });
+      days.forEach(function(d){
+        var c = daily[d].calls||0, hgt = Math.round(c/maxC*70)+2;
+        bar += '<div style="flex:1;text-align:center"><div style="height:'+hgt+'px;background:linear-gradient(180deg,var(--pu),rgba(88,86,214,.35));border-radius:3px 3px 0 0" title="'+d+': '+c+'次"></div><div style="font-size:9px;color:var(--ts);margin-top:2px;transform:rotate(-40deg);white-space:nowrap">'+d.slice(5)+'</div></div>';
+      });
+      bar += '</div></div></div>';
+      var ct2 = document.getElementById('ct');
+      if (ct2) ct2.insertAdjacentHTML('beforeend', bar);
+    }).catch(function(){});
   // Initialize chart and heatmap
   setTimeout(function() {
     var ctx = document.getElementById('chartRadar');
