@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<!-- v2.1 · 2026-08-06 05:04 · modular -->
+<!-- v2.1 · 2026-08-06 08:03 · modular -->
 <html lang="zh-CN">
 <head>
 <meta charset="UTF-8">
@@ -15727,8 +15727,14 @@ function renderLiveMacro(d) {
       + '\n你是人大434国际商务考研命题老师。请围绕考点【' + kn + '】命 1 道' + wantType + '题并写出标准答案。\n' + _knCardDrill(kn)
       + '\n【出题前先分析】先想清该考点的核心张力、人大偏好的考察角度(定义辨析/理论对比/适用边界/联系中国现实)、易混对比与现实接口，再命题；题目要考“是否真理解”(会用、会辨析、会联系现实)而非“背没背过”。'
       + '\n【风格】贴合人大434真题：简答极短直问(用“简述/如何/为什么/比较”)；论述可复合并结合中国现实(汇率、人民币、RCEP、全球价值链为高频)；禁用“试论述/浅析/谈谈你的理解”等。'
-      + '\n【答案】理论的定义/假设/要点/评价必须直接依据上方手册档案原文表述，理论名中英对照，答案≥' + minLen + '字，结构清晰。'
-      + '\n严格JSON输出(不要任何其他文字)：{"type":"' + wantType + '","question":"完整题面","answer":"标准答案正文","knowledge":"' + kn + '"}';
+      + '\n【答案】理论的定义/假设/要点/评价必须直接依据上方手册档案原文表述，理论名中英对照，答案≥' + minLen + '字。'
+      + '\n【答案格式·严格按Markdown】答案正文必须用以下固定结构输出（前端按Markdown渲染，格式必须合规）：'
+      + '\n1. 先用 **一句话定性** 开门见山（加粗）；'
+      + '\n2. 正文用 Markdown 列表分层：一级观点用 **加粗小标题** 起行（如 **1. 理论内涵**），其下内容用 "- " 无序列表展开；'
+      + '\n3. 涉及理论名词必须 中文（English）对照；'
+      + '\n4. 结尾用 **考点提示：** 冒号开头收尾。'
+      + '\n5. 禁止使用①②③、◆、→ 等符号代替 Markdown 列表；禁止整段无分层。'
+      + '\n严格JSON输出(不要任何其他文字)：{"type":"' + wantType + '","question":"完整题面","answer":"标准答案正文(按上述Markdown格式)"}';
     return fetch(DS_URL, { method: 'POST', headers: { Authorization: 'Bearer ' + getAPIKey(), 'Content-Type': 'application/json' },
       body: JSON.stringify({ model: AI_MODEL, messages: [{ role: 'system', content: sys }, { role: 'user', content: '命一道【' + kn + '】的' + wantType + '题(含标准答案)' }], max_tokens: 7000, thinking: { type: 'enabled' } })
     }).then(function(r){ if (!r.ok) throw Error('HTTP ' + r.status); return r.json(); })
