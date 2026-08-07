@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<!-- v2.1 · 2026-08-07 03:34 · modular -->
+<!-- v2.1 · 2026-08-07 03:37 · modular -->
 <html lang="zh-CN">
 <head>
 <meta charset="UTF-8">
@@ -16168,6 +16168,7 @@ function renderLiveMacro(d) {
   }
 
   var _drill = { q: null, type: '简答', revealed: false, done: 0, recent: [], pool: [], loading: false };
+  window._drill = _drill;  /* 暴露给专项训练/知识点专项练习注入 customPool/aiScope */
 
   function _rateLoad(){ try { return JSON.parse(localStorage.getItem('r434_drill2') || '{}'); } catch(e) { return {}; } }
   function _rateSave(m){ try { localStorage.setItem('r434_drill2', JSON.stringify(m)); if (typeof saveState === 'function') saveState(); } catch(e){} }
