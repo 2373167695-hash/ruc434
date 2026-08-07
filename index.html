@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<!-- v2.1 · 2026-08-07 03:37 · modular -->
+<!-- v2.1 · 2026-08-07 03:42 · modular -->
 <html lang="zh-CN">
 <head>
 <meta charset="UTF-8">
@@ -15861,7 +15861,7 @@ function buildStudyProfile() {
   } catch(e) { return ''; }
 }
 /* ---------- 🎯 专项训练: 自定义筛选(模块×题型×年份×状态) + 保存训练方向 ---------- */
-var _tr = { mod: '', kn: '', type: '', year: '', status: '', n: 10, src: '真题' };
+var _tr = { mod: '', kns: [], type: '', year: '', status: '', n: 10, src: '真题' };
 var _trSaved = null;
 function _trLoadSaved(){ try { _trSaved = JSON.parse(localStorage.getItem('r434_trainings') || '[]'); } catch(e) { _trSaved = []; } return _trSaved || []; }
 function _trSaveSaved(list){ try { localStorage.setItem('r434_trainings', JSON.stringify(list)); } catch(e) {} }
@@ -15901,6 +15901,7 @@ function _trCollectQids() {
   var wlog = {};
   try { wlog = JSON.parse(localStorage.getItem('r434_wrong')||'{}'); } catch(e) {}
   var qids = [];
+  var kns = _tr.kns || [];
   DATA.forEach(function(q) {
     if (_tr.year && String(q.year) !== _tr.year) return;
     if (_tr.type && q.type !== _tr.type) return;
@@ -15908,6 +15909,7 @@ function _trCollectQids() {
     if (_tr.status === 'unseen' && (marks[q.id] && marks[q.id].done)) return;
     if (_tr.status === 'wrong' && !wlog[q.id]) return;
     if (_tr.status === 'star' && !(marks[q.id] && marks[q.id].star)) return;
+    var kwn = q.knowledge || [];
     if (_tr.mod) {
       var inMod = false;
       if (KNOWLEDGE_NAV && KNOWLEDGE_NAV.sections) {
@@ -15916,8 +15918,7 @@ function _trCollectQids() {
           (part.chapters||[]).forEach(function(ch) {
             (ch.groups||[]).forEach(function(g) {
               (g.topics||[]).forEach(function(t) {
-                if (_tr.kn && t.name !== _tr.kn) return;
-                var kwn = q.knowledge || [];
+                if (kns.length && kns.indexOf(t.name) < 0) return;
                 if (kwn.indexOf(t.name) >= 0 || kwn.indexOf(t.key) >= 0) inMod = true;
               });
             });
@@ -15925,9 +15926,9 @@ function _trCollectQids() {
         });
       }
       if (!inMod) return;
-    } else if (_tr.kn) {
-      var kwn2 = q.knowledge || [];
-      if (kwn2.indexOf(_tr.kn) < 0) return;
+    } else if (kns.length) {
+      var hit = kns.some(function(n) { return kwn.indexOf(n) >= 0; });
+      if (!hit) return;
     }
     qids.push(q.id);
   });
@@ -15970,7 +15971,13 @@ function _trRender() {
 
   /* 筛选器 */
   h += '<div class="pcard" style="margin-bottom:14px"><div class="pcard-hdr"><h3>🔧 训练范围</h3></div><div class="pcard-body">';
-  h += '<div style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:10px">' + sel(modOpts, _tr.mod, "trSetMod(this.value)") + sel(knOpts, _tr.kn || '', "trSetKn(this.value)") + sel(yearOpts, _tr.year, "trSetYear(this.value)") + '</div>';
+  h += '<div style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:10px">' + sel(modOpts, _tr.mod, "trSetMod(this.value)") + sel(yearOpts, _tr.year, "trSetYear(this.value)") + '</div>';
+  /* 知识点多选 chips */
+  var knChips = knOpts.filter(function(o) { return o.v !== ''; }).map(function(o) {
+    var on = (_tr.kns || []).indexOf(o.v) >= 0;
+    return '<span onclick="trToggleKn(\'' + o.v.replace(/'/g,"\\'") + '\')" style="cursor:pointer;padding:4px 11px;border-radius:16px;font-size:11px;margin:3px;display:inline-block;' + (on ? 'background:rgba(130,128,255,.4);color:#fff;font-weight:700' : 'background:rgba(255,255,255,.05);color:var(--ts)') + '">' + (on ? '✓ ' : '') + escapeHtml(o.label) + '</span>';
+  }).join('');
+  h += '<div style="font-size:12px;color:var(--ts);margin:6px 0 4px">知识点（可多选，点选切换）</div><div style="line-height:1.9">' + ((_tr.kns && _tr.kns.length) ? '<span onclick="trClearKn()" style="cursor:pointer;padding:4px 11px;border-radius:16px;font-size:11px;margin:3px;display:inline-block;background:rgba(255,69,58,.15);color:#ff8a80">✕ 清空(' + _tr.kns.length + ')</span>' : '') + knChips + '</div>';
   h += '<div style="font-size:12px;color:var(--ts);margin:6px 0 4px">题型</div><div>' + typeChips + '</div>';
   h += '<div style="font-size:12px;color:var(--ts);margin:10px 0 4px">题目状态（仅对真题生效）</div><div>' + statusChips + '</div>';
   /* 题目来源: 真题 / AI出题 */
@@ -15984,9 +15991,10 @@ function _trRender() {
 
   /* 结果 + 启动 */
   var isAI = _tr.src === 'AI出题';
+  var scopeLabel = ((_tr.kns && _tr.kns.length) ? _tr.kns.join('、') : (_tr.mod || '全部知识点'));
   h += '<div class="pcard"><div class="pcard-body" style="text-align:center">'
     + (isAI
-        ? '<div style="font-size:14px;margin-bottom:6px">🤖 将按所选范围（' + (_tr.kn || _tr.mod || '全部知识点') + '）由 AI 现场生成' + _tr.n + ' 道新题（每题深度思考 20-40 秒）</div>'
+        ? '<div style="font-size:14px;margin-bottom:6px">🤖 将按所选范围（' + scopeLabel + '）由 AI 现场生成' + _tr.n + ' 道新题（每题深度思考 20-40 秒）</div>'
           + '<div style="font-size:12px;color:var(--ts);margin-bottom:14px">AI 会严格依据背诵手册出题并附标准答案，覆盖真实考点的不同考法</div>'
         : '<div style="font-size:15px;margin-bottom:6px">匹配到 <strong style="color:var(--pu)">' + qids.length + '</strong> 道真题</div>'
           + '<div style="font-size:12px;color:var(--ts);margin-bottom:14px">将从中随机抽取 ' + Math.min(_tr.n, Math.max(qids.length, 1)) + ' 题进行训练</div>')
@@ -16002,8 +16010,14 @@ function showTraining() {
   var bb = document.getElementById('backBtn'); if (bb) bb.style.display = 'block';
   _trRender();
 }
-window.trSetMod = function(v){ _tr.mod = v; _tr.kn = ''; _trRender(); };
-window.trSetKn = function(v){ _tr.kn = v; _trRender(); };
+window.trSetMod = function(v){ _tr.mod = v; _tr.kns = []; _trRender(); };
+window.trToggleKn = function(v){
+  var kns = _tr.kns || [];
+  var i = kns.indexOf(v);
+  if (i >= 0) kns.splice(i, 1); else kns.push(v);
+  _tr.kns = kns; _trRender();
+};
+window.trClearKn = function(){ _tr.kns = []; _trRender(); };
 window.trSetYear = function(v){ _tr.year = v; _trRender(); };
 window.trSetType = function(t){ _tr.type = t; _trRender(); };
 window.trSetStatus = function(s){ _tr.status = s; _trRender(); };
@@ -16012,9 +16026,10 @@ window.trSetSrc = function(s){ _tr.src = s; _trRender(); };
 /* 计算 AI 出题的知识点范围: 从选中模块/知识点映射到 KNOWLEDGE key 列表 */
 function _trAiScope() {
   var scope = [];
-  if (_tr.kn) {
-    /* 精确知识点: 匹配 KNOWLEDGE key 或 name */
-    for (var k in KNOWLEDGE) { if (k === _tr.kn || KNOWLEDGE[k].name === _tr.kn) scope.push(k); }
+  var kns = _tr.kns || [];
+  if (kns.length) {
+    /* 精确知识点(可多选): 匹配 KNOWLEDGE key 或 name */
+    for (var k in KNOWLEDGE) { if (kns.indexOf(k) >= 0 || kns.indexOf(KNOWLEDGE[k].name) >= 0) scope.push(k); }
   } else if (_tr.mod && KNOWLEDGE_NAV && KNOWLEDGE_NAV.sections) {
     /* 模块: 收集该模块下所有知识点 key */
     var names = {};
@@ -16071,7 +16086,7 @@ window.trLaunchSaved = function(i) {
   var list = _trLoadSaved();
   var s = list[i]; if (!s) return;
   if (s.src === 'AI出题') {
-    _tr.mod = s.mod || ''; _tr.kn = s.kn || ''; _tr.type = s.type || ''; _tr.year = s.year || ''; _tr.status = s.status || ''; _tr.n = s.n || 10; _tr.src = 'AI出题';
+    _tr.mod = s.mod || ''; _tr.kns = (s.kns || (s.kn ? [s.kn] : [])); _tr.type = s.type || ''; _tr.year = s.year || ''; _tr.status = s.status || ''; _tr.n = s.n || 10; _tr.src = 'AI出题';
     trLaunch();
     return;
   }
@@ -16086,7 +16101,7 @@ window.trLaunchSaved = function(i) {
     }
     navigate('drill');
   } else {
-    _tr.mod = s.mod || ''; _tr.kn = s.kn || ''; _tr.type = s.type || ''; _tr.year = s.year || ''; _tr.status = s.status || ''; _tr.n = s.n || 10; _tr.src = s.src || '真题';
+    _tr.mod = s.mod || ''; _tr.kns = (s.kns || (s.kn ? [s.kn] : [])); _tr.type = s.type || ''; _tr.year = s.year || ''; _tr.status = s.status || ''; _tr.n = s.n || 10; _tr.src = s.src || '真题';
     _trRender();
   }
 };
@@ -16094,10 +16109,11 @@ window.trSaveCurrent = function() {
   var isAI = _tr.src === 'AI出题';
   var qids = isAI ? [] : _trCollectQids();
   if (!isAI && !qids.length) { alert('当前没有匹配题目'); return; }
-  var name = prompt('给这个训练方向起个名字：', (_tr.kn || _tr.mod || '') + ' ' + (_tr.type || '全部题型') + (isAI ? ' · AI出题' : ''));
+  var scopeLabel = ((_tr.kns || []).join('、') || _tr.mod || '全部知识点');
+  var name = prompt('给这个训练方向起个名字：', scopeLabel + ' ' + (_tr.type || '全部题型') + (isAI ? ' · AI出题' : ''));
   if (!name) return;
   var list = _trLoadSaved();
-  list.unshift({ name: name, mod: _tr.mod, kn: _tr.kn, type: _tr.type, year: _tr.year, status: _tr.status, n: _tr.n, src: _tr.src || '真题', qids: qids, ts: Date.now() });
+  list.unshift({ name: name, mod: _tr.mod, kns: (_tr.kns || []).slice(), type: _tr.type, year: _tr.year, status: _tr.status, n: _tr.n, src: _tr.src || '真题', qids: qids, ts: Date.now() });
   if (list.length > 12) list = list.slice(0, 12);
   _trSaveSaved(list);
   _trRender();
@@ -16273,6 +16289,13 @@ function renderLiveMacro(d) {
   }
   function _loadAICard(){
     _drill.revealed = false;
+    /* 专项训练AI出题: 有范围限定 → 跳过服务端池, 直接按范围现场生成 */
+    if (_drill.aiScope && _drill.aiScope.length) {
+      _drill.loading = true; _drill.q = null; _render();
+      _genAICard().then(function(card){ if (!_isAI()) return; _drill.loading = false; _drill.q = card; _render(); })
+        .catch(function(){ _drill.loading = false; _drill.q = _pickQ(); if (_drill.q) _drill.q._aiFail = true; _render(); });
+      return;
+    }
     /* 1. 池中有→秒取 */
     var it = _takePool();
     if (it) { _drill.q = it; _drill.loading = false; _render(); return; }
