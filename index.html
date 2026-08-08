@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<!-- v2.1 · 2026-08-08 05:33 · modular -->
+<!-- v2.1 · 2026-08-08 05:49 · modular -->
 <html lang="zh-CN">
 <head>
 <meta charset="UTF-8">
@@ -16394,7 +16394,7 @@ function renderLiveMacro(d) {
   var _oNavMP = navigate;
   navigate = function(p){ if (p === 'settings:model' || p === 'mockexam:model') { showModelPicker(); return; } return _oNavMP.apply(this, arguments); };
 
-  var PROV_LABEL = { mimo: 'MiMo', qwen: 'Qwen-Max', deepseek: 'DeepSeek' };
+  var PROV_LABEL = { mimo: 'MiMo', qwen: 'Qwen 3.8 Max', deepseek: 'DeepSeek' };
   var PROV_IDS = ['mimo', 'qwen', 'deepseek'];
 
   window.showModelPicker = function(){
