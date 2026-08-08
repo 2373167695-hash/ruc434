@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<!-- v2.1 · 2026-08-07 06:18 · modular -->
+<!-- v2.1 · 2026-08-08 05:33 · modular -->
 <html lang="zh-CN">
 <head>
 <meta charset="UTF-8">
@@ -5033,16 +5033,16 @@ var AI_PROVIDERS = {
       return b;
     }
   },
-  // 通义千问 Qwen: DashScope OpenAI兼容端点, key 走 /key?svc=qwen; 兼容模式非流式不支持思考开关
+  // 通义千问 Qwen 3.8 Max: 阿里百炼 DashScope(v3.8max)→OpenAI兼容端点, key 硬编码
   qwen: {
-    id: 'qwen', label: '通义千问 Qwen',
-    getUrl: function(){ return MOCK_URL; },
-    getKey: function(){ return getQwenKey(); },
-    getModel: function(){ return MOCK_MODEL; },
+    id: 'qwen', label: '通义千问 Qwen 3.8 Max',
+    getUrl: function(){ return 'https://dashscope.aliyuncs.com/compatible-mode/v1/chat/completions'; },
+    getKey: function(){ return Promise.resolve('sk-ws-H.EREDHDM.EDWe.MEUCIFF8LFR11CReSjJCaJ2xeNv1bpPHe70vrDjZSVGBZCJNAiEAwS-I4MmPtfnK5o5Ra_KXjfvl1nde5LPHLFKUO9xq7-s'); },
+    getModel: function(){ return 'qwen-max'; },
     buildBody: function(opts){
-      var b = { model: MOCK_MODEL, messages: opts.messages, max_tokens: opts.max_tokens || 4000 };
+      var b = { model: 'qwen-max', messages: opts.messages, max_tokens: opts.max_tokens || 4000 };
       if (opts.stream) b.stream = true;
-      if (typeof opts.temperature === 'number') b.temperature = opts.temperature; /* thinking 靠模型自身能力 */
+      if (typeof opts.temperature === 'number') b.temperature = opts.temperature;
       return b;
     }
   },
@@ -5095,10 +5095,10 @@ try {
   var _oldmm = localStorage.getItem('r434_mockmodel');  /* 迁移旧单键设置 */
   if (_oldmm && !_rt) { AI_ROUTES.gen = _oldmm; AI_ROUTES.mock = _oldmm; }
 } catch(e) {}
-/* provider 可用性(供模型菜单列可选项): mimo恒可用, qwen/deepseek看是否配置 */
+/* provider 可用性(供模型菜单列可选项): mimo/qwen恒可用, deepseek看是否配置 */
 function aiProviderAvailable(id){
   if (id === 'mimo') return true;
-  if (id === 'qwen') return MOCK_ENABLED && !!MOCK_URL && !!MOCK_MODEL;
+  if (id === 'qwen') return true; /* v3.8-max 硬编码, 恒可用 */
   if (id === 'deepseek') return DS_ENABLED && !!DS_URL2 && !!DS_MODEL;
   return !!(AI_PROVIDERS[id]);
 }
