@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<!-- v2.1 · 2026-08-09 06:35 · modular -->
+<!-- v2.1 · 2026-08-09 06:47 · modular -->
 <html lang="zh-CN">
 <head>
 <meta charset="UTF-8">
@@ -5037,7 +5037,7 @@ var AI_PROVIDERS = {
   qwen: {
     id: 'qwen', label: '通义千问 Qwen 3.8 Max',
     getUrl: function(){ return SYNC_URL + '/qwen'; },
-    getKey: function(){ return Promise.resolve(''); }, /* Worker 端鉴权 */
+    getKey: function(){ return Promise.resolve('worker'); }, /* Worker 端鉴权，前端传占位符即可 */
     getModel: function(){ return 'qwen3.8-max'; },
     buildBody: function(opts){
       var b = { model: 'qwen3.8-max', messages: opts.messages, max_tokens: opts.max_tokens || 4000 };
