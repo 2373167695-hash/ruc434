@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<!-- v2.1 · 2026-08-08 05:51 · modular -->
+<!-- v2.1 · 2026-08-09 03:20 · modular -->
 <html lang="zh-CN">
 <head>
 <meta charset="UTF-8">
@@ -9239,15 +9239,15 @@ function doAnswerCheck() {
   result.innerHTML = '<div style="padding:24px;text-align:center;color:#888">⏳ AI 正在逐项评分...</div>';
   
   // Build grading prompt
-  var sys = RUC434_STYLE + '\n你是人大434国际商务考研阅卷老师，批改标准严格。请对学生的答案逐项评分（满分10分）。\n\n'
-    + '【评分标准（严格执行）】\n'
-    + '· 知识点覆盖（4分）：是否覆盖了题目要求的所有核心知识点\n'
-    + '· 逻辑结构（3分）：是否有清晰的定义→分析→结论递进结构\n'
-    + '· 术语准确（2分）：专业术语是否正确，是否有中英文对照\n'
-    + '· 实际联系（1分）：是否结合中国经济现实或案例\n\n'
+  var sys = '你是人大434国际商务考研阅卷老师，批改标准严格但公正。请对学生的答案逐项评分（满分10分）。\n\n'
+    + '【评分标准（按题型灵活调整）】\n'
+    + '如果是简答题：侧重核心要点是否齐全(5分)+逻辑是否清晰(3分)+术语是否准确(2分)\n'
+    + '如果是论述题：侧重知识框架是否完整(4分)+逻辑推导是否严谨(3分)+专业术语与概念表述是否精准(3分)\n'
+    + '如果是案例题：侧重问题识别是否准确(3分)+理论选用是否恰当(4分)+分析是否结合案例材料(3分)\n\n'
+    + '【注意】不要求术语中英文对照；不硬性要求联系中国现实(看题目本身是否需要)。\n\n'
     + '输出格式（JSON）：\n'
-    + '{"knowledge":得分,"logic":得分,"terms":得分,"realworld":得分,"total":总分,"strengths":"优点...","weaknesses":"不足...","improvement":"改进建议...","modelAnswer":"完整参考答案（按人大434答题规范，定义先行→分点展开→结论，包含中英文术语对照，800字左右）..."}\n\n'
-    + '规则：严格按照评分标准给分，不要手软；必须给出具体、可操作的改进建议；modelAnswer必须是完整的论述型答案，不是要点罗列，结构规范、可直接用于背诵。只输出JSON，不要其他文字。';
+    + '{"knowledge":得分,"logic":得分,"terms":得分,"total":总分,"strengths":"优点...","weaknesses":"不足...","improvement":"具体可操作的改进建议...","modelAnswer":"完整参考答案(按题目实际所需篇幅，简答题300-500字，论述题600-1000字，定义先行→分点展开→结论)"}\n\n'
+    + '规则：严格按评分标准给分，不手软也不死板；改进建议必须具体到"你漏了XX要点，应该这样写"；只输出JSON。';
   
   // Try to find matching exam question for reference
   var refInfo = '';
@@ -9324,10 +9324,9 @@ function renderAnswerCheckResult(content) {
   // Score breakdown
   h += '<div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:20px">';
   var items = [
-    {label:'知识点覆盖',score:json.knowledge||0,max:4},
+    {label:'知识覆盖',score:json.knowledge||0,max:json.knowledge > 3 ? 5 : 4},
     {label:'逻辑结构',score:json.logic||0,max:3},
-    {label:'术语准确',score:json.terms||0,max:2},
-    {label:'实际联系',score:json.realworld||0,max:1}
+    {label:'术语准确',score:json.terms||0,max:3}
   ];
   items.forEach(function(it) {
     var pct = Math.round(it.score/it.max*100);
@@ -10766,15 +10765,15 @@ function doAnswerCheck() {
   result.style.display = 'block';
   result.innerHTML = '<div style="padding:24px;text-align:center;color:#888">⏳ AI 正在逐项评分...</div>';
 
-  var sys = RUC434_STYLE + '\n你是人大434国际商务考研阅卷老师，批改标准严格。请对学生的答案逐项评分（满分10分）。\n\n'
-    + '【评分标准（严格执行）】\n'
-    + '· 知识点覆盖（4分）：是否覆盖了题目要求的所有核心知识点\n'
-    + '· 逻辑结构（3分）：是否有清晰的定义→分析→结论递进结构\n'
-    + '· 术语准确（2分）：专业术语是否正确，是否有中英文对照\n'
-    + '· 实际联系（1分）：是否结合中国经济现实或案例\n\n'
+  var sys = '你是人大434国际商务考研阅卷老师，批改标准严格但公正。请对学生的答案逐项评分（满分10分）。\n\n'
+    + '【评分标准（按题型灵活调整）】\n'
+    + '如果是简答题：侧重核心要点是否齐全(5分)+逻辑是否清晰(3分)+术语是否准确(2分)\n'
+    + '如果是论述题：侧重知识框架是否完整(4分)+逻辑推导是否严谨(3分)+专业术语与概念表述是否精准(3分)\n'
+    + '如果是案例题：侧重问题识别是否准确(3分)+理论选用是否恰当(4分)+分析是否结合案例材料(3分)\n\n'
+    + '【注意】不要求术语中英文对照；不硬性要求联系中国现实(看题目本身是否需要)。\n\n'
     + '输出格式（JSON）：\n'
-    + '{"knowledge":得分,"logic":得分,"terms":得分,"realworld":得分,"total":总分,"strengths":"优点...","weaknesses":"不足...","improvement":"改进建议...","modelAnswer":"完整参考答案（按人大434答题规范，定义先行→分点展开→结论，包含中英文术语对照，800字左右）..."}\n\n'
-    + '规则：严格按照评分标准给分，不要手软；必须给出具体、可操作的改进建议；modelAnswer必须是完整的论述型答案，不是要点罗列，结构规范、可直接用于背诵。只输出JSON，不要其他文字。';
+    + '{"knowledge":得分,"logic":得分,"terms":得分,"total":总分,"strengths":"优点...","weaknesses":"不足...","improvement":"具体可操作的改进建议...","modelAnswer":"完整参考答案(按题目实际所需篇幅，简答题300-500字，论述题600-1000字，定义先行→分点展开→结论)"}\n\n'
+    + '规则：严格按评分标准给分，不手软也不死板；改进建议必须具体到"你漏了XX要点，应该这样写"；只输出JSON。';
   var _prof = (typeof buildStudyProfile === 'function') ? buildStudyProfile() : '';
   var userMsg = '【题目】\n' + q + '\n\n【学生答案】\n' + a + refInfo + pointInfo + (_prof ? '\n\n' + _prof + '\n(评语请特别关注该考生的历史薄弱维度是否在本次答案中改善)' : '');
 
