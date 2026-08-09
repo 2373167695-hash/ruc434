@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<!-- v2.1 · 2026-08-09 03:20 · modular -->
+<!-- v2.1 · 2026-08-09 03:24 · modular -->
 <html lang="zh-CN">
 <head>
 <meta charset="UTF-8">
@@ -5271,7 +5271,7 @@ function buildAIContext(query) {
 }
 
 function aiDiagnose(){var div=document.getElementById("aiDiagnosis"),content=document.getElementById("aiDiagnosisContent");div.style.display="block";content.innerHTML="AI正在分析...";var s="浏览知识点"+Object.keys(knowledgeViews).length+"个，已做真题"+Object.values(marks).filter(function(v){return v.done}).length+"道。";callDS([{role:"system",content:"你是考研备考规划专家，擅长分析学习数据。请用中文回复。"},{role:"user",content:"学习数据："+s+"请做学习诊断，500字内，包括进度评价、薄弱模块、优先复习建议、冲刺建议。"}],"aiDiagnosisContent");}
-function aiGenerateQuestion(knowledge){var div=document.getElementById("aiQuestions"),content=document.getElementById("aiQuestionsContent");div.style.display="block";content.innerHTML="生成中...";var ctx=buildAIContext(knowledge);var sys=RUC434_STYLE+"\n你是中国人民大学434国际商务专业考研命题老师。请严格遵循以上写作风格，参考以下真题范例出题。\n\n【命题要求】\n1.题目风格必须100%贴合人大434真题的命题套路\n2.简答题10-15分,论述题20-25分,计算/案例15-20分\n3.必须结合中国经济现实或国际商务案例\n4.参考答案必须按人大434评分标准（知识点覆盖4分+逻辑结构3分+术语准确2分+实际联系1分）\n"+ctx;callDS([{role:"system",content:sys},{role:"user",content:"请为知识点["+knowledge+"]生成3道模拟题(1简答+1论述+1计算/案例),每题附参考答案要点。用【第1题】【第2题】【第3题】编号。"}],"aiQuestionsContent");}
+function aiGenerateQuestion(knowledge){var div=document.getElementById("aiQuestions"),content=document.getElementById("aiQuestionsContent");div.style.display="block";content.innerHTML="生成中...";var ctx=buildAIContext(knowledge);var sys="你是人大434国际商务考研命题老师。请结合以下真题资料，围绕知识点出题。\n\n【命题要求】\n1.题目风格贴合人大434真题\n2.简答题10-15分,论述题20-25分,案例15-20分\n3.可结合中国现实(视题目性质，不必强行)\n4.答案用Markdown分层列表：**加粗小标题**+\"- \"无序列表展开\n\n"+ctx;callDS([{role:"system",content:sys},{role:"user",content:"请为知识点["+knowledge+"]生成3道模拟题(1简答+1论述+1案例),每题附参考答案。用【第1题】【第2题】【第3题】编号。"}],"aiQuestionsContent");}
 
 function sendChat(){var inp=document.getElementById("chat-q"),q=inp.value.trim();if(!q)return;inp.value="";var body=document.getElementById("chat-body");body.innerHTML+='<div class="chat-msg user">'+q+'</div>';var ld=document.createElement("div");ld.className="chat-msg assistant";ld.id="c-load";ld.innerHTML='<span class="chat-dot"></span><span class="chat-dot"></span><span class="chat-dot"></span>';body.appendChild(ld);body.scrollTop=body.scrollHeight;chatHistory.push({role:"user",content:q});var md=document.createElement("div");md.className="chat-msg assistant";md.id="c-resp";md.style.display="none";body.appendChild(md);var ctx=buildAIContext(q);var sys=RUC434_STYLE+"\n你是人大434国际商务考研AI助手。你的数据库中已包含完整的历年真题和标准答案，你随时可以引用任何一道真题。请严格遵循以上写作风格，参考数据库中的真题答案、知识点和热点素材回答问题。公式请用$...$包裹。\n"+ctx+"\n\n要求：必须参考数据库中的真实真题和答案来回答；贴合人大434风格、结构化、分点作答、术语中英文对照、结尾有考点提示。";var msgs=[{role:"system",content:sys}];chatHistory.slice(-10).forEach(function(h){msgs.push({role:h.role,content:h.content});});aiCall('chat',{messages:msgs,stream:true,temperature:0.3}).then(function(r){if(!r.ok)throw Error("HTTP "+r.status);return r.body.getReader();}).then(function(rd){var b="",t="",d=new TextDecoder(),firstChunk=true;function n(){rd.read().then(function(r){if(r.done){var lx=document.getElementById("c-load");if(lx)lx.remove();md.style.display="";md.innerHTML=renderMarkdown(t);chatHistory.push({role:"assistant",content:t});saveState();return;}b+=d.decode(r.value,{stream:true});var ls=b.split("\n");b=ls.pop()||"";ls.forEach(function(l){if(l.startsWith("data: ")){var dd=l.substring(6);if(dd=="[DONE]")return;try{var p=JSON.parse(dd);if(p.choices&&p.choices[0].delta){var x=p.choices[0].delta.content||"";if(x){if(firstChunk){firstChunk=false;var lx=document.getElementById("c-load");if(lx)lx.remove();md.style.display="";}t+=x;md.innerHTML=renderMarkdown(t);body.scrollTop=body.scrollHeight;}}}catch(e){}}});n();})}n();}).catch(function(err){var lx=document.getElementById("c-load");if(lx)lx.remove();md.style.display="";md.innerHTML="<span style=color:red>AI请求失败："+err.message+"</span>";});}
 
@@ -9079,7 +9079,7 @@ function showMockExam() {
 function startMockExam() {
   document.getElementById('ct').innerHTML = '<div style="text-align:center;padding:80px 20px"><div class="spinner"></div><p style="margin-top:16px;color:var(--ts)">AI 正在生成模拟试卷...</p></div>';
   var ctx = buildAIContext('模拟考试');
-  var sys = RUC434_STYLE + '\n你是人大434国际商务考研命题老师。请严格按照以下要求生成模拟试卷。\n' + ctx + '\n\n【生成要求】\n1. 共10道题：简答5道(每题10分)、论述3道(每题20分)、案例2道(每题20分)\n2. 题目风格必须100%贴合人大434真题\n3. 至少2道涉及中国现实经济案例\n4. JSON输出：{\"questions\":[{\"type\":\"简答\",\"question\":\"...\",\"score\":10},...]}\n5. 只输出JSON，不要其他文字';
+  var sys = '你是人大434国际商务考研命题老师。请严格按照以下要求生成模拟试卷。\n' + ctx + '\n\n【生成要求】\n1. 共10道题：简答5道(每题10分)、论述3道(每题20分)、案例2道(每题20分)\n2. 题目风格贴合人大434真题：简答极短直问，论述可复合设问\n3. 可结合中国现实经济案例(不强求，视题目性质决定)\n4. JSON输出：{\"questions\":[{\"type\":\"简答\",\"question\":\"...\",\"score\":10},...]}\n5. 只输出JSON，不要其他文字';
   fetch(DS_URL, {method:'POST', headers:{Authorization:'Bearer '+getAPIKey(),'Content-Type':'application/json'},
     body:JSON.stringify({model:AI_MODEL, messages:[{role:'system',content:sys},{role:'user',content:'生成一套人大434国际商务考研模拟试卷'}], stream:false, temperature:0.5})
   }).then(function(r){return r.json();}).then(function(d){
@@ -16236,17 +16236,15 @@ function renderLiveMacro(d) {
     var kn = names[Math.floor(Math.random() * names.length)];
     var wantType = Math.random() < 0.6 ? '简答' : '论述';
     var minLen = wantType === '简答' ? 400 : 800;
-    var sys = (typeof RUC434_STYLE !== 'undefined' ? RUC434_STYLE : '')
-      + '\n你是人大434国际商务考研命题老师。请围绕考点【' + kn + '】命 1 道' + wantType + '题并写出标准答案。\n' + _knCardDrill(kn)
-      + '\n【出题前先分析】先想清该考点的核心张力、人大偏好的考察角度(定义辨析/理论对比/适用边界/联系中国现实)、易混对比与现实接口，再命题；题目要考“是否真理解”(会用、会辨析、会联系现实)而非“背没背过”。'
-      + '\n【风格】贴合人大434真题：简答极短直问(用“简述/如何/为什么/比较”)；论述可复合并结合中国现实(汇率、人民币、RCEP、全球价值链为高频)；禁用“试论述/浅析/谈谈你的理解”等。'
-      + '\n【答案】理论的定义/假设/要点/评价必须直接依据上方手册档案原文表述，理论名中英对照，答案≥' + minLen + '字。'
+    var sys = '你是人大434国际商务考研命题老师。请围绕考点【' + kn + '】命 1 道' + wantType + '题并写出标准答案。\n' + _knCardDrill(kn)
+      + '\n【出题前先分析】先想清该考点的核心张力、人大偏好的考察角度(定义辨析/理论对比/适用边界)、易混对比与现实接口，再命题；题目要考"是否真理解"而非"背没背过"。'
+      + '\n【风格】贴合人大434真题：简答极短直问(用"简述/如何/为什么/比较")；论述可复合设问；禁用"试论述/浅析/谈谈你的理解"等。'
+      + '\n【答案】理论的定义/假设/要点/评价必须直接依据上方手册档案原文表述，答案≥' + minLen + '字。'
       + '\n【答案格式·严格按Markdown】答案正文必须用以下固定结构输出（前端按Markdown渲染，格式必须合规）：'
       + '\n1. 先用 **一句话定性** 开门见山（加粗）；'
-      + '\n2. 正文用 Markdown 列表分层：一级观点用 **加粗小标题** 起行（如 **1. 理论内涵**），其下内容用 "- " 无序列表展开；'
-      + '\n3. 涉及理论名词必须 中文（English）对照；'
-      + '\n4. 结尾用 **考点提示：** 冒号开头收尾。'
-      + '\n5. 禁止使用①②③、◆、→ 等符号代替 Markdown 列表；禁止整段无分层。'
+      + '\n2. 正文用 Markdown 列表分层：一级观点用 **加粗小标题** 起行，其下内容用 "- " 无序列表展开；'
+      + '\n3. 结尾用 **考点提示：** 冒号开头收尾。'
+      + '\n4. 禁止使用①②③、◆、→ 等符号代替 Markdown 列表；禁止整段无分层。'
       + '\n严格JSON输出(不要任何其他文字)：{"type":"' + wantType + '","question":"完整题面","answer":"标准答案正文(按上述Markdown格式)"}';
     return fetch(DS_URL, { method: 'POST', headers: { Authorization: 'Bearer ' + getAPIKey(), 'Content-Type': 'application/json' },
       body: JSON.stringify({ model: AI_MODEL, messages: [{ role: 'system', content: sys }, { role: 'user', content: '命一道【' + kn + '】的' + wantType + '题(含标准答案)' }], max_tokens: 7000, thinking: { type: 'enabled' } })
