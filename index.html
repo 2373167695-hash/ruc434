@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<!-- v2.1 · 2026-08-09 06:26 · modular -->
+<!-- v2.1 · 2026-08-09 06:35 · modular -->
 <html lang="zh-CN">
 <head>
 <meta charset="UTF-8">
@@ -5033,11 +5033,11 @@ var AI_PROVIDERS = {
       return b;
     }
   },
-  // 通义千问 Qwen 3.8 Max: 阿里百炼 DashScope(v3.8-max)→OpenAI兼容端点, key 硬编码
+  // 通义千问 Qwen 3.8 Max: Token Plan → Worker代理(Key在Worker端,浏览器不接触)
   qwen: {
     id: 'qwen', label: '通义千问 Qwen 3.8 Max',
-    getUrl: function(){ return 'https://dashscope.aliyuncs.com/compatible-mode/v1/chat/completions'; },
-    getKey: function(){ return Promise.resolve('sk-sp-H.DMPPPR.1xuk.MEUCIG8wDIyGLNXMu8hIN3WX-Z53XC0j4Tw5p4uXblWYqDA1AiEAjLCE33p8b8CIwZwINhu4ltms6BrbB2JHiIZvzCUGY84'); },
+    getUrl: function(){ return SYNC_URL + '/qwen'; },
+    getKey: function(){ return Promise.resolve(''); }, /* Worker 端鉴权 */
     getModel: function(){ return 'qwen3.8-max'; },
     buildBody: function(opts){
       var b = { model: 'qwen3.8-max', messages: opts.messages, max_tokens: opts.max_tokens || 4000 };
