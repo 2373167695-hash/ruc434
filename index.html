@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<!-- v2.1 · 2026-08-09 05:41 · modular -->
+<!-- v2.1 · 2026-08-09 06:14 · modular -->
 <html lang="zh-CN">
 <head>
 <meta charset="UTF-8">
@@ -9107,7 +9107,15 @@ function showMockExam() {
 function startMockExam() {
   document.getElementById('ct').innerHTML = '<div style="text-align:center;padding:80px 20px"><div class="spinner"></div><p style="margin-top:16px;color:var(--ts)">AI 正在生成模拟试卷...</p></div>';
   var ctx = buildAIContext('模拟考试');
-  var sys = '你是人大434国际商务考研命题老师。请严格按照以下要求生成模拟试卷。\n' + ctx + '\n' + buildHotContext('') + '\n\n【生成要求】\n1. 共10道题：简答5道(每题10分)、论述3道(每题20分)、案例2道(每题20分)\n2. 题目风格贴合人大434真题：简答极短直问，论述可复合设问\n3. 案例题/论述题可从上方热点素材中选取真实事件作为背景\n4. JSON输出：{\"questions\":[{\"type\":\"简答\",\"question\":\"...\",\"score\":10},...]}\n5. 只输出JSON，不要其他文字';
+  var sys = '你是人大434国际商务考研命题老师。请严格按照以下要求生成模拟试卷，每道题必须同时生成标准答案。\n' + ctx + '\n' + buildHotContext('') + '\n\n'
+    + '【生成要求】\n'
+    + '1. 共10道题：简答5道(每题10分)、论述3道(每题20分)、案例2道(每题20分)\n'
+    + '2. 题目风格贴合人大434真题：简答极短直问，论述可复合设问\n'
+    + '3. 每道题的标准答案(含评分基准)必须依据上方资料库原文表述，理论定义与要点忠于手册\n'
+    + '4. 案例题/论述题可从上方热点素材中选取真实事件作为背景\n'
+    + '5. 答案用Markdown分层结构：**加粗小标题**+"- "无序列表展开，结尾【考点提示】\n'
+    + '6. JSON输出：{"questions":[{"type":"简答","question":"题面","score":10,"answer":"标准答案(含采分点)"},...]}\n'
+    + '7. 只输出JSON，不要其他文字';
   fetch(DS_URL, {method:'POST', headers:{Authorization:'Bearer '+getAPIKey(),'Content-Type':'application/json'},
     body:JSON.stringify({model:AI_MODEL, messages:[{role:'system',content:sys},{role:'user',content:'生成一套人大434国际商务考研模拟试卷'}], stream:false, temperature:0.5})
   }).then(function(r){return r.json();}).then(function(d){
@@ -9160,10 +9168,10 @@ function submitMockExam() {
   }
   if (mockState.timerId) clearInterval(mockState.timerId); mockState.phase = 'done';
   document.getElementById('ct').innerHTML = '<div style="text-align:center;padding:80px 20px"><div class="spinner"></div><p style="margin-top:16px;color:var(--ts)">AI 正在批改试卷...</p></div>';
-  var g = '你是人大434考研阅卷老师。请逐题批改以下试卷，每题给出得分和简短评语。\n\n';
-  mockState.questions.forEach(function(q,i){g += '第'+(i+1)+'题['+q.type+'('+q.score+'分)]：'+q.question+'\n【本题标准答案(评分基准)】：'+((q.answer||'').substring(0,800)||'(无, 按学科常识评)')+'\n学生答案：'+(mockState.answers[i]||'(未作答)')+'\n\n';});
-  g += '\n评分规则：对照标准答案逐题评分，评语必须指出学生漏掉了标准答案中的哪些要点(点名要点)。\nJSON输出：{"results":[{"score":8,"max":10,"comment":"评语(含漏答要点清单)"},...],"total":85,"summary":"总体评价(100字内)"}';
-  aiCall('grade', {messages:[{role:'system',content:RUC434_STYLE},{role:'user',content:g}],temperature:0.3})
+  var g = '';
+  mockState.questions.forEach(function(q,i){g += '第'+(i+1)+'题['+q.type+'('+q.score+'分)]：'+q.question+'\n【本题标准答案(评分基准)】：'+((q.answer||'').substring(0,1000)||'(无, 按学科常识评)')+'\n学生答案：'+(mockState.answers[i]||'(未作答)')+'\n\n';});
+  g += '\n评分规则：逐题对照标准答案评分。评语必须点名学生漏掉了标准答案中的哪些要点。按题型灵活打分（简答侧重要点齐全，论述侧重逻辑推导，案例侧重理论运用）。\nJSON输出：{"results":[{"score":8,"max":10,"comment":"评语(含漏答要点清单)"},...],"total":85,"summary":"总体评价(含最弱维度+改进方向)"}';
+  aiCall('grade', {messages:[{role:'system',content:'你是人大434考研阅卷老师。批改严格但公正。不要求术语中英文对照，不硬性要求联系现实。'},{role:'user',content:g}],temperature:0.3})
   .then(function(r){return r.json();}).then(function(d){
     var c=d.choices[0].message.content,m2=c.match(/\{[\s\S]*\}/);
     var rr = m2?JSON.parse(m2[0]):{results:[],total:0,summary:'批改完成'};
