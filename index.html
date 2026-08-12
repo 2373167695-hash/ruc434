@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<!-- v2.1 · 2026-08-12 08:20 · modular -->
+<!-- v2.1 · 2026-08-12 08:31 · modular -->
 <html lang="zh-CN">
 <head>
 <meta charset="UTF-8">
@@ -5259,6 +5259,12 @@ function buildAIContextWiki(query) {
   var totalKN = Object.keys(KNOWLEDGE).length;
   var kPages = WIKI.pages.filter(function(p){ return p.type === 'knowledge'; });
 
+  /* ============================================================
+     缓存前缀区（固定内容，每次调用完全一致 → MiMo/Qwen Prompt Cache 命中）
+     顺序：声明 → 真题索引 → 知识目录 → 风格范例 → 热点
+     收益：~13K 字符前缀命中缓存，输入成本 ¥3/M → ¥0.025/M
+     ============================================================ */
+
   // === 声明 ===
   ctx += '【重要声明】你拥有完整的人大434国际商务考研数据库（已编译为知识Wiki）：\n';
   ctx += '· ' + totalQ + ' 道历年真题的完整题目和标准答案\n';
@@ -5266,13 +5272,47 @@ function buildAIContextWiki(query) {
   ctx += '· 历年命题规律、答题规范、学术热点素材\n';
   ctx += '当用户问你是否拥有数据时，必须回答"是"并举例说明。\n\n';
 
-  // === 学习者画像 ===
-  var doneQ = 0, starQ = 0;
-  DATA.forEach(function(q) { if (marks[q.id] && marks[q.id].done) doneQ++; if (marks[q.id] && marks[q.id].star) starQ++; });
-  var viewedKN = Object.keys(knowledgeViews).length;
-  ctx += '【学习者画像】已完成真题：' + doneQ + '/' + totalQ + ' 已浏览知识点：' + viewedKN + '/' + totalKN + '\n\n';
+  // === 真题索引（固定，供引用） ===
+  ctx += '=== 真题索引（' + totalQ + '道） ===\n';
+  DATA.forEach(function(q) {
+    ctx += '[' + q.year + '#' + q.num + ' ' + q.type + '] ' + q.question.substring(0, 45) + (q.question.length > 45 ? '…' : '') + '\n';
+  });
+  ctx += '\n';
 
-  // === 检索命中Wiki词条（最有价值内容置顶，注意力头部区） ===
+  // === 知识Wiki目录（固定，让模型感知全量知识库） ===
+  var byModule = {};
+  kPages.forEach(function(p){ (byModule[p.module || '其他'] = byModule[p.module || '其他'] || []).push(p.title); });
+  ctx += '=== 知识Wiki目录（' + kPages.length + '词条） ===\n';
+  for (var m in byModule) ctx += m + '：' + byModule[m].join('、') + '\n';
+  ctx += '\n';
+
+  // === 答题风格范例（固定：DATA 第一道长答案） ===
+  var ex = DATA.filter(function(q) { return q.answer && q.answer.length > 200; })[0];
+  if (ex) {
+    ctx += '=== 答题风格范例（回答须模仿其风格与结构） ===\n';
+    ctx += '【' + ex.year + '年 第' + ex.num + '题 ' + ex.type + '】\n题目：' + ex.question + '\n标准答案：\n' + ex.answer + '\n\n';
+  }
+
+  // === 热点素材（固定前3条；出题场景另由 buildHotContext 注入全量） ===
+  if (typeof HOT_TOPICS !== 'undefined' && HOT_TOPICS && HOT_TOPICS.categories) {
+    var cards = [];
+    HOT_TOPICS.categories.forEach(function(cat){ (cat.cards || []).forEach(function(c){ cards.push(c); }); });
+    if (cards.length) {
+      ctx += '=== 当前学术热点（完整档案，含时间线/理论/多角度，回答涉及时事可引用） ===\n';
+      cards.slice(0, 3).forEach(function(c) {
+        ctx += '· ' + c.topic + '：' + String(c.timeline || c.news_brief || '').substring(0, 200) + '\n';
+        if (c.theory && c.theory.length) ctx += '  理论：' + c.theory.join('；') + '\n';
+      });
+      ctx += '\n';
+    }
+  }
+
+  /* ============================================================
+     动态区（随 query 变化，不命中缓存但占比小，位于注意力尾部近因区）
+     顺序：命中词条 → 考点拆解 → 学习者画像
+     ============================================================ */
+
+  // === 检索命中Wiki词条（答题核心依据） ===
   var qmap = wikiQmap();
   var hits = ragRetrieve(query, 40).filter(function(d){ return d.type === 'wiki'; }).slice(0, 6);
   if (hits.length) {
@@ -5297,7 +5337,7 @@ function buildAIContextWiki(query) {
     });
   }
 
-  // === RAG：逐题拆解考点（批改/出题的覆盖维度依据，紧随命中词条） ===
+  // === RAG：逐题拆解考点（批改/出题的覆盖维度依据） ===
   if (typeof ragRetrieve === 'function') {
     var ragResults = ragRetrieve(query, 12);
     var qaHits = ragResults.filter(function(d) { return d.type === 'qanalysis'; });
@@ -5311,42 +5351,14 @@ function buildAIContextWiki(query) {
     }
   }
 
-  // === 答题风格范例（保留1道长答案供模仿） ===
-  var ex = DATA.filter(function(q) { return q.answer && q.answer.length > 200; })[0];
-  if (ex) {
-    ctx += '=== 答题风格范例（回答须模仿其风格与结构） ===\n';
-    ctx += '【' + ex.year + '年 第' + ex.num + '题 ' + ex.type + '】\n题目：' + ex.question + '\n标准答案：\n' + ex.answer + '\n\n';
-  }
-
-  // === 热点素材（紧凑前3条；出题场景另由 buildHotContext 注入全量） ===
-  if (typeof HOT_TOPICS !== 'undefined' && HOT_TOPICS && HOT_TOPICS.categories) {
-    var cards = [];
-    HOT_TOPICS.categories.forEach(function(cat){ (cat.cards || []).forEach(function(c){ cards.push(c); }); });
-    if (cards.length) {
-      ctx += '=== 当前学术热点（完整档案，含时间线/理论/多角度，回答涉及时事可引用） ===\n';
-      cards.slice(0, 3).forEach(function(c) {
-        ctx += '· ' + c.topic + '：' + String(c.timeline || c.news_brief || '').substring(0, 200) + '\n';
-        if (c.theory && c.theory.length) ctx += '  理论：' + c.theory.join('；') + '\n';
-      });
-      ctx += '\n';
-    }
-  }
+  // === 学习者画像（动态：每次调用变化，放尾部） ===
+  var doneQ = 0, starQ = 0;
+  DATA.forEach(function(q) { if (marks[q.id] && marks[q.id].done) doneQ++; if (marks[q.id] && marks[q.id].star) starQ++; });
+  var viewedKN = Object.keys(knowledgeViews).length;
+  ctx += '【学习者画像】已完成真题：' + doneQ + '/' + totalQ + ' 已浏览知识点：' + viewedKN + '/' + totalKN + '\n\n';
 
   var _prof = (typeof buildStudyProfile === 'function') ? buildStudyProfile() : '';
   if (_prof) ctx += _prof + '\n(回答时可结合该考生的薄弱环节给出针对性建议)\n\n';
-
-  // === 真题索引（尾部兜底，供引用） ===
-  ctx += '=== 真题索引（' + totalQ + '道） ===\n';
-  DATA.forEach(function(q) {
-    ctx += '[' + q.year + '#' + q.num + ' ' + q.type + '] ' + q.question.substring(0, 45) + (q.question.length > 45 ? '…' : '') + '\n';
-  });
-  ctx += '\n';
-
-  // === 知识Wiki目录（尾部兜底，让模型感知全量知识库） ===
-  var byModule = {};
-  kPages.forEach(function(p){ (byModule[p.module || '其他'] = byModule[p.module || '其他'] || []).push(p.title); });
-  ctx += '=== 知识Wiki目录（' + kPages.length + '词条，上方已展示检索命中条目全文） ===\n';
-  for (var m in byModule) ctx += m + '：' + byModule[m].join('、') + '\n';
 
   return ctx;
 }
