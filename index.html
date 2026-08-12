@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<!-- v2.1 · 2026-08-12 05:48 · modular -->
+<!-- v2.1 · 2026-08-12 07:46 · modular -->
 <html lang="zh-CN">
 <head>
 <meta charset="UTF-8">
@@ -5190,7 +5190,7 @@ var RUC434_STYLE = '【人大434写作风格——必须严格遵循】\n' +
   '  · 术语准确（2分）→ 专业术语正确，无常识性错误\n' +
   '  · 实际联系（1分）→ 结合中国经济现实或案例\n';
 
-/* 提取热点素材摘要(供出题prompt注入): 从HOT_TOPICS中取与知识点相关的热点事件 */
+/* 提取热点素材(供出题prompt注入): 从HOT_TOPICS取相关热点事件的完整档案(timeline/理论/多角度/预测题/案例素材) */
 function buildHotContext(knowledge) {
   if (typeof HOT_TOPICS === 'undefined' || !HOT_TOPICS || !HOT_TOPICS.categories) return '';
   var cards = [];
@@ -5198,24 +5198,31 @@ function buildHotContext(knowledge) {
   HOT_TOPICS.categories.forEach(function(cat) {
     (cat.cards||[]).forEach(function(c) {
       var match = false;
-      if (kn && (c.related_knowledge||[]).some(function(r){ return r.indexOf(kn) >= 0 || kn.indexOf(r) >= 0; })) match = true;
+      var kws = [].concat(c.key_terms||[], c.theory||[], c.related_knowledge||[]).map(function(x){ return String(x); });
+      if (kn && kws.some(function(r){ return r && (r.indexOf(kn) >= 0 || kn.indexOf(r) >= 0); })) match = true;
       if (!kn) match = true;
       if (match) cards.push({
-        topic: c.topic, news_brief: c.news_brief || '', exam_type: c.exam_type || '',
-        knowledge: (c.related_knowledge||[]).join('、'), tips: (c.exam_tips||[]).slice(0, 2).join('；')
+        topic: c.topic, timeline: c.timeline || c.news_brief || '', exam_type: c.exam_type || '',
+        theory: c.theory || [], analysis: c.analysis || [],
+        predicted_qa: c.predicted_qa || {}, case_material: c.case_material || c.case_study || '',
+        tips: (c.exam_tips||[]).slice(0, 2).join('；'), probability: c.probability || '中'
       });
     });
   });
   if (!cards.length) return '';
-  var ctx = '\n\n【当前热点素材（出题时可据此命制案例题/论述题背景）】\n';
-  var picked = cards.slice(0, 5);
+  var ctx = '\n\n【当前热点素材完整档案（出题/批改/论述时可选取作为案例背景或论证素材，数字与事实必须忠于档案）】\n';
+  var picked = cards.slice(0, 3);  /* 完整档案较大, 注入Top3防超长 */
   picked.forEach(function(c, i) {
-    ctx += (i+1) + '. ' + c.topic + '【' + c.exam_type + '·概率' + (c.probability||'中') + '】\n'
-      + '   事件概要：' + (c.news_brief||'暂无').substring(0, 120) + '\n'
-      + '   关联考点：' + c.knowledge + '\n'
-      + (c.tips ? '   命题提示：' + c.tips + '\n' : '');
+    ctx += (i+1) + '. 【' + c.topic + '】(' + (c.exam_type||'') + '·概率' + c.probability + ')\n';
+    ctx += '   时间线：' + (c.timeline||'暂无').substring(0, 300) + '\n';
+    if (c.theory && c.theory.length) ctx += '   关联理论：' + c.theory.join('；') + '\n';
+    if (c.analysis && c.analysis.length) {
+      ctx += '   多角度分析：' + c.analysis.map(function(a){ return (a.angle||'') + ':' + (a.content||'').substring(0, 100); }).join('；') + '\n';
+    }
+    if (c.predicted_qa && c.predicted_qa.question) ctx += '   预测题：' + c.predicted_qa.question.substring(0, 100) + '\n';
+    if (c.case_material) ctx += '   案例素材：' + c.case_material.substring(0, 200) + '\n';
   });
-  ctx += '出题时可选取以上热点事件作为案例背景或论述题素材，贴合时事。\n';
+  ctx += '出题/答题时可选取以上热点事件作为案例背景或论述素材，数字与事实以档案为准，不得编造。\n';
   return ctx;
 }
 /* ===== LLM Wiki 接地层 (v3.72) =====
@@ -8737,7 +8744,23 @@ function showHotCategory(idx) {
     h += '</div></div>';
     
     h += '<div class="know-pred-body" style="padding:16px">';
-    h += '<div style="background:rgba(255,255,255,.04);padding:10px 14px;border-radius:8px;margin-bottom:12px;font-size:12px;line-height:1.7;color:var(--t)">📰 ' + issue.news_brief + '</div>';
+    h += '<div style="background:rgba(255,255,255,.04);padding:10px 14px;border-radius:8px;margin-bottom:12px;font-size:12px;line-height:1.7;color:var(--t)">📰 ' + (issue.timeline || issue.news_brief) + '</div>';
+    if (issue.theory && issue.theory.length) {
+      h += '<div style="margin-bottom:12px"><div style="font-size:12px;font-weight:700;color:var(--t);margin-bottom:6px">📚 关联理论</div>';
+      (issue.theory || []).forEach(function(th) {
+        h += '<div style="padding:4px 0;font-size:12px;line-height:1.6;color:#a5b4fc">· ' + th + '</div>';
+      });
+      h += '</div>';
+    }
+    if (issue.analysis && issue.analysis.length) {
+      h += '<div style="margin-bottom:12px"><div style="font-size:12px;font-weight:700;color:var(--t);margin-bottom:6px">🔍 多角度分析</div>';
+      (issue.analysis || []).forEach(function(a) {
+        var angle = (typeof a === 'object' && a) ? (a.angle || '') : '';
+        var content = (typeof a === 'object' && a) ? (a.content || '') : String(a || '');
+        h += '<div style="padding:6px 0;font-size:12px;line-height:1.7;border-bottom:1px solid var(--bdr)"><strong style="color:#f59e0b">' + angle + '</strong><br>' + content + '</div>';
+      });
+      h += '</div>';
+    }
     h += '<div style="background:linear-gradient(135deg,rgba(124,58,237,.15),rgba(124,58,237,.08));padding:14px;border-radius:10px;border-left:4px solid #7c3aed;margin-bottom:12px">';
     h += '<div style="font-size:11px;color:#7c3aed;font-weight:700;margin-bottom:6px">🎯 预测题目</div>';
     h += '<div style="font-size:14px;font-weight:600;line-height:1.7;color:var(--t)">' + issue.predicted_question + '</div></div>';
