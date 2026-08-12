@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<!-- v2.1 · 2026-08-12 08:31 · modular -->
+<!-- v2.1 · 2026-08-12 08:44 · modular -->
 <html lang="zh-CN">
 <head>
 <meta charset="UTF-8">
@@ -5157,7 +5157,31 @@ function aiCall(scene, opts){
   });
 }
 function _doAICall(prov, key, opts){
-  return fetch(prov.getUrl(), { method: 'POST', headers: { Authorization: 'Bearer ' + (key||''), 'Content-Type': 'application/json' }, body: JSON.stringify(prov.buildBody(opts)) });
+  return fetch(prov.getUrl(), { method: 'POST', headers: { Authorization: 'Bearer ' + (key||''), 'Content-Type': 'application/json' }, body: JSON.stringify(prov.buildBody(opts)) })
+  .then(function(r){
+    /* 记录缓存命中统计(Prompt Cache): 仅非流式响应能读 usage JSON; 流式跳过 */
+    try {
+      if (r && r.clone && !opts.stream) {
+        r.clone().json().then(function(d){
+          var u = d && d.usage;
+          if (u) {
+            var hit = (u.prompt_cache_hit_tokens) || (u.prompt_tokens_details && u.prompt_tokens_details.cached_tokens) || 0;
+            var total = u.prompt_tokens || 0;
+            if (total) {
+              var log = {};
+              try { log = JSON.parse(localStorage.getItem('r434_cache_stats') || '{}'); } catch(e) {}
+              log.calls = (log.calls || 0) + 1;
+              log.hit = (log.hit || 0) + hit;
+              log.total = (log.total || 0) + total;
+              log.ts = Date.now();
+              localStorage.setItem('r434_cache_stats', JSON.stringify(log));
+            }
+          }
+        }).catch(function(){});
+      }
+    } catch(e) {}
+    return r;
+  });
 }
 /* 兼容旧调用: mockAICall = 模考场景 aiCall('mock', ...) */
 function mockAICall(opts){ return aiCall('mock', opts); }
@@ -16686,6 +16710,20 @@ function renderLiveMacro(d) {
       + '<div style="font-size:11px;color:var(--ts);margin:2px 0 0">开启后 AI 实时搜索最新时政/经贸动态，不依赖静态素材库。支持 MiMo/Qwen（DeepSeek 不支持）。</div></div>'
       + '<span onclick="toggleWebSearch()" style="cursor:pointer;padding:6px 16px;border-radius:16px;font-size:12px;font-weight:700;' + (wsOn ? 'background:rgba(59,130,246,.4);color:#fff' : 'background:rgba(255,255,255,.08);color:var(--ts)') + '">' + (wsOn ? '✅ 已开启' : '🔕 已关闭') + '</span>'
       + '</div></div>';
+    /* 缓存命中统计: 从 localStorage 读 Prompt Cache 数据 */
+    var _cs = null;
+    try { _cs = JSON.parse(localStorage.getItem('r434_cache_stats') || 'null'); } catch(e) {}
+    if (_cs && _cs.calls > 0) {
+      var _hitRate = Math.round((_cs.hit / _cs.total) * 100);
+      rows += '<div style="padding:10px 14px;margin-bottom:10px;border-radius:14px;background:rgba(48,209,88,.05);border:1px solid rgba(48,209,88,.18)">'
+        + '<div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:4px">'
+        + '<div style="font-size:12px;color:var(--t)">⚡ Prompt Cache 命中率</div>'
+        + '<div style="font-size:14px;font-weight:700;color:' + (_hitRate > 30 ? '#4ade80' : '#f59e0b') + '">' + _hitRate + '%</div>'
+        + '</div>'
+        + '<div style="font-size:11px;color:var(--ts);margin-top:2px">' + _cs.calls + ' 次调用 · 命中 ' + _cs.hit.toLocaleString() + ' / 输入 ' + _cs.total.toLocaleString() + ' token</div>'
+        + '<div style="font-size:10px;color:var(--ts);margin-top:2px;cursor:pointer" onclick="localStorage.removeItem(\'r434_cache_stats\');closeModelPicker();showModelPicker();">↺ 重置统计</div>'
+        + '</div>';
+    }
     AI_SCENES.forEach(function(sc){
       var cur = AI_ROUTES[sc.key]; if (!aiProviderAvailable(cur)) cur = 'mimo';
       var seg = PROV_IDS.map(function(pid){
