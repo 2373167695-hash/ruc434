@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<!-- v2.1 · 2026-08-12 08:44 · modular -->
+<!-- v2.1 · 2026-08-12 09:00 · modular -->
 <html lang="zh-CN">
 <head>
 <meta charset="UTF-8">
@@ -5185,9 +5185,60 @@ function _doAICall(prov, key, opts){
 }
 /* 兼容旧调用: mockAICall = 模考场景 aiCall('mock', ...) */
 function mockAICall(opts){ return aiCall('mock', opts); }
-function escapeHtml(s) {
-  if (!s) return '';
+function escapeHtml(s) {  if (!s) return '';
   return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+}
+/* ===== 答案回流: 把AI高质量回答存为知识卡, 纳入RAG索引, 越用越厚 ===== */
+function myCards(){ try { var c = JSON.parse(localStorage.getItem('r434_mycards') || '[]'); return Array.isArray(c) ? c : []; } catch(e) { return []; } }
+function saveMyCard(title, content, knowledge){
+  var cards = myCards();
+  cards.unshift({ title: title, content: content, knowledge: knowledge || '', ts: Date.now() });
+  if (cards.length > 50) cards = cards.slice(0, 50);  /* 上限50张 */
+  try { localStorage.setItem('r434_mycards', JSON.stringify(cards)); } catch(e) {}
+  try { buildTfidf(); } catch(e) {}  /* 重建索引, 新卡立即可检索 */
+  try { syncToCloud(); } catch(e) {}
+}
+window.saveMyCard = saveMyCard;
+/* 从AI回答DOM读取全文并存为知识卡(答案回流入口) */
+window._saveCardFromEl = function(btn, fid){
+  var el = document.getElementById(fid);
+  if (!el) return;
+  var full = (el.textContent || '').trim();
+  if (full.length < 20) { alert('回答太短，暂不存卡'); return; }
+  var title = full.substring(0, 50).replace(/\s+/g, ' ').trim() + (full.length > 50 ? '…' : '');
+  var kn = prompt('关联知识点（可选，便于检索分类）：', '');
+  if (kn === null) return;  /* 取消 */
+  saveMyCard(title, full, kn);
+  alert('✅ 已存为知识卡！可在「🧠 我的知识卡」查看，且已纳入AI检索。');
+};
+window.delMyCard = function(ts){
+  var cards = myCards().filter(function(c){ return c.ts !== ts; });
+  try { localStorage.setItem('r434_mycards', JSON.stringify(cards)); } catch(e) {}
+  try { buildTfidf(); } catch(e) {}
+  try { syncToCloud(); } catch(e) {}
+  showMyCards();
+};
+function showMyCards(){
+  document.getElementById('bc').innerHTML = '<span>🧠 我的知识卡</span>';
+  var cards = myCards();
+  var h = '<div class="hero"><h1>🧠 我的知识卡</h1><div class="desc">AI 讲解/批改中沉淀的高质量回答 · 已纳入检索，共 ' + cards.length + ' 张</div></div>';
+  h += '<button class="btn" style="margin-bottom:14px;font-size:12px;padding:6px 14px" onclick="navigate(\'corpushub\')">← 返回</button>';
+  if (!cards.length) { h += '<div class="pcard" style="padding:30px;text-align:center;color:var(--ts)">还没有知识卡。在 AI 讲解/批改/对话的答案下方点「💾 存为知识卡」即可沉淀。</div>'; }
+  else {
+    h += '<div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(320px,1fr));gap:12px">';
+    cards.forEach(function(c){
+      h += '<div class="pcard" style="display:flex;flex-direction:column">'
+        + '<div style="font-size:14px;font-weight:700;color:var(--t);margin-bottom:6px">' + escapeHtml(c.title) + '</div>'
+        + (c.knowledge ? '<div style="font-size:11px;color:#93c5fd;margin-bottom:6px">📌 ' + escapeHtml(c.knowledge) + '</div>' : '')
+        + '<div style="font-size:12px;line-height:1.8;color:var(--ts);flex:1;max-height:180px;overflow:hidden">' + renderMarkdown(String(c.content||'').substring(0, 400)) + '</div>'
+        + '<div style="display:flex;justify-content:space-between;align-items:center;margin-top:8px">'
+        + '<span style="font-size:10px;color:var(--ts)">' + new Date(c.ts).toLocaleDateString() + '</span>'
+        + '<span style="cursor:pointer;font-size:11px;color:#f87171" onclick="delMyCard(' + c.ts + ')">删除</span>'
+        + '</div></div>';
+    });
+    h += '</div>';
+  }
+  document.getElementById('ct').innerHTML = h;
 }
 var _tfidf={docs:[],df:{},totalDocs:0};
 function tokenize(s){
@@ -5203,7 +5254,7 @@ function tokenize(s){
   });
   return out;
 }
-function buildTfidf(){_tfidf.docs=[];_tfidf.df={};_tfidf.totalDocs=0;var all=[];DATA.forEach(function(q){all.push({type:"question",id:q.id,text:q.question+" "+(q.answer||"").substring(0,300)+" "+(q.knowledge||[]).join(" "),ref:q});});for(var k in KNOWLEDGE){var kn=KNOWLEDGE[k];all.push({type:"knowledge",id:k,text:k+" "+(kn.overview||"")+" "+(kn.key||[]).join(" ")+" "+(kn.exam||""),ref:kn});}if(ANSWER_BANK&&ANSWER_BANK.categories)ANSWER_BANK.categories.forEach(function(c){c.items.forEach(function(it){all.push({type:"answerbank",id:it.name,text:it.name+" "+(it.content||""),ref:it});});});if(typeof Q_ANALYSIS!=='undefined'&&Q_ANALYSIS.questions)Q_ANALYSIS.questions.forEach(function(qa){all.push({type:"qanalysis",id:qa.id,text:(qa.core_points||[]).join(" ")+" "+(qa.keywords||[]).join(" ")+" "+(qa.framework||[]).join(" ")+" "+(qa.proposition||""),ref:qa});});if(typeof WIKI!=='undefined'&&WIKI&&WIKI.pages)WIKI.pages.forEach(function(p){all.push({type:"wiki",id:p.id,text:p.title+" "+(p.module||"")+" "+(p.core||"")+" "+(p.content||"")+" "+(p.exam_framework||"")+" "+((p.links||[]).join(" ")),ref:p});});all.forEach(function(d){var tokens=tokenize(d.text);var tf={};tokens.forEach(function(t){tf[t]=(tf[t]||0)+1;});d.tf=tf;d.tokens=tokens;for(var t in tf){_tfidf.df[t]=(_tfidf.df[t]||0)+1;}});_tfidf.docs=all;_tfidf.totalDocs=all.length;}
+function buildTfidf(){_tfidf.docs=[];_tfidf.df={};_tfidf.totalDocs=0;var all=[];DATA.forEach(function(q){all.push({type:"question",id:q.id,text:q.question+" "+(q.answer||"").substring(0,300)+" "+(q.knowledge||[]).join(" "),ref:q});});for(var k in KNOWLEDGE){var kn=KNOWLEDGE[k];all.push({type:"knowledge",id:k,text:k+" "+(kn.overview||"")+" "+(kn.key||[]).join(" ")+" "+(kn.exam||""),ref:kn});}if(ANSWER_BANK&&ANSWER_BANK.categories)ANSWER_BANK.categories.forEach(function(c){c.items.forEach(function(it){all.push({type:"answerbank",id:it.name,text:it.name+" "+(it.content||""),ref:it});});});if(typeof Q_ANALYSIS!=='undefined'&&Q_ANALYSIS.questions)Q_ANALYSIS.questions.forEach(function(qa){all.push({type:"qanalysis",id:qa.id,text:(qa.core_points||[]).join(" ")+" "+(qa.keywords||[]).join(" ")+" "+(qa.framework||[]).join(" ")+" "+(qa.proposition||""),ref:qa});});if(typeof WIKI!=='undefined'&&WIKI&&WIKI.pages)WIKI.pages.forEach(function(p){all.push({type:"wiki",id:p.id,text:p.title+" "+(p.module||"")+" "+(p.core||"")+" "+(p.content||"")+" "+(p.exam_framework||"")+" "+((p.links||[]).join(" ")),ref:p});});/* 用户自定义知识卡(答案回流): 存 localStorage r434_mycards, 纳入检索 */try{var _mc=JSON.parse(localStorage.getItem('r434_mycards')||'[]');if(Array.isArray(_mc))_mc.forEach(function(c){if(c&&c.title)all.push({type:"mycard",id:'mycard_'+c.ts,text:(c.title||"")+" "+(c.knowledge||"")+" "+(c.content||""),ref:c});});}catch(e){}all.forEach(function(d){var tokens=tokenize(d.text);var tf={};tokens.forEach(function(t){tf[t]=(tf[t]||0)+1;});d.tf=tf;d.tokens=tokens;for(var t in tf){_tfidf.df[t]=(_tfidf.df[t]||0)+1;}});_tfidf.docs=all;_tfidf.totalDocs=all.length;}
 function ragRetrieve(query,topN){topN=topN||5;var qTokens=tokenize(query);var scores=_tfidf.docs.map(function(d){var score=0;qTokens.forEach(function(t){if(d.tf[t]){var idf=Math.log(_tfidf.totalDocs/_tfidf.df[t]);score+=d.tf[t]*idf*idf;}});return{doc:d,score:score};});scores.sort(function(a,b){return b.score-a.score;});return scores.slice(0,topN).filter(function(s){return s.score>0;}).map(function(s){return s.doc;});}
 
 var RUC434_STYLE = '【人大434写作风格——必须严格遵循】\n' +
@@ -5640,6 +5691,7 @@ function buildNav() {
   knh += '<div class="ni lv0" data-p="allquestions">📝 全部真题</div>';
   knh += '<div class="ni lv0" data-p="wrongbook">📋 错题本</div>';
   knh += '<div class="ni lv0" data-p="corpushub">🧠 三层语料</div>';
+  knh += '<div class="ni lv0" data-p="mycards">💾 我的知识卡</div>';
   knh += '<div class="ni lv0" data-p="modcorpus">📖 模块语料</div>';
   knh += '<div class="ni lv0" data-p="stats">📊 学习统计</div>';
   knh += '<div class="ni lv0" data-p="cards">🧠 记忆卡片</div>';
@@ -5789,6 +5841,7 @@ function navigate(p, topicName, skipHistory) {
     else if (p === 'modcorpus') { showModuleCorpus(); }
     else if (p === 'corpushub') { showCorpusHub(); }
     else if (p === 'mycorpus') { showMyCorpus(); }
+    else if (p === 'mycards') { showMyCards(); }
     else if (p === 'capmap') { showCorpusHub(); }
     else if (p === 'stats') { showStats(); }
     else if (p === 'cards') { showCards(); } else if (p === 'hot') { showHotTopic(); }
@@ -8474,8 +8527,10 @@ function callDSFast(msg, cid) {
   if(fid&&!document.getElementById('follow_'+fid)){
     var fDiv=document.createElement('div');
     fDiv.id='follow_'+fid;
-    fDiv.style.cssText='margin-top:12px;display:flex;gap:6px';
-    fDiv.innerHTML='<textarea id="fq_'+fid+'" placeholder="继续追问..." style="flex:1;min-height:36px;border:1px solid var(--bdr);border-radius:12px;padding:8px;font-size:12px;resize:none;font-family:inherit" rows="2"></textarea><button class="ai-btn ai-btn-sm" onclick="aiFollowUp(\''+fid+'\')">追问</button>';
+    fDiv.style.cssText='margin-top:12px;display:flex;gap:6px;align-items:center;flex-wrap:wrap';
+    /* 答案回流: 存为知识卡(标题取回答前50字, 全文从DOM读取) */
+    fDiv.innerHTML='<button class="ai-btn ai-btn-sm" style="background:rgba(48,209,88,.15);border:1px solid rgba(48,209,88,.3);color:#4ade80" onclick="_saveCardFromEl(this,\''+fid+'\')">💾 存为知识卡</button>'
+      + '<textarea id="fq_'+fid+'" placeholder="继续追问..." style="flex:1;min-height:36px;border:1px solid var(--bdr);border-radius:12px;padding:8px;font-size:12px;resize:none;font-family:inherit" rows="2"></textarea><button class="ai-btn ai-btn-sm" onclick="aiFollowUp(\''+fid+'\')">追问</button>';
     el.parentNode.appendChild(fDiv);
     try{el.setAttribute('data-ctx',JSON.stringify(msg));}catch(e){}
   }return;}
@@ -13196,7 +13251,7 @@ function _dailyBarHtml() {
   var KEYS = ['r434', 'r434_kv', 'r434_chat', 'r434_ch_theory', 'r434_ch_case', 'r434_ch_phrase',
     'r434_mycorpus', 'r434_mycorpus_bak', 'r434_cards', 'r434_recite', 'r434_wrong', 'r434_wrong_review',
     'r434_gradelog', 'r434_dailylog', 'r434_daily_pending', 'r434_achistory', 'r434_cap_progress',
-    'r434_tviz_notes', 'r434_mock', 'r434_acscores'];
+    'r434_tviz_notes', 'r434_mock', 'r434_acscores', 'r434_mycards'];
 
   function collectAll(){
     var blob = {};
