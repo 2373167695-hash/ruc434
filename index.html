@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<!-- v2.1 · 2026-08-12 07:46 · modular -->
+<!-- v2.1 · 2026-08-12 07:53 · modular -->
 <html lang="zh-CN">
 <head>
 <meta charset="UTF-8">
@@ -5308,9 +5308,10 @@ function buildAIContextWiki(query) {
     var cards = [];
     HOT_TOPICS.categories.forEach(function(cat){ (cat.cards || []).forEach(function(c){ cards.push(c); }); });
     if (cards.length) {
-      ctx += '=== 当前学术热点 ===\n';
+      ctx += '=== 当前学术热点（完整档案，含时间线/理论/多角度，回答涉及时事可引用） ===\n';
       cards.slice(0, 3).forEach(function(c) {
-        ctx += '· ' + c.topic + '：' + String(c.news_brief || '').substring(0, 100) + '（关联：' + (c.related_knowledge || []).join('、') + '）\n';
+        ctx += '· ' + c.topic + '：' + String(c.timeline || c.news_brief || '').substring(0, 200) + '\n';
+        if (c.theory && c.theory.length) ctx += '  理论：' + c.theory.join('；') + '\n';
       });
       ctx += '\n';
     }
@@ -5403,13 +5404,13 @@ function buildAIContextLegacy(query) {
   ctx += '5. 对比题必须用表格或"相同点/不同点"框架\n';
   ctx += '6. 案例分析必须引用题干原文信息\n\n';
   
-  // === HOT TOPICS ===
+  // === HOT TOPICS (legacy精简版: 只列topic+预测题, 防止40个完整档案撑爆上下文) ===
   if (typeof HOT_TOPICS !== 'undefined' && HOT_TOPICS && HOT_TOPICS.categories) {
     ctx += '=== 热点素材 ===\n\n';
     HOT_TOPICS.categories.forEach(function(cat) {
       ctx += '--- ' + cat.category + ' ---\n';
       (cat.cards || []).forEach(function(s) {
-        ctx += '【' + s.topic + '】\n背景：' + s.news_brief + '\n预测题目：' + s.predicted_question + '\n\n';
+        ctx += '【' + s.topic + '】' + ((s.predicted_question || '').substring(0, 80)) + '\n';
       });
     });
   }
