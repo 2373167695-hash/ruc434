@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<!-- v2.1 · 2026-08-12 08:05 · modular -->
+<!-- v2.1 · 2026-08-12 08:20 · modular -->
 <html lang="zh-CN">
 <head>
 <meta charset="UTF-8">
@@ -5045,6 +5045,7 @@ var AI_PROVIDERS = {
       if (opts.thinking) b.thinking = { type: 'enabled' };
       else if (typeof opts.temperature === 'number') b.temperature = opts.temperature;
       if (opts.search) b.tools = [{ type: 'web_search', max_keyword: 3, force_search: true, limit: 1 }];
+      if (opts.json) b.response_format = { type: 'json_object' };
       return b;
     }
   },
@@ -5059,6 +5060,7 @@ var AI_PROVIDERS = {
       if (opts.stream) b.stream = true;
       if (typeof opts.temperature === 'number') b.temperature = opts.temperature;
       if (opts.search) b.tools = [{ type: 'web_search' }];
+      if (opts.json) b.response_format = { type: 'json_object' };
       return b;
     }
   },
@@ -5073,6 +5075,7 @@ var AI_PROVIDERS = {
       var b = { model: DS_MODEL, messages: opts.messages, max_tokens: opts.max_tokens || 4000 };
       if (opts.stream) b.stream = true;
       if (typeof opts.temperature === 'number') b.temperature = opts.temperature;
+      if (opts.json) b.response_format = { type: 'json_object' };
       return b;  // 不注入 web_search (Chat API 不支持)
     }
   }
@@ -9295,8 +9298,11 @@ function startMockExam() {
     + '6. JSON输出：{"questions":[{"type":"简答","question":"题面","score":10,"answer":"标准答案(含采分点)"},...]}\n'
     + '7. 只输出JSON，不要其他文字';
   var _d = directDS();
+  var _wsT = webSearchTools();
+  var _body = {model:AI_MODEL, messages:[{role:'system',content:sys},{role:'user',content:'生成一套人大434国际商务考研模拟试卷'}], stream:false, temperature:0.5, response_format:{type:'json_object'}};
+  if (_wsT) _body.tools = _wsT;
   fetch(_d.url, {method:'POST', headers:{Authorization:'Bearer '+_d.key,'Content-Type':'application/json'},
-    body:JSON.stringify({model:AI_MODEL, tools:(webSearchTools()||[]), messages:[{role:'system',content:sys},{role:'user',content:'生成一套人大434国际商务考研模拟试卷'}], stream:false, temperature:0.5})
+    body:JSON.stringify(_body)
   }).then(function(r){return r.json();}).then(function(d){
     var c = d.choices[0].message.content, m = c.match(/\{[\s\S]*\}/);
     if (!m) throw Error('AI格式错误');
@@ -9350,7 +9356,7 @@ function submitMockExam() {
   var g = '';
   mockState.questions.forEach(function(q,i){g += '第'+(i+1)+'题['+q.type+'('+q.score+'分)]：'+q.question+'\n【本题标准答案(评分基准)】：'+((q.answer||'').substring(0,1000)||'(无, 按学科常识评)')+'\n学生答案：'+(mockState.answers[i]||'(未作答)')+'\n\n';});
   g += '\n评分规则：逐题对照标准答案评分。评语必须点名学生漏掉了标准答案中的哪些要点。按题型灵活打分（简答侧重要点齐全，论述侧重逻辑推导，案例侧重理论运用）。\nJSON输出：{"results":[{"score":8,"max":10,"comment":"评语(含漏答要点清单)"},...],"total":85,"summary":"总体评价(含最弱维度+改进方向)"}';
-  aiCall('grade', {messages:[{role:'system',content:'你是人大434考研阅卷老师。批改严格但公正。不要求术语中英文对照，不硬性要求联系现实。'},{role:'user',content:g}],temperature:0.3})
+  aiCall('grade', {messages:[{role:'system',content:'你是人大434考研阅卷老师。批改严格但公正。不要求术语中英文对照，不硬性要求联系现实。'},{role:'user',content:g}],temperature:0.3,json:true})
   .then(function(r){return r.json();}).then(function(d){
     var c=d.choices[0].message.content,m2=c.match(/\{[\s\S]*\}/);
     var rr = m2?JSON.parse(m2[0]):{results:[],total:0,summary:'批改完成'};
@@ -9476,7 +9482,7 @@ function doAnswerCheck() {
   var _d = directDS();
   fetch(_d.url, {
     method:'POST', headers:{Authorization:'Bearer '+getAPIKey(),'Content-Type':'application/json'},
-    body:JSON.stringify({model:AI_MODEL, tools:(webSearchTools()||[]),messages:[{role:'system',content:sys},{role:'user',content:userMsg}],max_tokens:6000,temperature:0.1})
+    body:JSON.stringify({model:AI_MODEL, tools:(webSearchTools()||[]), response_format:{type:'json_object'},messages:[{role:'system',content:sys},{role:'user',content:userMsg}],max_tokens:6000,temperature:0.1})
   }).then(function(r){if(!r.ok)throw Error('HTTP '+r.status);return r.json()})
   .then(function(d){
     var c = d.choices&&d.choices[0]&&d.choices[0].message?d.choices[0].message.content||'':'';
@@ -10369,7 +10375,7 @@ function tvisGen() {
   var _d = directDS();
   fetch(_d.url, {
     method:'POST', headers:{Authorization:'Bearer '+getAPIKey(),'Content-Type':'application/json'},
-    body:JSON.stringify({model:AI_MODEL, tools:(webSearchTools()||[]),messages:[{role:'system',content:sys},{role:'user',content:'请分析理论：'+q}],temperature:0.3,max_tokens:2048})
+    body:JSON.stringify({model:AI_MODEL, tools:(webSearchTools()||[]), response_format:{type:'json_object'},messages:[{role:'system',content:sys},{role:'user',content:'请分析理论：'+q}],temperature:0.3,max_tokens:2048})
   }).then(function(r){if(!r.ok)throw Error('HTTP '+r.status);return r.json()})
   .then(function(d){
     var c = d.choices&&d.choices[0]&&d.choices[0].message?d.choices[0].message.content||'':'';
@@ -10994,7 +11000,7 @@ function doAnswerCheck() {
   var _prof = (typeof buildStudyProfile === 'function') ? buildStudyProfile() : '';
   var userMsg = '【题目】\n' + q + '\n\n【学生答案】\n' + a + refInfo + pointInfo + (_prof ? '\n\n' + _prof + '\n(评语请特别关注该考生的历史薄弱维度是否在本次答案中改善)' : '');
 
-  aiCall('grade', {messages:[{role:'system',content:sys},{role:'user',content:userMsg}],max_tokens:6000,temperature:0.1})
+  aiCall('grade', {messages:[{role:'system',content:sys},{role:'user',content:userMsg}],max_tokens:6000,temperature:0.1,json:true})
   .then(function(r){ if(!r.ok) throw Error('HTTP '+r.status); return r.json(); })
   .then(function(d){
     var c = d.choices&&d.choices[0]&&d.choices[0].message ? d.choices[0].message.content||'' : '';
@@ -11838,7 +11844,7 @@ function _dailyBarHtml() {
       + '\n\n【生成要求】\n1. 共10道题：简答5道(每题10分)、论述3道(每题20分)、案例2道(每题20分)\n2. 题目风格必须100%贴合人大434真题\n3. 至少2道涉及中国现实经济案例\n4. JSON输出：{"questions":[{"type":"简答","question":"...","score":10},...]}\n5. 只输出JSON，不要其他文字';
     var _d = directDS();
     fetch(_d.url, {method:'POST', headers:{Authorization:'Bearer '+_d.key,'Content-Type':'application/json'},
-      body:JSON.stringify({model:AI_MODEL, tools:(webSearchTools()||[]), messages:[{role:'system',content:sys},{role:'user',content:'生成一套人大434国际商务考研模拟试卷' + (topics.length ? '，命题范围：' + topics.join('、') : '')}], stream:false, temperature:0.5})
+      body:JSON.stringify({model:AI_MODEL, tools:(webSearchTools()||[]), response_format:{type:'json_object'}, messages:[{role:'system',content:sys},{role:'user',content:'生成一套人大434国际商务考研模拟试卷' + (topics.length ? '，命题范围：' + topics.join('、') : '')}], stream:false, temperature:0.5})
     }).then(function(r){return r.json();}).then(function(d){
       var c = d.choices[0].message.content, m = c.match(/\{[\s\S]*\}/);
       if (!m) throw Error('AI格式错误');
@@ -12444,7 +12450,7 @@ function _dailyBarHtml() {
     var user = '大纲路径：' + path + '\n目标节点：' + f.node.t + '\n请生成该节点下的子要点。';
     var _d = directDS();
     fetch(_d.url, {method:'POST', headers:{Authorization:'Bearer '+_d.key,'Content-Type':'application/json'},
-      body:JSON.stringify({model:AI_MODEL, tools:(webSearchTools()||[]), messages:[{role:'system',content:sys},{role:'user',content:user}], stream:false, temperature:0.4})
+      body:JSON.stringify({model:AI_MODEL, tools:(webSearchTools()||[]), response_format:{type:'json_object'}, messages:[{role:'system',content:sys},{role:'user',content:user}], stream:false, temperature:0.4})
     }).then(function(r){ if(!r.ok) throw Error('HTTP '+r.status); return r.json(); }).then(function(d){
       var c = d.choices[0].message.content, m = c.match(/\[[\s\S]*\]/);
       if (!m) throw Error('AI输出格式异常');
@@ -14245,7 +14251,7 @@ function _dailyBarHtml() {
     var sys = '你是人大434国际商务考研专家。为理论「' + q + '」生成结构化框架,严格输出JSON(不要其他文字):\n'
       + '{"theory":"规范理论名","overview":"120字以内综述(提出者+核心命题)","assumptions":["假设,每条20-50字,3-5条"],"mechanisms":["核心机制,每条25-60字,要具体有逻辑链,4-6条"],"inferences":["理论推论/可解释的现象,3-4条"],"pros":["理论贡献,2-3条"],"cons":["局限批评,2-3条"],"policy":["对中国的政策/现实含义,2-3条"],"keypoints":["答题必写采分点,4-5条"],"examtips":"一句考点提示(考法+易错点)","related":["最相关的3个理论名"],"questions":["可能的考题2道"]}\n'
       + '要求:内容必须具体(有人名/机制/条件),禁止"企业追求利润最大化"式空话;优先使用以下题库资料:\n' + ctx;
-    aiCall('gen', {messages: [{role: 'system', content: sys}, {role: 'user', content: '生成「' + q + '」的框架JSON'}], temperature: 0.25, max_tokens: 5000})
+    aiCall('gen', {messages: [{role: 'system', content: sys}, {role: 'user', content: '生成「' + q + '」的框架JSON'}], temperature: 0.25, max_tokens: 5000, json: true})
     .then(function(r){ if (!r.ok) throw Error('HTTP ' + r.status); return r.json(); })
     .then(function(d){
       var c = (d.choices && d.choices[0] && d.choices[0].message) ? d.choices[0].message.content : '';
