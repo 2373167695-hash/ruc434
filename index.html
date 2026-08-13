@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<!-- v2.1 · 2026-08-13 02:31 · modular -->
+<!-- v2.1 · 2026-08-13 02:57 · modular -->
 <html lang="zh-CN">
 <head>
 <meta charset="UTF-8">
@@ -5059,6 +5059,7 @@ var AI_PROVIDERS = {
       var b = { model: 'qwen3.8-max', messages: opts.messages, max_tokens: opts.max_tokens || 4000 };
       if (opts.stream) b.stream = true;
       if (typeof opts.temperature === 'number') b.temperature = opts.temperature;
+      if (opts.thinking) b.enable_thinking = true; /* 阿里百炼深度思考: enable_thinking */
       if (opts.search) b.tools = [{ type: 'web_search' }];
       if (opts.json) b.response_format = { type: 'json_object' };
       return b;
@@ -5241,6 +5242,7 @@ function showMyCards(){
   document.getElementById('ct').innerHTML = h;
 }
 var _tfidf={docs:[],df:{},totalDocs:0};
+var _lazyReady = false; /* 懒加载完成门禁: true 后才允许 wiki 模式, 未就绪用轻量上下文, 绝不回退 legacy 全量 */
 function tokenize(s){
   s=String(s||"").toLowerCase();
   var out=[];
@@ -5325,8 +5327,33 @@ function wikiQmap() {
   return _wikiQmap;
 }
 function buildAIContext(query) {
-  if (typeof WIKI !== 'undefined' && WIKI && WIKI.pages && WIKI.pages.length && _tfidf.totalDocs > 0) return buildAIContextWiki(query);
-  return buildAIContextLegacy(query);
+  /* 懒加载未完成时: 用轻量上下文(仅声明+画像+TF-IDF可用数据), 绝不回退 legacy 276K全量(≈19万token prefill) */
+  if (!_lazyReady || typeof WIKI === 'undefined' || !WIKI || !WIKI.pages || !WIKI.pages.length || !_tfidf.totalDocs) return buildAIContextLight(query);
+  return buildAIContextWiki(query);
+}
+/* 轻量上下文: 懒加载完成前的降级方案, 只含已内嵌数据(DATA/KNOWLEDGE), 单轮小输出 */
+function buildAIContextLight(query) {
+  var ctx = '';
+  ctx += '【重要声明】你拥有完整的人大434国际商务考研数据库（历年真题+知识点+知识Wiki），正在加载中，稍后可引用全部内容。\n';
+  ctx += '数据库规模：' + DATA.length + ' 道历年真题、' + Object.keys(KNOWLEDGE).length + ' 个知识点。\n\n';
+  var doneQ = 0;
+  DATA.forEach(function(q) { if (marks[q.id] && marks[q.id].done) doneQ++; });
+  ctx += '【学习者画像】已完成真题：' + doneQ + '/' + DATA.length + '\n\n';
+  /* TF-IDF 若已构建(部分数据就绪), 尝试检索知识点, 保证一定接地 */
+  if (_tfidf.totalDocs) {
+    try {
+      var hits = ragRetrieve(query, 6).filter(function(d){ return d.type === 'knowledge'; }).slice(0, 3);
+      if (hits.length) {
+        ctx += '=== 相关知识点 ===\n';
+        hits.forEach(function(d) {
+          var kn = d.ref;
+          ctx += '【' + d.id + '】' + (kn.overview || '') + '\n要点：' + ((kn.key || []).join('；') || '无') + '\n\n';
+        });
+      }
+    } catch(e) {}
+  }
+  ctx += '（知识Wiki正在后台加载，若需更详尽的词条/真题资料，请稍候再问。）\n';
+  return ctx;
 }
 function buildAIContextWiki(query) {
   var ctx = '';
@@ -5574,7 +5601,7 @@ function buildAIContextLegacy(query) {
 function aiDiagnose(){var div=document.getElementById("aiDiagnosis"),content=document.getElementById("aiDiagnosisContent");div.style.display="block";content.innerHTML="AI正在分析...";var s="浏览知识点"+Object.keys(knowledgeViews).length+"个，已做真题"+Object.values(marks).filter(function(v){return v.done}).length+"道。";callDS([{role:"system",content:"你是考研备考规划专家，擅长分析学习数据。请用中文回复。"},{role:"user",content:"学习数据："+s+"请做学习诊断，500字内，包括进度评价、薄弱模块、优先复习建议、冲刺建议。"}],"aiDiagnosisContent");}
 function aiGenerateQuestion(knowledge){var div=document.getElementById("aiQuestions"),content=document.getElementById("aiQuestionsContent");div.style.display="block";content.innerHTML="生成中...";var ctx=buildAIContext(knowledge);var sys="你是人大434国际商务考研命题老师。请结合以下真题资料，围绕知识点出题。\n\n【命题要求】\n1.题目风格贴合人大434真题\n2.简答题10-15分,论述题20-25分,案例15-20分\n3.可结合下方热点素材中的具体事件作为案例背景\n4.答案用Markdown分层列表：**加粗小标题**+\"- \"无序列表展开\n\n"+buildHotContext(knowledge)+"\n"+ctx;callDS([{role:"system",content:sys},{role:"user",content:"请为知识点["+knowledge+"]生成3道模拟题(1简答+1论述+1案例),每题附参考答案。用【第1题】【第2题】【第3题】编号。"}],"aiQuestionsContent");}
 
-function sendChat(){var inp=document.getElementById("chat-q"),q=inp.value.trim();if(!q)return;inp.value="";var body=document.getElementById("chat-body");body.innerHTML+='<div class="chat-msg user">'+q+'</div>';var ld=document.createElement("div");ld.className="chat-msg assistant";ld.id="c-load";ld.innerHTML='<span class="chat-dot"></span><span class="chat-dot"></span><span class="chat-dot"></span>';body.appendChild(ld);body.scrollTop=body.scrollHeight;chatHistory.push({role:"user",content:q});var md=document.createElement("div");md.className="chat-msg assistant";md.id="c-resp";md.style.display="none";body.appendChild(md);var ctx=buildAIContext(q);var sys=RUC434_STYLE+"\n你是人大434国际商务考研AI助手。你的数据库中已包含完整的历年真题和标准答案，你随时可以引用任何一道真题。请严格遵循以上写作风格，参考数据库中的真题答案、知识点和热点素材回答问题。公式请用$...$包裹。\n"+ctx+"\n\n要求：必须参考数据库中的真实真题和答案来回答；贴合人大434风格、结构化、分点作答、术语中英文对照、结尾有考点提示。";var msgs=[{role:"system",content:sys}];chatHistory.slice(-10).forEach(function(h){msgs.push({role:h.role,content:h.content});});aiCall('chat',{messages:msgs,stream:true,temperature:0.3}).then(function(r){if(!r.ok)throw Error("HTTP "+r.status);return r.body.getReader();}).then(function(rd){var b="",t="",d=new TextDecoder(),firstChunk=true;function n(){rd.read().then(function(r){if(r.done){var lx=document.getElementById("c-load");if(lx)lx.remove();md.style.display="";md.innerHTML=renderMarkdown(t);chatHistory.push({role:"assistant",content:t});saveState();return;}b+=d.decode(r.value,{stream:true});var ls=b.split("\n");b=ls.pop()||"";ls.forEach(function(l){if(l.startsWith("data: ")){var dd=l.substring(6);if(dd=="[DONE]")return;try{var p=JSON.parse(dd);if(p.choices&&p.choices[0].delta){var x=p.choices[0].delta.content||"";if(x){if(firstChunk){firstChunk=false;var lx=document.getElementById("c-load");if(lx)lx.remove();md.style.display="";}t+=x;md.innerHTML=renderMarkdown(t);body.scrollTop=body.scrollHeight;}}}catch(e){}}});n();})}n();}).catch(function(err){var lx=document.getElementById("c-load");if(lx)lx.remove();md.style.display="";md.innerHTML="<span style=color:red>AI请求失败："+err.message+"</span>";});}
+function sendChat(){var inp=document.getElementById("chat-q"),q=inp.value.trim();if(!q)return;inp.value="";var body=document.getElementById("chat-body");body.innerHTML+='<div class="chat-msg user">'+q+'</div>';var ld=document.createElement("div");ld.className="chat-msg assistant";ld.id="c-load";ld.innerHTML='<span class="chat-dot"></span><span class="chat-dot"></span><span class="chat-dot"></span>';body.appendChild(ld);body.scrollTop=body.scrollHeight;chatHistory.push({role:"user",content:q});var md=document.createElement("div");md.className="chat-msg assistant";md.id="c-resp";md.style.display="none";body.appendChild(md);var ctx=buildAIContext(q);var sys=RUC434_STYLE+"\n你是人大434国际商务考研AI助手。你的数据库中已包含完整的历年真题和标准答案，你随时可以引用任何一道真题。请严格遵循以上写作风格，参考数据库中的真题答案、知识点和热点素材回答问题。公式请用$...$包裹。\n"+ctx+"\n\n要求：必须参考数据库中的真实真题和答案来回答；贴合人大434风格、结构化、分点作答、术语中英文对照、结尾有考点提示。";var msgs=[{role:"system",content:sys}];chatHistoryForPrompt(10).forEach(function(h){msgs.push({role:h.role,content:h.content});});aiCall('chat',{messages:msgs,stream:true,temperature:0.3}).then(function(r){if(!r.ok)throw Error("HTTP "+r.status);return r.body.getReader();}).then(function(rd){var b="",t="",d=new TextDecoder(),firstChunk=true;function n(){rd.read().then(function(r){if(r.done){var lx=document.getElementById("c-load");if(lx)lx.remove();md.style.display="";md.innerHTML=renderMarkdown(t);chatHistory.push({role:"assistant",content:t});saveState();return;}b+=d.decode(r.value,{stream:true});var ls=b.split("\n");b=ls.pop()||"";ls.forEach(function(l){if(l.startsWith("data: ")){var dd=l.substring(6);if(dd=="[DONE]")return;try{var p=JSON.parse(dd);if(p.choices&&p.choices[0].delta){var x=p.choices[0].delta.content||"";if(x){if(firstChunk){firstChunk=false;var lx=document.getElementById("c-load");if(lx)lx.remove();md.style.display="";}t+=x;md.innerHTML=renderMarkdown(t);body.scrollTop=body.scrollHeight;}}}catch(e){}}});n();})}n();}).catch(function(err){var lx=document.getElementById("c-load");if(lx)lx.remove();md.style.display="";md.innerHTML="<span style=color:red>AI请求失败："+err.message+"</span>";});}
 
 // ===== STATE =====
 var marks = {};
@@ -5584,6 +5611,14 @@ try { knowledgeViews = JSON.parse(localStorage.getItem("r434_kv") || "{}"); } ca
 var curPath = localStorage.getItem("r434_path") || "", quizIdx = 0, quizQs = [], quizTimer = null, quizSeconds = 0, quizWrong = [];
 
 var chatHistory = [];
+
+/* 对话历史截断: 只截助手旧回复(用户提问保留全文), 单条上限500字——防止历史膨胀拖慢TTFT。知识接地靠buildAIContext, 不靠历史。 */
+function chatHistoryForPrompt(n) {
+  n = n || 10;
+  return (chatHistory.slice(-n) || []).map(function(h) {
+    return { role: h.role, content: (h.role === 'assistant' && String(h.content||'').length > 500) ? h.content.substring(0, 500) + '…' : h.content };
+  });
+}
 try { chatHistory = JSON.parse(localStorage.getItem("r434_chat") || "[]"); } catch(e) {}
 
 // ===== WRONG QUESTION SM-2 =====
@@ -6535,7 +6570,7 @@ function sendAIMessage() {
     + ctx
     + "\n【作答规范（仅当学生要你示范或批改考试答案时启用）】\n" + RUC434_STYLE;
   var msgs = [{role: 'system', content: sys}];
-  chatHistory.slice(-10).forEach(function(h) { msgs.push({role: h.role, content: h.content}); });
+  chatHistoryForPrompt(10).forEach(function(h) { msgs.push({role: h.role, content: h.content}); });
   aiCall('chat', {messages: msgs, stream: true, temperature: 0.3}).then(function(r) {
     if (!r.ok) throw Error('HTTP ' + r.status);
     return r.body.getReader();
@@ -6690,7 +6725,7 @@ function sendVoiceMessage(q) {
   var ctx = buildAIContext(q);
   var sys = RUC434_STYLE + "\n你是人大434国际商务考研AI助手。简洁回答，适合语音朗读。不要用markdown格式、表格、代码块。\n" + ctx;
   var msgs = [{role: 'system', content: sys}];
-  chatHistory.slice(-10).forEach(function(h) { msgs.push({role: h.role, content: h.content}); });
+  chatHistoryForPrompt(10).forEach(function(h) { msgs.push({role: h.role, content: h.content}); });
   fetch(DS_URL, {
     method: 'POST',
     headers: {Authorization: 'Bearer ' + getAPIKey(), 'Content-Type': 'application/json'},
@@ -9476,20 +9511,90 @@ function submitMockExam() {
     if (!ok) return;
   }
   if (mockState.timerId) clearInterval(mockState.timerId); mockState.phase = 'done';
-  document.getElementById('ct').innerHTML = '<div style="text-align:center;padding:80px 20px"><div class="spinner"></div><p style="margin-top:16px;color:var(--ts)">AI 正在批改试卷...</p></div>';
-  var g = '';
-  mockState.questions.forEach(function(q,i){g += '第'+(i+1)+'题['+q.type+'('+q.score+'分)]：'+q.question+'\n【本题标准答案(评分基准)】：'+((q.answer||'').substring(0,1000)||'(无, 按学科常识评)')+'\n学生答案：'+(mockState.answers[i]||'(未作答)')+'\n\n';});
-  g += '\n评分规则：逐题对照标准答案评分。评语必须点名学生漏掉了标准答案中的哪些要点。按题型灵活打分（简答侧重要点齐全，论述侧重逻辑推导，案例侧重理论运用）。\nJSON输出：{"results":[{"score":8,"max":10,"comment":"评语(含漏答要点清单)"},...],"total":85,"summary":"总体评价(含最弱维度+改进方向)"}';
-  aiCall('grade', {messages:[{role:'system',content:'你是人大434考研阅卷老师。批改严格但公正。不要求术语中英文对照，不硬性要求联系现实。'},{role:'user',content:g}],temperature:0.3,json:true})
-  .then(function(r){return r.json();}).then(function(d){
-    var c=d.choices[0].message.content,m2=c.match(/\{[\s\S]*\}/);
-    var rr = m2?JSON.parse(m2[0]):{results:[],total:0,summary:'批改完成'};
-    mockState._grading = rr.results || []; // save for export
-    renderMockResult(rr);
-  }).catch(function(e){
-    var rr = {results:[],total:0,summary:'批改出错：'+e.message};
-    mockState._grading = []; renderMockResult(rr);
+  var qs = mockState.questions || [];
+  var results = new Array(qs.length);
+  /* 逐题并行评分(并发2, 复用 _mockGenAnswers 模式): 出一题渲一题, 不再单发等全文 */
+  var queue = qs.map(function(q,i){ return i; });
+  var active = 0, done = 0;
+  var totalScore = 0, totalMax = 0;
+
+  function tick() {
+    var el = document.getElementById('mockGradeProg');
+    if (el) el.textContent = 'AI 逐题批改中 ' + done + '/' + qs.length;
+  }
+  function renderOne(i, r) {
+    var card = document.getElementById('mockGradeCard_' + i);
+    if (!card) return;
+    var q = qs[i], p = q.score > 0 ? Math.round((r.score||0)/q.score*100) : 0;
+    var cl = p >= 80 ? 'var(--gn)' : p >= 50 ? 'var(--or)' : 'var(--r)';
+    card.innerHTML = '<div class="pcard"><div class="pcard-hdr"><h3>' + (i+1) + '. ' + q.type + '（' + q.score + '分）</h3><span style="color:' + cl + ';font-weight:700">' + (r.score||0) + '/' + q.score + '</span></div>' +
+      '<div class="pcard-body"><div style="font-size:14px;line-height:1.8;margin-bottom:8px">' + q.question + '</div>' +
+      '<div style="background:rgba(0,0,0,.02);padding:12px;border-radius:10px;font-size:13px;margin-bottom:8px;white-space:pre-wrap"><strong>你的答案：</strong>' + escapeHtml(mockState.answers[i]||'(未作答)') + '</div>' +
+      (r.comment ? '<div style="color:var(--ts);font-size:13px;background:rgba(255,159,10,.06);border:1px solid rgba(255,159,10,.15);border-radius:10px;padding:10px 12px"><strong>📝 评语：</strong>' + renderMarkdown(r.comment) + '</div>' : '') +
+      (q.answer ? '<details style="margin-top:10px"><summary style="cursor:pointer;font-size:13px;color:#a5b4fc">📋 查看标准答案</summary><div style="font-size:13px;line-height:1.85;padding:12px;margin-top:6px;background:rgba(94,92,230,.08);border:1px solid rgba(148,146,255,.18);border-radius:10px">' + renderMarkdown(q.answer) + '</div></details>' : '') +
+      '</div></div>';
+  }
+  function next() {
+    if (mockState.phase !== 'done') return;
+    if (!queue.length) return;
+    if (active >= 2) return;
+    var i = queue.shift();
+    var q = qs[i];
+    active++;
+    var g = '题目[' + q.type + '(' + q.score + '分)]：' + q.question + '\n【标准答案(评分基准)】：' + ((q.answer||'').substring(0,1000)||'(无, 按学科常识评)') + '\n学生答案：' + (mockState.answers[i]||'(未作答)') + '\n\n';
+    g += '\n评分规则：对照标准答案评分，评语必须点名学生漏掉了标准答案中的哪些要点。按题型灵活打分（简答侧重要点齐全，论述侧重逻辑推导，案例侧重理论运用）。';
+    aiCall('grade', {messages:[{role:'system',content:'你是人大434考研阅卷老师。批改严格但公正。不要求术语中英文对照，不硬性要求联系现实。'},{role:'user',content:g}],temperature:0.3,json:true,max_tokens:800})
+    .then(function(r){ return r.json(); })
+    .then(function(d){
+      var c = d.choices && d.choices[0] ? d.choices[0].message.content : '';
+      var m2 = c ? c.match(/\{[\s\S]*\}/) : null;
+      var r = m2 ? JSON.parse(m2[0]) : {score:0,max:q.score,comment:'评分解析失败'};
+      results[i] = r; renderOne(i, r); done++; totalScore += (r.score||0); totalMax += q.score;
+      tick();
+    }).catch(function(){
+      var r = {score:0,max:q.score,comment:'评分请求失败'};
+      results[i] = r; renderOne(i, r); done++; totalScore += 0; totalMax += q.score;
+      tick();
+    }).finally(function(){
+      active--;
+      if (!queue.length && active === 0) finish();
+    });
+    next();
+  }
+  function finish() {
+    /* 汇总阶段: 单次调用生成总体评价(不阻塞前面的逐题渲染) */
+    var tm = Math.floor((Date.now()-mockState.startTime)/60000);
+    var rr = {results: results, total: totalScore, summary: '批改完成'};
+    var ss = '以下是本次模考' + qs.length + '题的逐题评分。';
+    rr.summary = ss;
+    mockState._grading = results; /* save for export */
+    saveMockRecord(rr, tm);
+    /* 异步补 summary(可失败, 不影响已渲染结果) */
+    var g2 = '以下是' + qs.length + '道题的得分：' + results.map(function(r,i){ return '第'+(i+1)+'题'+(r.score||0)+'/'+qs[i].score+'分'; }).join('、') + '。';
+    aiCall('grade', {messages:[{role:'system',content:'你是人大434考研阅卷老师，输出简短总体评价。'},{role:'user',content:g2 + '\n请用100字内给出本次模考总体评价（含最弱维度+改进方向）。'}],temperature:0.3,json:true,max_tokens:300})
+    .then(function(r){ return r.json(); }).then(function(d){
+      var c = d.choices && d.choices[0] ? d.choices[0].message.content : '';
+      var m2 = c ? c.match(/\{[\s\S]*\}/) : null;
+      if (m2) { try { rr.summary = JSON.parse(m2[0]).summary || rr.summary; } catch(e){} }
+      else if (c && c.trim()) rr.summary = c.trim();
+      var hd = document.getElementById('mockGradeSummary');
+      if (hd) hd.innerHTML = '<div class="pcard" style="border-left:3px solid var(--pu)"><div class="pcard-body" style="font-size:14px;line-height:1.8">📊 <strong>总体评价</strong><div style="margin-top:6px">' + rr.summary + '</div></div></div>';
+    }).catch(function(){});
+    var hd2 = document.getElementById('mockGradeSummary');
+    if (hd2) hd2.innerHTML = '<div class="pcard" style="border-left:3px solid var(--pu)"><div class="pcard-body" style="font-size:14px;line-height:1.8">📊 <strong>总分：' + totalScore + ' 分</strong><div style="margin-top:6px;color:var(--ts);font-size:13px">' + rr.summary + '</div></div></div>';
+  }
+
+  /* 渲染进度框架 */
+  var h = '<div class="hero"><h1>📝 考试结果</h1><div class="desc">AI 逐题批改中，已完成题目会立即显示</div></div>';
+  h += '<div style="text-align:center;margin:8px 0 16px"><span id="mockGradeProg" style="font-size:13px;color:var(--ts)">AI 逐题批改中 0/' + qs.length + '</span></div>';
+  qs.forEach(function(q,i){
+    h += '<div id="mockGradeCard_' + i + '"><div class="pcard"><div class="pcard-hdr"><h3>' + (i+1) + '. ' + q.type + '（' + q.score + '分）</h3><span style="color:var(--ts)">⏳ 评分中...</span></div><div class="pcard-body"><div style="font-size:14px;line-height:1.8">' + q.question + '</div></div></div></div>';
   });
+  h += '<div id="mockGradeSummary"></div>';
+  h += '<div style="text-align:center;margin-top:20px;display:flex;gap:12px;justify-content:center"><button class="ai-btn ai-btn-sm" onclick="mockExportWithAnswers()" style="padding:10px 20px;font-size:14px">📄 导出试卷+答案</button><button class="btn btn-gen" onclick="showMockExam()">重新模考</button></div>';
+  document.getElementById('ct').innerHTML = h;
+
+  next(); next();
 }
 
 function renderMockResult(rr, isReplay) {
@@ -15023,22 +15128,49 @@ function _dailyBarHtml() {
       + '5. 严格JSON输出：{"questions":[{"type":"简答|论述|案例","question":"完整题面","knowledge":"必须是上方列出的考点名原文"}]}';
     mockAICall({ messages: [{role: 'system', content: sys},
         {role: 'user', content: '生成一套人大434模拟试卷(只出题)' + (topics.length ? '，命题范围：' + topics.join('、') : '')}],
-        max_tokens: 9000, thinking: true })
-    .then(function(r){ if (!r.ok) throw Error('HTTP ' + r.status); return r.json(); })
-    .then(function(d){
-      var c = d.choices[0].message.content, m = c.match(/\{[\s\S]*\}/);
-      if (!m) throw Error('AI格式错误');
-      var qs = (JSON.parse(m[0]).questions || []);
-      if (qs.length < 6) throw Error('题量不足');
-      qs.forEach(function(q){ q.score = q.type === '简答' ? 10 : 20; q.answer = ''; });
-      mockState.questions = qs;
-      mockState.answers = new Array(qs.length).fill('');
-      mockState.startTime = Date.now(); mockState.phase = 'exam'; renderMockExam();
-      var timerEl = document.getElementById('mockTimer');
-      if (timerEl && timerEl.parentElement && !document.getElementById('mockAnsProg')) {
-        timerEl.parentElement.insertAdjacentHTML('beforeend', ' <span id="mockAnsProg" style="font-size:11px;color:var(--ts)"></span>');
+        max_tokens: 9000, thinking: true, stream: true })
+    .then(function(r){ if (!r.ok) throw Error('HTTP ' + r.status); return r.body.getReader(); })
+    .then(function(rd){
+      var b = '', t = '', d = new TextDecoder();
+      function np(){
+        return rd.read().then(function(rr){
+          if (rr.done) {
+            var m = t.match(/\{[\s\S]*\}/);
+            if (!m) throw Error('AI格式错误');
+            var data = JSON.parse(m[0]);
+            var qs = data.questions || [];
+            if (qs.length < 6) throw Error('题量不足');
+            qs.forEach(function(q){ q.score = q.type === '简答' ? 10 : 20; q.answer = ''; });
+            mockState.questions = qs;
+            mockState.answers = new Array(qs.length).fill('');
+            mockState.startTime = Date.now(); mockState.phase = 'exam'; renderMockExam();
+            var timerEl = document.getElementById('mockTimer');
+            if (timerEl && timerEl.parentElement && !document.getElementById('mockAnsProg')) {
+              timerEl.parentElement.insertAdjacentHTML('beforeend', ' <span id="mockAnsProg" style="font-size:11px;color:var(--ts)"></span>');
+            }
+            _mockGenAnswers();
+            return;
+          }
+          b += d.decode(rr.value, {stream: true});
+          var ls = b.split('\n'); b = ls.pop() || '';
+          ls.forEach(function(l){
+            if (l.indexOf('data: ') === 0) {
+              var dd = l.substring(6); if (dd === '[DONE]') return;
+              try {
+                var p = JSON.parse(dd);
+                if (p.choices && p.choices[0]) {
+                  var delta = p.choices[0].delta || {};
+                  /* thinking 流式: 思考阶段 reasoning_content 不产出 content, 只拼 content 保证 JSON 完整 */
+                  var x = delta.content || '';
+                  if (x) t += x;
+                }
+              } catch(e) {}
+            }
+          });
+          return np();
+        });
       }
-      _mockGenAnswers();
+      return np();
     }).catch(function(){
       /* 回退: 真题拼卷(自带手册清洗后的标准答案) */
       var pool = DATA.slice();
@@ -16860,7 +16992,12 @@ function renderLiveMacro(d) {
   var files = ["per_question.json","module_corpus.json","answer-bank.json","hot-topics.json","material-library.json","wiki.json"].concat(['knowledge_ext.json']);
   var vars  = ["Q_ANALYSIS","MODULE_CORPUS","ANSWER_BANK","HOT_TOPICS","MATERIAL_LIBRARY","WIKI"].concat(['KNOWLEDGE_EXT']);
   function loadOne(i) {
-    if (i >= files.length) { try { buildTfidf(); } catch(e) {} return; }
+    if (i >= files.length) {
+      try { buildTfidf(); } catch(e) {}
+      /* 懒加载完成门禁: 通知 buildAIContext 可切 wiki 模式, 不再回退 legacy 全量 */
+      try { _lazyReady = true; if (typeof onLazyReady === 'function') onLazyReady(); } catch(e) {}
+      return;
+    }
     fetch(files[i]).then(function(r){return r.json();}).then(function(d){
       window[vars[i]] = d;
       if (vars[i] === 'KNOWLEDGE_EXT') { /* full_text/figures 合并回 KNOWLEDGE */
