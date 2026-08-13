@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<!-- v2.1 · 2026-08-13 09:21 · modular -->
+<!-- v2.1 · 2026-08-13 11:05 · modular -->
 <html lang="zh-CN">
 <head>
 <meta charset="UTF-8">
@@ -4955,7 +4955,7 @@ function directDS(){
 }
 /* 全局联网搜索开关: 返回 web_search 工具数组(开启时), 供直连调用注入 */
 function webSearchTools(){
-  try { if (localStorage.getItem('r434_websearch') === '1') return [{ type: 'web_search', max_keyword: 3, force_search: true, limit: 1 }]; } catch(e) {}
+  try { if (localStorage.getItem('r434_websearch') === '1') return [{ type: 'web_search', max_keyword: 3, force_search: false, limit: 1 }]; } catch(e) {}
   return null;
 }
 /* 模考专用模型(Qwen-Max), 由 /config 下发; 未配置则模考仍用 mimo */
@@ -5044,7 +5044,7 @@ var AI_PROVIDERS = {
       if (opts.stream) b.stream = true;
       if (opts.thinking) b.thinking = { type: 'enabled' };
       else if (typeof opts.temperature === 'number') b.temperature = opts.temperature;
-      if (opts.search) b.tools = [{ type: 'web_search', max_keyword: 3, force_search: true, limit: 1 }];
+      if (opts.search) b.tools = [{ type: 'web_search', max_keyword: 3, force_search: false, limit: 1 }];
       if (opts.json) b.response_format = { type: 'json_object' };
       return b;
     }
