@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<!-- v2.1 · 2026-08-12 09:00 · modular -->
+<!-- v2.1 · 2026-08-13 02:31 · modular -->
 <html lang="zh-CN">
 <head>
 <meta charset="UTF-8">
@@ -5390,6 +5390,17 @@ function buildAIContextWiki(query) {
   // === 检索命中Wiki词条（答题核心依据） ===
   var qmap = wikiQmap();
   var hits = ragRetrieve(query, 40).filter(function(d){ return d.type === 'wiki'; }).slice(0, 6);
+  if (!hits.length) {
+    /* 弱命中兜底: wiki 零命中时用 knowledge 原始档案补充，避免接地空白 */
+    var kHits = ragRetrieve(query, 8).filter(function(d){ return d.type === 'knowledge'; }).slice(0, 3);
+    if (kHits.length) {
+      ctx += '=== 相关知识点档案（RAG 兜底） ===\n';
+      kHits.forEach(function(d) {
+        var kn = d.ref;
+        ctx += '【' + d.id + '】' + (kn.overview || '') + '\n要点：' + ((kn.key || []).join('；') || '无') + '\n\n';
+      });
+    }
+  }
   if (hits.length) {
     ctx += '=== 检索命中Wiki词条（回答/出题/批改时优先引用以下已整理知识） ===\n\n';
     hits.forEach(function(d) {
@@ -5410,6 +5421,28 @@ function buildAIContextWiki(query) {
       if (p.links && p.links.length) ctx += '  关联词条：' + p.links.join('、') + '\n';
       ctx += '\n';
     });
+
+    /* Wiki 图一跳扩展（零成本）: 沿命中词条 links 补充邻居知识点，治单路检索漏检
+     * 例: 问"H-O理论"时自动带出"列昂惕夫之谜"(同题共考邻居) */
+    var hitIds = {};
+    hits.forEach(function(d){ hitIds[d.id] = 1; });
+    var pageMap = {};
+    WIKI.pages.forEach(function(p){ pageMap[p.id] = p; });
+    var expanded = [];
+    for (var hi = 0; hi < hits.length && expanded.length < 2; hi++) {
+      var hl = hits[hi].ref.links || [];
+      for (var li = 0; li < hl.length && expanded.length < 2; li++) {
+        var lp = pageMap[hl[li]];
+        if (lp && lp.type === 'knowledge' && !hitIds[lp.id]) { hitIds[lp.id] = 1; expanded.push(lp); }
+      }
+    }
+    if (expanded.length) {
+      ctx += '=== 图扩展关联词条（命中词条的一跳邻居，补充参考） ===\n';
+      expanded.forEach(function(p) {
+        ctx += '【' + p.title + '】' + (p.core || String(p.content).substring(0, 220)) + '\n';
+      });
+      ctx += '\n';
+    }
   }
 
   // === RAG：逐题拆解考点（批改/出题的覆盖维度依据） ===
