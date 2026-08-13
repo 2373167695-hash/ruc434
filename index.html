@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<!-- v2.1 · 2026-08-13 12:32 · modular -->
+<!-- v2.1 · 2026-08-13 12:34 · modular -->
 <html lang="zh-CN">
 <head>
 <meta charset="UTF-8">
@@ -15869,7 +15869,9 @@ function _dailyBarHtml() {
   var bgImg = new Image(); bgImg.src = 'bg.jpg';
 
   var css = ''
-  + '.ai-chat-input-bar{background:transparent !important;backdrop-filter:none !important;-webkit-backdrop-filter:none !important;overflow:hidden !important}'
+  + '.ai-chat-input-bar{position:relative;background:rgba(255,255,255,.06) !important;backdrop-filter:blur(20px) saturate(1.2) !important;-webkit-backdrop-filter:blur(20px) saturate(1.2) !important;overflow:visible !important;z-index:2}'
+  + '.in-refr{display:none !important}'
+  + '.ai-chat-input-bar .ai-chat-voice,.ai-chat-input-bar .ai-chat-textarea,.ai-chat-input-bar .ai-chat-send{position:relative;z-index:3}'
   + '.in-refr{position:absolute;inset:0;z-index:-1;border-radius:inherit;overflow:hidden;pointer-events:none}'
   + '.in-refr-img{position:absolute;inset:-30px;background-image:url("bg.jpg");background-repeat:no-repeat}'
   /* 光学膜: 只有白系高光与棱边, 不压暗(透明折射款) */
