@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<!-- v2.1 · 2026-08-15 05:09 · modular -->
+<!-- v2.1 · 2026-08-15 06:09 · modular -->
 <html lang="zh-CN">
 <head>
 <meta charset="UTF-8">
@@ -6990,7 +6990,7 @@ function showMacro() {
   initMacroCharts();
 }
 
-/* ===== 国际贸易数据弹药库（答题引用·数据骨架） ===== */
+/* ===== 国际贸易数据弹药库（完整版·8大板块·答题引用） ===== */
 function showTradeData() {
   document.getElementById("bc").innerHTML = '<span>📦 国际贸易数据</span>';
   var t = (typeof TRADE_DATA !== 'undefined' && TRADE_DATA) ? TRADE_DATA : null;
@@ -6999,42 +6999,103 @@ function showTradeData() {
     return;
   }
   var h = '<div class="hero"><h1>📦 国际贸易数据弹药库</h1>' +
-    '<div class="desc">答题数据骨架 · ' + (t.update_date || '') + ' · ' + (t.data_source || '') + '<br>论述题精准引用关键数据，是体现专业素养、让答案脱颖而出的"杀手锏"。点击指标可复制，便于答题时直接引用。</div></div>';
+    '<div class="desc">答题数据骨架 · 数据基准：' + (t.data_basis || '') + ' · ' + (t.data_source || '') + '<br>论述题精准引用关键数据，是体现专业素养、让答案脱颖而出的"杀手锏"。点击卡片/行可复制，便于答题引用。</div></div>';
 
-  /* 精选金句（答题可直接引用） */
-  if (t.highlight_quotes && t.highlight_quotes.length) {
-    h += '<div class="macro-section-header"><h3>💡 数据金句（直接引用）</h3><span class="badge">答题弹药</span></div>';
-    h += '<div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:24px">';
-    t.highlight_quotes.forEach(function(q) {
-      h += '<div class="pcard" style="padding:14px 16px;cursor:pointer" onclick="copyTradeQuote(this)" title="点击复制">' +
-        '<div style="font-size:13px;line-height:1.8;color:var(--t)">“' + q.quote + '”</div>' +
-        '<div style="font-size:11px;color:var(--ts);margin-top:8px">🎯 ' + q.exam_use + '</div></div>';
+  /* KPI 速览 */
+  if (t.kpi && t.kpi.length) {
+    h += '<div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(160px,1fr));gap:12px;margin-bottom:24px">';
+    t.kpi.forEach(function(k) {
+      var cls = (k.trend || '').indexOf('▲') >= 0 ? 'var(--gn)' : ((k.trend || '').indexOf('▼') >= 0 ? 'var(--r)' : 'var(--or)');
+      h += '<div class="pcard" style="padding:14px 16px;text-align:center;cursor:pointer" onclick="copyTradeStr(this)" title="点击复制">' +
+        '<div style="font-size:12px;color:var(--ts)">' + k.label + '</div>' +
+        '<div style="font-size:24px;font-weight:700;color:var(--t);margin:4px 0;line-height:1.2">' + k.value + '<span style="font-size:12px;color:var(--ts)"> ' + (k.unit || '') + '</span></div>' +
+        '<div style="font-size:11px;color:' + cls + ';font-weight:600">' + k.trend + '</div>' +
+        (k.note ? '<div style="font-size:10px;color:var(--ts);margin-top:2px">' + k.note + '</div>' : '') + '</div>';
     });
     h += '</div>';
   }
 
-  /* 分类数据表 */
+  /* 分类板块 */
   t.sections.forEach(function(sec, si) {
     h += '<div class="macro-section-header"><h3>' + sec.name + '</h3><span class="badge">' + sec.exam_point + '</span></div>';
-    h += '<div class="pcard" style="padding:0;margin-bottom:24px;overflow:hidden">';
-    h += '<div style="overflow-x:auto"><table style="width:100%;border-collapse:collapse;font-size:13px">';
-    h += '<tr style="background:rgba(94,92,230,.08)"><th style="text-align:left;padding:10px 14px;color:var(--ts);font-weight:600;white-space:nowrap">指标</th><th style="text-align:right;padding:10px 14px;color:var(--ts);font-weight:600;white-space:nowrap">数值</th><th style="text-align:left;padding:10px 14px;color:var(--ts);font-weight:600;white-space:nowrap">同比/说明</th><th style="text-align:left;padding:10px 14px;color:var(--ts);font-weight:600;white-space:nowrap">来源</th></tr>';
-    sec.indicators.forEach(function(ind) {
-      var note = (ind.yoy ? '📈 ' + ind.yoy + '　' : '') + (ind.note || '');
-      h += '<tr style="border-top:1px solid rgba(255,255,255,.05);cursor:pointer" onclick="copyTradeRow(this)" title="点击复制该行">' +
-        '<td style="padding:10px 14px;color:var(--t);white-space:nowrap"><strong>' + ind.name + '</strong></td>' +
-        '<td style="padding:10px 14px;text-align:right;color:#a5b4fc;font-weight:700;white-space:nowrap">' + ind.value + '</td>' +
-        '<td style="padding:10px 14px;color:var(--ts);line-height:1.6">' + note + '</td>' +
-        '<td style="padding:10px 14px;color:#888;font-size:11px;white-space:nowrap">' + (ind.source || '') + '</td></tr>';
+
+    /* 图表区 */
+    if (sec.charts && sec.charts.length) {
+      h += '<div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:14px">';
+      sec.charts.forEach(function(ch) {
+        h += '<div class="pcard" style="padding:16px 18px">';
+        h += '<div style="font-size:13px;font-weight:600;color:var(--t);margin-bottom:12px">' + ch.title + '</div>';
+        if (ch.type === 'bar') {
+          ch.items.forEach(function(it) {
+            var col = it.color === 'red' ? 'var(--r)' : (it.color === 'blue' ? 'var(--bl)' : (it.color === 'green' ? 'var(--gn)' : 'var(--or)'));
+            h += '<div style="margin-bottom:10px"><div style="display:flex;justify-content:space-between;font-size:11px;color:var(--ts);margin-bottom:3px"><span>' + it.label + '</span><span>' + it.value + '</span></div>' +
+              '<div style="height:10px;background:rgba(255,255,255,.06);border-radius:5px;overflow:hidden"><div style="height:100%;width:' + it.pct + '%;background:' + col + ';border-radius:5px;opacity:.85"></div></div>' +
+              '<div style="font-size:10px;color:' + ((it.yoy || '').indexOf('-') >= 0 ? 'var(--r)' : 'var(--gn)') + ';margin-top:2px">' + it.yoy + '</div></div>';
+          });
+        } else if (ch.type === 'pie') {
+          var colMap = { gold: 'var(--or)', blue: 'var(--bl)', green: 'var(--gn)', purple: 'var(--pu)' };
+          h += '<div style="display:flex;align-items:center;gap:18px">';
+          h += '<div style="width:110px;height:110px;border-radius:50%;flex-shrink:0;background:conic-gradient(';
+          var acc = 0;
+          ch.items.forEach(function(it, i2) {
+            var from = acc, to = acc + it.pct * 3.6;
+            h += (i2 > 0 ? ',' : '') + (colMap[it.color] || 'var(--pu)') + ' ' + from.toFixed(1) + 'deg ' + to.toFixed(1) + 'deg';
+            acc = to;
+          });
+          h += ')"></div>';
+          h += '<div style="flex:1">';
+          ch.items.forEach(function(it) {
+            h += '<div style="display:flex;align-items:center;gap:8px;font-size:12px;margin-bottom:8px">' +
+              '<span style="width:10px;height:10px;border-radius:3px;background:' + (colMap[it.color] || 'var(--pu)') + '"></span>' +
+              '<span style="color:var(--t)">' + it.label + '</span>' +
+              '<span style="margin-left:auto;color:var(--ts);font-weight:600">' + it.value + '</span></div>';
+          });
+          h += '</div></div>';
+        }
+        h += '</div>';
+      });
+      h += '</div>';
+    }
+
+    /* 表格区 */
+    (sec.tables || []).forEach(function(tb) {
+      h += '<div class="pcard" style="padding:0;margin-bottom:14px;overflow:hidden">';
+      if (tb.head) h += '<div style="padding:12px 16px;font-size:13px;font-weight:600;color:var(--t);background:rgba(94,92,230,.06)">' + tb.head + '</div>';
+      h += '<div style="overflow-x:auto"><table style="width:100%;border-collapse:collapse;font-size:13px">';
+      h += '<tr style="background:rgba(94,92,230,.08)"><th style="text-align:left;padding:9px 14px;color:var(--ts);font-weight:600;white-space:nowrap">指标</th><th style="text-align:right;padding:9px 14px;color:var(--ts);font-weight:600;white-space:nowrap">数据</th><th style="text-align:left;padding:9px 14px;color:var(--ts);font-weight:600;white-space:nowrap">同比/备注</th><th style="text-align:left;padding:9px 14px;color:var(--ts);font-weight:600;white-space:nowrap">来源</th></tr>';
+      tb.rows.forEach(function(row) {
+        var tagColor = row.tag === 'up' ? 'var(--gn)' : (row.tag === 'down' ? 'var(--r)' : 'var(--ts)');
+        h += '<tr style="border-top:1px solid rgba(255,255,255,.05);cursor:pointer' + (row.sub ? ';background:rgba(255,255,255,.02)' : '') + '" onclick="copyTradeRow(this)" title="点击复制">' +
+          '<td style="padding:9px 14px;color:var(--t);' + (row.sub ? 'padding-left:28px;font-size:12px;color:var(--ts)' : '') + '">' + row.name + '</td>' +
+          '<td style="padding:9px 14px;text-align:right;color:#a5b4fc;font-weight:700;white-space:nowrap">' + row.value + '</td>' +
+          '<td style="padding:9px 14px;color:' + tagColor + ';white-space:nowrap;font-size:12px">' + row.trend + '</td>' +
+          '<td style="padding:9px 14px;color:#888;font-size:11px;white-space:nowrap">' + (row.src || '') + '</td></tr>';
+      });
+      h += '</table></div></div>';
     });
-    h += '</table></div></div>';
+
+    /* 答题话术 */
+    if (sec.tip) {
+      h += '<div style="padding:12px 16px;border-radius:12px;background:rgba(94,92,230,.08);border:1px solid rgba(94,92,230,.15);margin-bottom:24px;cursor:pointer;font-size:12.5px;line-height:1.8;color:var(--t)" onclick="copyTradeStr(this)" title="点击复制话术">💡 <b>答题话术：</b>' + sec.tip + '</div>';
+    }
   });
 
-  h += '<div style="text-align:center;margin:16px 0 30px;font-size:12px;color:var(--ts)">' +
-    '数据来源：' + (t.data_source || '') + ' · 建议每年更新，形成个人"数据弹药库"</div>';
+  /* 组合拳话术 */
+  if (t.quotes && t.quotes.length) {
+    h += '<div class="macro-section-header"><h3>🎯 答题引用示范 · 组合拳话术</h3><span class="badge">点击复制</span></div>';
+    h += '<div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:24px">';
+    t.quotes.forEach(function(q) {
+      h += '<div class="pcard" style="padding:14px 16px;cursor:pointer" onclick="copyTradeStr(this)" title="点击复制">' +
+        '<div style="font-size:13px;font-weight:700;color:var(--t);margin-bottom:6px">' + q.title + '</div>' +
+        '<div style="font-size:12.5px;color:var(--ts);line-height:1.8">' + q.text + '</div></div>';
+    });
+    h += '</div>';
+  }
+
+  h += '<div style="text-align:center;margin:16px 0 30px;font-size:12px;color:var(--ts)">数据来源：' + (t.data_source || '') + ' · 建议每年更新，形成个人"数据弹药库"</div>';
   document.getElementById("ct").innerHTML = h;
 }
-/* 复制金句/数据行（答题引用） */
+/* 复制工具 */
 function copyTradeRow(el) {
   var txt = (el.textContent || '').replace(/\s+/g, ' ').trim();
   try {
@@ -7046,7 +7107,7 @@ function copyTradeRow(el) {
     }
   } catch(e) {}
 }
-function copyTradeQuote(el) {
+function copyTradeStr(el) {
   var txt = (el.textContent || '').replace(/\s+/g, ' ').trim();
   try {
     if (navigator.clipboard && navigator.clipboard.writeText) {
