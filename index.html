@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<!-- v2.1 · 2026-08-15 06:31 · modular -->
+<!-- v2.1 · 2026-08-15 06:41 · modular -->
 <html lang="zh-CN">
 <head>
 <meta charset="UTF-8">
@@ -7319,32 +7319,42 @@ function etSwitchTab(tab) {
     c.innerHTML = showTradeData(true) || '<p style="color:#999;text-align:center;padding:30px">贸易数据加载中</p>';
   } else {
     /* 热点与预测：热点头条 + 学术预测 */
-    var t = (typeof TRADE_DATA !== 'undefined' && TRADE_DATA) ? TRADE_DATA : null;
     var hot = (typeof HOT_TOPICS !== 'undefined' && HOT_TOPICS) ? HOT_TOPICS : null;
     var hh = '';
     hh += '<div class="macro-section-header"><h3>🔥 热点素材</h3><span class="badge">关联知识点</span></div>';
+    var hotCount = 0;
     if (hot && hot.categories) {
       hot.categories.forEach(function(cat) {
-        hh += '<div class="pcard" style="padding:14px 18px;margin-bottom:12px"><div style="font-size:13px;font-weight:700;color:var(--t);margin-bottom:10px">' + (cat.name || '') + '</div>';
-        (cat.cards || []).slice(0, 4).forEach(function(cd) {
+        var cards = cat.cards || [];
+        if (!cards.length) return;
+        hotCount += cards.length;
+        hh += '<div class="pcard" style="padding:14px 18px;margin-bottom:12px"><div style="font-size:13px;font-weight:700;color:var(--t);margin-bottom:10px">' + (cat.icon || '') + ' ' + (cat.category || '') + '</div>';
+        cards.slice(0, 4).forEach(function(cd) {
           hh += '<div style="padding:8px 0;border-top:1px solid rgba(255,255,255,.05);font-size:12.5px;color:var(--ts);line-height:1.7">' +
-            '<span style="color:var(--t);font-weight:600">' + (cd.topic || '') + '</span> ' + (cd.summary || '') + '</div>';
+            '<span style="color:var(--t);font-weight:600">' + (cd.topic || '') + '</span>' +
+            (cd.probability ? ' <span style="color:var(--or);font-size:11px">' + cd.probability + '</span>' : '') +
+            (cd.news_brief ? '<br><span style="color:var(--ts);font-size:12px">' + cd.news_brief.substring(0, 80) + (cd.news_brief.length > 80 ? '…' : '') + '</span>' : '') + '</div>';
         });
         hh += '</div>';
       });
     }
+    if (!hotCount) hh += '<p style="color:#999;text-align:center;padding:20px">暂无热点素材</p>';
     hh += '<div class="macro-section-header"><h3>🎯 学术预测</h3><span class="badge">出题方向</span></div>';
     var pred = (typeof PREDICTIONS !== 'undefined' && PREDICTIONS) ? PREDICTIONS : null;
-    if (pred && (pred.predictions || pred.items)) {
-      var plist = pred.predictions || pred.items || [];
+    var plist = (Array.isArray(pred) ? pred : (pred && (pred.predictions || pred.items))) || [];
+    if (plist.length) {
       hh += '<div class="pcard" style="padding:14px 18px">';
       plist.slice(0, 8).forEach(function(p, i) {
-        hh += '<div style="padding:8px 0;border-top:' + (i ? '1px solid rgba(255,255,255,.05)' : 'none') + ';font-size:12.5px;color:var(--ts);line-height:1.7">' +
-          '<span style="color:var(--pu);font-weight:600">' + (p.tag || p.type || '预测') + '</span> ' + (p.title || p.text || '') + '</div>';
+        hh += '<div style="padding:10px 0;border-top:' + (i ? '1px solid rgba(255,255,255,.05)' : 'none') + ';font-size:12.5px;line-height:1.7">' +
+          '<div style="color:var(--t);font-weight:600">' + (p.topic || p.title || '') +
+          (p.probability ? ' <span style="color:var(--or);font-size:11px;font-weight:400">' + p.probability + '</span>' : '') + '</div>' +
+          (p.evidence ? '<div style="color:var(--ts);font-size:11.5px;margin-top:4px">' + p.evidence.substring(0, 90) + (p.evidence.length > 90 ? '…' : '') + '</div>' : '') + '</div>';
       });
       hh += '</div>';
+    } else {
+      hh += '<p style="color:#999;text-align:center;padding:20px">暂无学术预测</p>';
     }
-    c.innerHTML = hh || '<p style="color:#999;text-align:center;padding:30px">暂无热点与预测数据</p>';
+    c.innerHTML = hh;
   }
 }
 
