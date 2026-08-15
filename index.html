@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<!-- v2.1 · 2026-08-15 06:41 · modular -->
+<!-- v2.1 · 2026-08-15 07:21 · modular -->
 <html lang="zh-CN">
 <head>
 <meta charset="UTF-8">
@@ -5944,30 +5944,14 @@ function saveState() {
 
 // ===== NAVIGATION =====
 function buildNav() {
-  // ===== 学习区 =====
-  var knh = '<div class="ni lv0 active" data-p="kn:home">📖 知识点总览</div>';
-  knh += '<div class="ni lv0" data-p="allquestions">📝 全部真题</div>';
+  // ===== 核心导航（精简版：其余功能走首页卡片） =====
+  var knh = '<div class="ni lv0 active" data-p="kn:home">📖 知识点</div>';
+  knh += '<div class="ni lv0" data-p="allquestions">📝 真题练习</div>';
   knh += '<div class="ni lv0" data-p="wrongbook">📋 错题本</div>';
   knh += '<div class="ni lv0" data-p="cards">🧠 记忆卡片</div>';
-  knh += '<div class="ni lv0" data-p="stats">📊 学习统计</div>';
-  knh += '<div class="ni lv0" data-p="graph">🕸️ 知识图谱</div>';
-  knh += '<div class="sidebar-section-label">AI 辅助</div>';
   knh += '<div class="ni lv0" data-p="aichat">💬 AI助手</div>';
-  knh += '<div class="ni lv0" data-p="mockexam">🎯 AI模考</div>';
-  knh += '<div class="ni lv0" data-p="answercheck">✅ 答案批改</div>';
-  knh += '<div class="ni lv0" data-p="outputtrain">✍️ 输出训练</div>';
-  knh += '<div class="ni lv0" data-p="theoryviz">📐 理论可视化</div>';
-  knh += '<div class="sidebar-section-label">数据情报</div>';
   knh += '<div class="ni lv0" data-p="ecotrade">📊 经济与贸易数据</div>';
-  knh += '<div class="ni lv0" data-p="predictions">🎯 学术预测</div>';
-  knh += '<div class="ni lv0" data-p="professors">👨‍🏫 导师研究</div>';
-  knh += '<div class="ni lv0" data-p="hot">🔥 热点素材</div>';
-  knh += '<div class="sidebar-section-label">语料与收藏</div>';
-  knh += '<div class="ni lv0" data-p="corpushub">🧠 三层语料</div>';
-  knh += '<div class="ni lv0" data-p="modcorpus">📖 模块语料</div>';
-  knh += '<div class="ni lv0" data-p="mycorpus">📋 我的语料</div>';
-  knh += '<div class="ni lv0" data-p="mycards">💾 我的知识卡</div>';
-  knh += '<div class="sidebar-section-label">PDF章节</div>';
+  knh += '<div class="sidebar-section-label">知识章节</div>';
   
   if (KNOWLEDGE_NAV && KNOWLEDGE_NAV.sections) {
     KNOWLEDGE_NAV.sections.forEach(function(part, pi) {
@@ -6236,6 +6220,21 @@ function showHome() {recordTrend();var bb=document.getElementById('backBtn');if(
   h += '<div class="gc" onclick="navigate(\'predictions\')"><div class="ico" style="background:rgba(255,159,10,.08)">🎯</div><div class="cnt"><h4>学术热点预测</h4><p>基于两院最新研究，预测2027年可能考点</p></div></div>';
   h += '<div class="gc" onclick="navigate(\'professors\')"><div class="ico" style="background:rgba(0,122,255,.08)">👨‍🏫</div><div class="cnt"><h4>导师研究方向</h4><p>' + pn + '位重点导师的研究领域与最新成果</p></div></div>';
   h += '<div class="gc" onclick="navigate(\'hot\')"><div class="ico" style="background:rgba(94,92,230,.08)">🔥</div><div class="cnt"><h4>热点素材解读</h4><p>跨国公司平台经济 · ESA理论与MNPs</p></div></div>';
+  h += '</div>';
+
+  // ===== 更多工具（侧边栏精简后收纳的功能入口） =====
+  h += '<div class="sec-hd" style="margin-top:0"><h3>🧰 更多工具</h3></div>';
+  h += '<div class="grid">';
+  h += '<div class="gc" onclick="navigate(\'mockexam\')"><div class="ico" style="background:rgba(255,69,58,.08)">🎯</div><div class="cnt"><h4>AI 模考</h4><p>全真模拟 · 智能组卷与评分</p></div></div>';
+  h += '<div class="gc" onclick="navigate(\'answercheck\')"><div class="ico" style="background:rgba(48,209,88,.08)">✅</div><div class="cnt"><h4>答案批改</h4><p>AI 批改 · 采分点诊断</p></div></div>';
+  h += '<div class="gc" onclick="navigate(\'outputtrain\')"><div class="ico" style="background:rgba(94,92,230,.08)">✍️</div><div class="cnt"><h4>输出训练</h4><p>答题输出 · 结构化表达</p></div></div>';
+  h += '<div class="gc" onclick="navigate(\'theoryviz\')"><div class="ico" style="background:rgba(0,122,255,.08)">📐</div><div class="cnt"><h4>理论可视化</h4><p>模型图解 · 交互式学习</p></div></div>';
+  h += '<div class="gc" onclick="navigate(\'corpushub\')"><div class="ico" style="background:rgba(255,159,10,.08)">🧠</div><div class="cnt"><h4>三层语料</h4><p>理论→案例→话术体系</p></div></div>';
+  h += '<div class="gc" onclick="navigate(\'modcorpus\')"><div class="ico" style="background:rgba(94,92,230,.08)">📖</div><div class="cnt"><h4>模块语料</h4><p>8大模块答题模板</p></div></div>';
+  h += '<div class="gc" onclick="navigate(\'stats\')"><div class="ico" style="background:rgba(48,209,88,.08)">📊</div><div class="cnt"><h4>学习统计</h4><p>进度热力图 · 掌握度分析</p></div></div>';
+  h += '<div class="gc" onclick="navigate(\'graph\')"><div class="ico" style="background:rgba(130,128,255,.08)">🕸️</div><div class="cnt"><h4>知识图谱</h4><p>知识点关联可视化</p></div></div>';
+  h += '<div class="gc" onclick="navigate(\'mycorpus\')"><div class="ico" style="background:rgba(255,159,10,.08)">📋</div><div class="cnt"><h4>我的语料</h4><p>个人笔记与素材库</p></div></div>';
+  h += '<div class="gc" onclick="navigate(\'mycards\')"><div class="ico" style="background:rgba(48,209,88,.08)">💾</div><div class="cnt"><h4>我的知识卡</h4><p>AI 回答沉淀的知识卡</p></div></div>';
   h += '</div>';
   // ===== FREQUENCY TABLE (below heatmap) =====
   var freqRows = [];
