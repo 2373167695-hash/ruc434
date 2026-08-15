@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<!-- v2.1 · 2026-08-15 06:15 · modular -->
+<!-- v2.1 · 2026-08-15 06:31 · modular -->
 <html lang="zh-CN">
 <head>
 <meta charset="UTF-8">
@@ -5944,28 +5944,29 @@ function saveState() {
 
 // ===== NAVIGATION =====
 function buildNav() {
-  // ===== Knowledge Tree (PDF chapter structure) =====
+  // ===== 学习区 =====
   var knh = '<div class="ni lv0 active" data-p="kn:home">📖 知识点总览</div>';
   knh += '<div class="ni lv0" data-p="allquestions">📝 全部真题</div>';
   knh += '<div class="ni lv0" data-p="wrongbook">📋 错题本</div>';
-  knh += '<div class="ni lv0" data-p="corpushub">🧠 三层语料</div>';
-  knh += '<div class="ni lv0" data-p="mycards">💾 我的知识卡</div>';
-  knh += '<div class="ni lv0" data-p="modcorpus">📖 模块语料</div>';
-  knh += '<div class="ni lv0" data-p="stats">📊 学习统计</div>';
   knh += '<div class="ni lv0" data-p="cards">🧠 记忆卡片</div>';
+  knh += '<div class="ni lv0" data-p="stats">📊 学习统计</div>';
   knh += '<div class="ni lv0" data-p="graph">🕸️ 知识图谱</div>';
+  knh += '<div class="sidebar-section-label">AI 辅助</div>';
   knh += '<div class="ni lv0" data-p="aichat">💬 AI助手</div>';
-  knh += '<div class="sidebar-section-label">备考工具</div>';
-  knh += '<div class="ni lv0" data-p="mycorpus">📋 我的语料</div>';
-  knh += '<div class="ni lv0" data-p="theoryviz">📐 理论可视化</div>';
-  knh += '<div class="ni lv0" data-p="outputtrain">✍️ 输出训练</div>';
   knh += '<div class="ni lv0" data-p="mockexam">🎯 AI模考</div>';
   knh += '<div class="ni lv0" data-p="answercheck">✅ 答案批改</div>';
-  knh += '<div class="ni lv0" data-p="macro">📊 宏观数据</div>';
-  knh += '<div class="ni lv0" data-p="tradedata">📦 国际贸易数据</div>';
+  knh += '<div class="ni lv0" data-p="outputtrain">✍️ 输出训练</div>';
+  knh += '<div class="ni lv0" data-p="theoryviz">📐 理论可视化</div>';
+  knh += '<div class="sidebar-section-label">数据情报</div>';
+  knh += '<div class="ni lv0" data-p="ecotrade">📊 经济与贸易数据</div>';
   knh += '<div class="ni lv0" data-p="predictions">🎯 学术预测</div>';
   knh += '<div class="ni lv0" data-p="professors">👨‍🏫 导师研究</div>';
   knh += '<div class="ni lv0" data-p="hot">🔥 热点素材</div>';
+  knh += '<div class="sidebar-section-label">语料与收藏</div>';
+  knh += '<div class="ni lv0" data-p="corpushub">🧠 三层语料</div>';
+  knh += '<div class="ni lv0" data-p="modcorpus">📖 模块语料</div>';
+  knh += '<div class="ni lv0" data-p="mycorpus">📋 我的语料</div>';
+  knh += '<div class="ni lv0" data-p="mycards">💾 我的知识卡</div>';
   knh += '<div class="sidebar-section-label">PDF章节</div>';
   
   if (KNOWLEDGE_NAV && KNOWLEDGE_NAV.sections) {
@@ -6114,8 +6115,8 @@ function navigate(p, topicName, skipHistory) {
     else if (p === 'allquestions') { showAllQuestions(); }
     else if (p === 'wrongbook') { showWrongBook(); }
     else if (p.indexOf('kn:') === 0) { showKnContent(p.substring(3), topicName || ''); }
-    else if (p === 'macro') { showMacro(); }
-    else if (p === 'tradedata') { showTradeData(); }
+    else if (p === 'macro' || p === 'ecotrade') { showEcoTrade(); }
+    else if (p === 'tradedata') { showEcoTrade(); }
     else if (p === 'predictions') { showPredictions(); }
     else if (p === 'professors') { showProfessors(); }
     else if (p.indexOf('year:') === 0) { doShowExamYear(parseInt(p.substring(5))); }
@@ -6231,8 +6232,7 @@ function showHome() {recordTrend();var bb=document.getElementById('backBtn');if(
   // Quick links row (styled as grid cards)
   h += '<div class="sec-hd" style="margin-top:0"><h3>🔗 快捷入口</h3></div>';
   h += '<div class="grid">';
-  h += '<div class="gc" onclick="navigate(\'macro\')"><div class="ico" style="background:var(--panel-bg)">📊</div><div class="cnt"><h4>宏观经济数据大屏</h4><p>人民币指数+汇率走势+宏观热点+出题预测</p></div></div>';
-  h += '<div class="gc" onclick="navigate(\'tradedata\')"><div class="ico" style="background:var(--panel-bg)">📦</div><div class="cnt"><h4>国际贸易数据弹药库</h4><p>进出口/投资/汇率/人民币国际化核心数据，答题引用</p></div></div>';
+  h += '<div class="gc" onclick="navigate(\'ecotrade\')"><div class="ico" style="background:var(--panel-bg)">📊</div><div class="cnt"><h4>经济与贸易数据</h4><p>宏观仪表盘+贸易数据弹药库+热点与预测</p></div></div>';
   h += '<div class="gc" onclick="navigate(\'predictions\')"><div class="ico" style="background:rgba(255,159,10,.08)">🎯</div><div class="cnt"><h4>学术热点预测</h4><p>基于两院最新研究，预测2027年可能考点</p></div></div>';
   h += '<div class="gc" onclick="navigate(\'professors\')"><div class="ico" style="background:rgba(0,122,255,.08)">👨‍🏫</div><div class="cnt"><h4>导师研究方向</h4><p>' + pn + '位重点导师的研究领域与最新成果</p></div></div>';
   h += '<div class="gc" onclick="navigate(\'hot\')"><div class="ico" style="background:rgba(94,92,230,.08)">🔥</div><div class="cnt"><h4>热点素材解读</h4><p>跨国公司平台经济 · ESA理论与MNPs</p></div></div>';
@@ -6970,11 +6970,11 @@ function speakText(text) {
   }).catch(function() {});
 }
 
-function showMacro() {
-  document.getElementById("bc").innerHTML = '<span>📊 宏观数据</span>';
+function showMacro(_inner) {
+  if (!_inner) document.getElementById("bc").innerHTML = '<span>📊 宏观数据</span>';
   
   if (!MACRO_DATA || !MACRO_DATA.dashboard) {
-    document.getElementById("ct").innerHTML = '<p style="text-align:center;color:#999;padding:40px">暂无宏观数据</p>';
+    if (!_inner) document.getElementById("ct").innerHTML = '<p style="text-align:center;color:#999;padding:40px">暂无宏观数据</p>';
     return;
   }
   
@@ -7174,6 +7174,7 @@ function showMacro() {
     });
   }
   
+  if (_inner) return h;  /* Tabs 合并模式: 返回 HTML 由外层容器渲染 */
   document.getElementById("ct").innerHTML = h;
   
   // Initialize charts after DOM is ready
@@ -7181,15 +7182,18 @@ function showMacro() {
 }
 
 /* ===== 国际贸易数据弹药库（完整版·8大板块·答题引用） ===== */
-function showTradeData() {
-  document.getElementById("bc").innerHTML = '<span>📦 国际贸易数据</span>';
+function showTradeData(_inner) {
+  if (!_inner) document.getElementById("bc").innerHTML = '<span>📦 国际贸易数据</span>';
   var t = (typeof TRADE_DATA !== 'undefined' && TRADE_DATA) ? TRADE_DATA : null;
   if (!t || !t.sections) {
-    document.getElementById("ct").innerHTML = '<p style="text-align:center;color:#999;padding:40px">贸易数据加载中...<br><small>（若长时间未加载请刷新）</small></p>';
-    return;
+    if (!_inner) document.getElementById("ct").innerHTML = '<p style="text-align:center;color:#999;padding:40px">贸易数据加载中...<br><small>（若长时间未加载请刷新）</small></p>';
+    return '';
   }
-  var h = '<div class="hero"><h1>📦 国际贸易数据弹药库</h1>' +
+  var h = '';
+  if (!_inner) {
+  h += '<div class="hero"><h1>📦 国际贸易数据弹药库</h1>' +
     '<div class="desc">答题数据骨架 · 数据基准：' + (t.data_basis || '') + ' · ' + (t.data_source || '') + '<br>论述题精准引用关键数据，是体现专业素养、让答案脱颖而出的"杀手锏"。点击卡片/行可复制，便于答题引用。</div></div>';
+  }
 
   /* KPI 速览 */
   if (t.kpi && t.kpi.length) {
@@ -7283,8 +7287,67 @@ function showTradeData() {
   }
 
   h += '<div style="text-align:center;margin:16px 0 30px;font-size:12px;color:var(--ts)">数据来源：' + (t.data_source || '') + ' · 建议每年更新，形成个人"数据弹药库"</div>';
+  if (_inner) return h;  /* Tabs 合并模式 */
   document.getElementById("ct").innerHTML = h;
 }
+
+/* ===== 经济与贸易数据（合并页：宏观仪表盘 / 贸易弹药库 / 热点预测） ===== */
+function showEcoTrade() {
+  document.getElementById("bc").innerHTML = '<span>📊 经济与贸易数据</span>';
+  var h = '<div class="hero"><h1>📊 经济与贸易数据</h1>' +
+    '<div class="desc">宏观走势 · 贸易数据弹药库 · 热点与预测——三个视角一键切换。</div></div>';
+  h += '<div class="kn-tabs" style="margin-bottom:20px">' +
+    '<div class="kn-tab active" id="etTabMacro" onclick="etSwitchTab(\'macro\')">📈 宏观仪表盘</div>' +
+    '<div class="kn-tab" id="etTabTrade" onclick="etSwitchTab(\'trade\')">📦 贸易数据弹药库</div>' +
+    '<div class="kn-tab" id="etTabHot" onclick="etSwitchTab(\'hot\')">🔥 热点与预测</div></div>';
+  h += '<div id="etContainer"></div>';
+  document.getElementById("ct").innerHTML = h;
+  etSwitchTab('macro');
+}
+function etSwitchTab(tab) {
+  var tabs = { macro: 'etTabMacro', trade: 'etTabTrade', hot: 'etTabHot' };
+  for (var k in tabs) {
+    var el = document.getElementById(tabs[k]);
+    if (el) el.className = 'kn-tab' + (k === tab ? ' active' : '');
+  }
+  var c = document.getElementById('etContainer');
+  if (!c) return;
+  if (tab === 'macro') {
+    c.innerHTML = showMacro(true) || '<p style="color:#999;text-align:center;padding:30px">暂无宏观数据</p>';
+    try { initMacroCharts(); } catch(e) {}
+  } else if (tab === 'trade') {
+    c.innerHTML = showTradeData(true) || '<p style="color:#999;text-align:center;padding:30px">贸易数据加载中</p>';
+  } else {
+    /* 热点与预测：热点头条 + 学术预测 */
+    var t = (typeof TRADE_DATA !== 'undefined' && TRADE_DATA) ? TRADE_DATA : null;
+    var hot = (typeof HOT_TOPICS !== 'undefined' && HOT_TOPICS) ? HOT_TOPICS : null;
+    var hh = '';
+    hh += '<div class="macro-section-header"><h3>🔥 热点素材</h3><span class="badge">关联知识点</span></div>';
+    if (hot && hot.categories) {
+      hot.categories.forEach(function(cat) {
+        hh += '<div class="pcard" style="padding:14px 18px;margin-bottom:12px"><div style="font-size:13px;font-weight:700;color:var(--t);margin-bottom:10px">' + (cat.name || '') + '</div>';
+        (cat.cards || []).slice(0, 4).forEach(function(cd) {
+          hh += '<div style="padding:8px 0;border-top:1px solid rgba(255,255,255,.05);font-size:12.5px;color:var(--ts);line-height:1.7">' +
+            '<span style="color:var(--t);font-weight:600">' + (cd.topic || '') + '</span> ' + (cd.summary || '') + '</div>';
+        });
+        hh += '</div>';
+      });
+    }
+    hh += '<div class="macro-section-header"><h3>🎯 学术预测</h3><span class="badge">出题方向</span></div>';
+    var pred = (typeof PREDICTIONS !== 'undefined' && PREDICTIONS) ? PREDICTIONS : null;
+    if (pred && (pred.predictions || pred.items)) {
+      var plist = pred.predictions || pred.items || [];
+      hh += '<div class="pcard" style="padding:14px 18px">';
+      plist.slice(0, 8).forEach(function(p, i) {
+        hh += '<div style="padding:8px 0;border-top:' + (i ? '1px solid rgba(255,255,255,.05)' : 'none') + ';font-size:12.5px;color:var(--ts);line-height:1.7">' +
+          '<span style="color:var(--pu);font-weight:600">' + (p.tag || p.type || '预测') + '</span> ' + (p.title || p.text || '') + '</div>';
+      });
+      hh += '</div>';
+    }
+    c.innerHTML = hh || '<p style="color:#999;text-align:center;padding:30px">暂无热点与预测数据</p>';
+  }
+}
+
 /* 复制工具 */
 function copyTradeRow(el) {
   var txt = (el.textContent || '').replace(/\s+/g, ' ').trim();
