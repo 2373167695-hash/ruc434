@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<!-- v2.1 · 2026-08-16 01:43 · modular -->
+<!-- v2.1 · 2026-08-16 01:49 · modular -->
 <html lang="zh-CN">
 <head>
 <meta charset="UTF-8">
@@ -5174,7 +5174,7 @@ function navigate(p, topicName, skipHistory) {
   // Render new content immediately
   try {
     if (p === '') { showHome(); }
-    else if (p === 'modcorpus') { showModuleCorpus(); }
+        else if (p === 'modcorpus') { showModuleCorpus(); }
     else if (p === 'corpushub') { showCorpusHub(); }
     else if (p === 'mycorpus') { showMyCorpus(); }
     else if (p === 'mycards') { showMyCards(); }
@@ -5182,7 +5182,7 @@ function navigate(p, topicName, skipHistory) {
     else if (p === 'cards') { showCards(); } else if (p === 'hot') { showHotTopic(); }
     else if (p === 'graph') { showGraph(); }
     else if (p === 'aichat') { showAI(); }
-    else if (p === 'training') { showTraining(); }
+        else if (p === 'training') { showTraining(); }
     else if (p === 'theoryviz') { showTheoryViz(); }
     else if (p === 'mockexam') { showMockExam(); }
     else if (p === 'answercheck') { showAnswerCheck(); }
@@ -8230,40 +8230,6 @@ function showWrongBook() {
   document.getElementById('ct').innerHTML = h;
 }
 
-
-function showWrongReview() {
-  var ids = Object.keys(wrongReview);
-  if (!ids.length) { document.getElementById('ct').innerHTML = '<div class="hero" style="text-align:center"><h2>🎉 没有待复习的错题</h2><p style="color:var(--ts)">做完测验后，答错的题目会自动加入复习队列</p></div>'; return; }
-  var now = new Date();
-  var dueIds = [], laterIds = [];
-  ids.forEach(function(id) {
-    var r = wrongReview[id];
-    if (!r.date || (now - new Date(r.date)) > r.interval * 86400000) dueIds.push(id);
-    else laterIds.push(id);
-  });
-  document.getElementById('bc').innerHTML = '<span>📋 错题复习</span>';
-  var h = '<div class="hero"><h1>📋 错题·间隔复习</h1><div class="desc">SM-2 算法调度 · 待复习 <strong>' + dueIds.length + '</strong> 道 | 已安排 ' + laterIds.length + ' 道</div></div>';
-  dueIds.forEach(function(id) {
-    var q = DATA.find(function(x){return x.id===id;});
-    if (!q) return;
-    var r = wrongReview[id] || {}, nextDays = r.n > 0 ? (r.interval || 1) + '天' : '首次';
-    h += '<div class="pcard" style="margin-bottom:12px"><div class="pcard-body">' +
-      '<div style="display:flex;justify-content:space-between;align-items:flex-start;gap:12px"><div style="flex:1"><div style="font-size:14px;line-height:1.8;margin-bottom:8px">' + q.question + '</div>' +
-      '<div class="qa" style="max-height:300px">' + (q.answer || '暂无答案') + '</div></div>' +
-      '<div style="text-align:center;min-width:60px"><div style="font-size:11px;color:var(--ts);margin-bottom:4px">下次：' + nextDays + '</div></div></div>' +
-      '<div style="display:flex;gap:6px;justify-content:center;margin-top:12px">' +
-      '<button onclick="reviewWrongCard(\'' + id + '\',0)" class="btn" style="background:#f44336;color:#fff;font-size:12px;padding:6px 14px">不认识</button>' +
-      '<button onclick="reviewWrongCard(\'' + id + '\',1)" class="btn" style="background:#FF9800;color:#fff;font-size:12px;padding:6px 14px">模糊</button>' +
-      '<button onclick="reviewWrongCard(\'' + id + '\',3)" class="btn" style="background:#4CAF50;color:#fff;font-size:12px;padding:6px 14px">掌握</button></div></div></div>';
-  });
-  if (!dueIds.length) h += '<p style="text-align:center;color:var(--ts);padding:40px">✅ 所有错题都在复习计划中，暂无到期题目</p>';
-  document.getElementById('ct').innerHTML = h;
-}
-
-// ===== AI MOCK EXAM =====
-var mockState = {questions:[], answers:[], startTime:0, timerId:null, phase:'ready'};
-
-/* ===== 答题框自动增高与放大切换 ===== */
 function showGraph() {
   document.getElementById('bc').innerHTML = '<span>🕸️ 知识图谱</span>';
   var G = {nodes:[], edges:[], nodeMap:{}, filters:{mod:{}, edgeType:'all', unviewed:false, kw:''}};
@@ -8343,6 +8309,1977 @@ function graphZoom(f){window._gz=Math.max(0.3,Math.min(3,window._gz*f));var vp=d
 function graphReset(){window._gz=1;window._gpx=0;window._gpy=0;var vp=document.getElementById('graphViewport');if(vp)vp.setAttribute('transform','');}
 function setupGraphInteractions(){var svg=document.getElementById('graphSvg');if(!svg)return;svg.addEventListener('wheel',function(e){e.preventDefault();graphZoom(e.deltaY<0?1.1:0.9);});var pan=false,sx=0,sy=0;svg.addEventListener('mousedown',function(e){if(e.target.tagName==='circle'||e.target.tagName==='text'||e.target.closest('.graph-node'))return;pan=true;sx=e.clientX-window._gpx;sy=e.clientY-window._gpy;svg.style.cursor='grabbing';});document.addEventListener('mousemove',function(e){if(!pan)return;window._gpx=e.clientX-sx;window._gpy=e.clientY-sy;var vp=document.getElementById('graphViewport');if(vp)vp.setAttribute('transform','translate('+window._gpx+','+window._gpy+') scale('+window._gz+')');});document.addEventListener('mouseup',function(){pan=false;svg.style.cursor='';});var dn=null,dox=0,doy=0;svg.querySelectorAll('.graph-node').forEach(function(g){g.addEventListener('mousedown',function(e){e.stopPropagation();var id=this.dataset.id;var n=window._graph.nodes[window._graph.nodeMap[id]];var pt=svgPoint(svg,e.clientX,e.clientY);dn=n;dox=pt.x-n.x;doy=pt.y-n.y;});});document.addEventListener('mousemove',function(e){if(!dn)return;var pt=svgPoint(svg,e.clientX,e.clientY);dn.x=Math.max(30,Math.min(930,pt.x-dox));dn.y=Math.max(30,Math.min(610,pt.y-doy));graphRender();var ns=svg.querySelectorAll('.graph-node');ns.forEach(function(g){if(g.dataset.id===dn.id){dn=null;}});});document.addEventListener('mouseup',function(){dn=null;});document.querySelectorAll('.graph-mod-toggle').forEach(function(cb){cb.addEventListener('change',graphFilter);});var ef=document.getElementById('graphEdgeFilter');if(ef)ef.addEventListener('change',graphFilter);var uv=document.getElementById('graphUnviewed');if(uv)uv.addEventListener('change',graphFilter);svg.querySelectorAll('.graph-node').forEach(function(g,i){g.style.opacity='0';g.style.transition='opacity .4s';setTimeout(function(){g.style.opacity='1';},i*15);});}
 function svgPoint(svg,cx,cy){var pt=svg.createSVGPoint();pt.x=cx;pt.y=cy;return pt.matrixTransform(svg.getScreenCTM().inverse());}
+
+function reviewCard(kn, quality) {
+  var log = JSON.parse(localStorage.getItem('r434_cards')||'{}');
+  var prev = log[kn] || {n:0, ef:2.5, interval:1};
+  var interval;
+  if (quality < 1) interval = 1;
+  else if (prev.n === 0) interval = 1;
+  else if (prev.n === 1) interval = 6;
+  else interval = Math.round(prev.interval * prev.ef);
+  prev.ef = Math.max(1.3, prev.ef + (0.1 - (3-quality) * (0.08 + (3-quality) * 0.02)));
+  prev.interval = interval;
+  prev.date = new Date().toISOString().slice(0,10);
+  prev.n = prev.n + 1;
+  log[kn] = prev;
+  localStorage.setItem('r434_cards', JSON.stringify(log));
+  navigate('cards');
+}
+
+function showHotTopic() {
+  if (!HOT_TOPICS) { document.getElementById('ct').innerHTML = '<p>暂无热点素材</p>'; return; }
+  document.getElementById('bc').innerHTML = '<span>🔥 热点素材</span>';
+  
+  var t = HOT_TOPICS;
+  var h = '<div class="hero"><h1>🔥 ' + t.title + '</h1><div class="desc">按专题分类整理，点击进入查看详细考点分析 · 更新：' + t.updated + '</div></div>';
+  h += '<div class="dash-hero" style="grid-template-columns: repeat(auto-fill, minmax(280px, 1fr))">';
+  
+  (t.categories || []).forEach(function(cat, i) {
+    var cardCount = (cat.cards || []).length;
+    h += '<div class="dash-metric" style="cursor:pointer;padding:20px;transition:transform .15s" onclick="showHotCategory(' + i + ')" onmouseover="this.style.transform=\'translateY(-2px)\'" onmouseout="this.style.transform=\'\'">';
+    h += '<div class="label" style="font-size:18px;margin-bottom:8px">' + cat.icon + ' ' + cat.category + '</div>';
+    h += '<div class="value" style="font-size:24px;font-weight:700">' + cardCount + '</div>';
+    h += '<div style="font-size:12px;color:var(--ts);margin-top:4px">个备考专题';
+    (cat.cards || []).forEach(function(c) {
+      h += '<br><span style="color:var(--t);font-size:13px">' + c.topic.substring(0,18) + (c.topic.length>18?'...':'') + '</span>';
+    });
+    h += '</div></div>';
+  });
+  
+  h += '</div>';
+  document.getElementById('ct').innerHTML = h;
+}
+
+function showHotCategory(idx) {
+  if (!HOT_TOPICS || !HOT_TOPICS.categories) return;
+  var cat = HOT_TOPICS.categories[idx];
+  if (!cat) return;
+  
+  document.getElementById('bc').innerHTML = '<span style="cursor:pointer;color:var(--pu);text-decoration:underline" onclick="showHotTopic()">🔥 热点素材</span> <span style="color:var(--ts)">/</span> ' + cat.category;
+  var h = '<div class="hero"><h1>' + cat.icon + ' ' + cat.category + '</h1><div class="desc">共 ' + cat.cards.length + ' 个备考专题</div></div>';
+  
+  (cat.cards || []).forEach(function(issue, i) {
+    h += '<div class="know-pred-card" style="margin-bottom:16px">';
+    h += '<div class="know-pred-hdr" style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:8px">';
+    h += '<div style="display:flex;align-items:center;gap:8px">';
+    h += '<span class="icon" style="background:#7c3aed;color:#fff;width:28px;height:28px;border-radius:8px;display:flex;align-items:center;justify-content:center;font-size:14px">📌</span>';
+    h += '<h4 style="font-size:15px;font-weight:700">' + issue.topic + '</h4>';
+    h += '<span style="font-size:11px;padding:2px 8px;border-radius:10px;background:rgba(124,58,237,.15);color:#7c3aed">' + issue.exam_type + '</span>';
+    h += '<span style="font-size:11px;color:#f59e0b">' + issue.probability + '</span>';
+    h += '</div></div>';
+    
+    h += '<div class="know-pred-body" style="padding:16px">';
+    h += '<div style="background:rgba(255,255,255,.04);padding:10px 14px;border-radius:8px;margin-bottom:12px;font-size:12px;line-height:1.7;color:var(--t)">📰 ' + (issue.timeline || issue.news_brief) + '</div>';
+    if (issue.theory && issue.theory.length) {
+      h += '<div style="margin-bottom:12px"><div style="font-size:12px;font-weight:700;color:var(--t);margin-bottom:6px">📚 关联理论</div>';
+      (issue.theory || []).forEach(function(th) {
+        h += '<div style="padding:4px 0;font-size:12px;line-height:1.6;color:#a5b4fc">· ' + th + '</div>';
+      });
+      h += '</div>';
+    }
+    if (issue.analysis && issue.analysis.length) {
+      h += '<div style="margin-bottom:12px"><div style="font-size:12px;font-weight:700;color:var(--t);margin-bottom:6px">🔍 多角度分析</div>';
+      (issue.analysis || []).forEach(function(a) {
+        var angle = (typeof a === 'object' && a) ? (a.angle || '') : '';
+        var content = (typeof a === 'object' && a) ? (a.content || '') : String(a || '');
+        h += '<div style="padding:6px 0;font-size:12px;line-height:1.7;border-bottom:1px solid var(--bdr)"><strong style="color:#f59e0b">' + angle + '</strong><br>' + content + '</div>';
+      });
+      h += '</div>';
+    }
+    h += '<div style="background:linear-gradient(135deg,rgba(124,58,237,.15),rgba(124,58,237,.08));padding:14px;border-radius:10px;border-left:4px solid #7c3aed;margin-bottom:12px">';
+    h += '<div style="font-size:11px;color:#7c3aed;font-weight:700;margin-bottom:6px">🎯 预测题目</div>';
+    h += '<div style="font-size:14px;font-weight:600;line-height:1.7;color:var(--t)">' + issue.predicted_question + '</div></div>';
+    
+    h += '<div style="margin-bottom:12px"><div style="font-size:12px;font-weight:700;color:var(--t);margin-bottom:6px">📝 答题框架</div>';
+    (issue.answer_framework || []).forEach(function(af) {
+      h += '<div style="padding:6px 0;font-size:13px;line-height:1.7;border-bottom:1px solid var(--bdr)">' + af + '</div>';
+    });
+    h += '</div>';
+    
+    h += '<div style="margin-bottom:12px"><div style="display:flex;flex-wrap:wrap;gap:6px">';
+    (issue.key_terms || []).forEach(function(kt) {
+      h += '<span style="padding:3px 10px;background:rgba(59,130,246,.12);color:#93c5fd;border-radius:12px;font-size:11px;cursor:pointer" onclick="event.stopPropagation();navigateByKnowledge(\'' + kt.replace(/'/g,"\\'") + '\')">' + kt + '</span>';
+    });
+    h += '</div></div>';
+    
+    var examQs = [];
+    (issue.related_exam_ids || []).forEach(function(eid) {
+      DATA.forEach(function(q) { if (q.id === eid) examQs.push(q); });
+    });
+    if (examQs.length) {
+      h += '<div style="margin-bottom:12px"><div style="font-size:12px;font-weight:700;color:var(--t);margin-bottom:6px">📜 关联真题</div>';
+      examQs.forEach(function(q) {
+        h += '<div class="know-pred-ref" onclick="showExamQ(\'' + q.id + '\')" style="padding:6px 10px;margin:3px 0;background:rgba(255,255,255,.04);border-radius:6px;cursor:pointer;font-size:12px"><strong>' + q.year + '年#' + q.num + '</strong> ' + q.type + ' · ' + q.question.substring(0,30) + '...</div>';
+      });
+      h += '</div>';
+    }
+    
+    if (issue.case_study) {
+      h += '<div style="background:rgba(48,209,88,.06);padding:10px 14px;border-radius:8px;font-size:12px;line-height:1.7;color:#4ade80"><div style="font-weight:700;margin-bottom:4px">💼 案例</div>' + issue.case_study + '</div>';
+    }
+    
+    h += '<button class="ai-btn" onclick="aiHotExplain(\'' + idx + '_' + i + '\')" style="margin-top:12px">🧠 AI深入分析</button>';
+    h += '<div id="hotAI_' + idx + '_' + i + '" style="margin-top:10px"></div>';
+    h += '</div></div>';
+  });
+  
+  document.getElementById('ct').innerHTML = h;
+}
+function aiHotExplain(sid) {
+  var el = document.getElementById('hotAI_' + sid);
+  if (!el) return;
+  // Parse category index and card index from sid (format: "catIdx_cardIdx")
+  var parts = sid.split('_');
+  var catIdx = parseInt(parts[0]), cardIdx = parseInt(parts[1]);
+  var issue = (HOT_TOPICS.categories[catIdx] && HOT_TOPICS.categories[catIdx].cards) 
+    ? HOT_TOPICS.categories[catIdx].cards[cardIdx] : null;
+  if (!issue) return;
+  var ctx = (typeof buildAIContext === 'function') ? buildAIContext(issue.topic) : '';
+  var sys = '你是人大434考研辅导老师。请针对以下热点专题做深入的考点分析，包括关联知识点、答题思路和易错点辨析。\n\n【专题】' + issue.topic + '\n【背景】' + issue.news_brief + '\n【预测题目】' + issue.predicted_question + '\n\n参考真题与知识库：' + ctx;
+  callDSFast([{role:'system', content:sys}, {role:'user', content:'请深入分析热点专题：' + issue.topic}], 'hotAI_' + sid);
+}
+var _aiChats = {};
+function aiFollowUp(cid) {
+  var inp = document.getElementById('fq_' + cid);
+  var el = document.getElementById(cid);
+  if (!inp || !el || !inp.value.trim()) return;
+  var q = inp.value.trim(); inp.value = '';
+  if (!_aiChats[cid]) _aiChats[cid] = [];
+  _aiChats[cid].push({role: 'user', content: q});
+  el.innerHTML += '<div style="margin-top:10px"><strong style="font-size:11px;color:var(--ts)">💬 追问：</strong>' + q + '</div>';
+  var wait = document.createElement('div'); wait.id = 'wait_' + cid;
+  wait.style.cssText = 'margin-top:8px;color:#999;font-size:12px';
+  var ld2 = aiLoading('思考中'); wait.innerHTML = ''; wait.appendChild(ld2);
+  el.appendChild(wait);
+  // Build context from original message + history
+  var msgs = JSON.parse(el.getAttribute('data-ctx') || '[]');
+  msgs.push({role: 'user', content: q});
+  var _d2 = directDS();
+  var _wsT = webSearchTools();
+  var _body2 = {model:_d2.model, messages:msgs, stream:true, temperature:0.3};
+  if (_wsT) _body2.tools = _wsT;
+  fetch(_d2.url, {method:'POST', headers:{Authorization:'Bearer '+_d2.key, 'Content-Type':'application/json'}, body:JSON.stringify(_body2)}).then(function(r){
+    if(!r.ok) throw Error('HTTP '+r.status);
+    return r.body.getReader();
+  }).then(function(rd){
+    var b='',t='',d=new TextDecoder();
+    var resp = document.createElement('div'); resp.style.cssText = 'margin-top:8px;font-size:13px;line-height:1.8';
+    el.appendChild(resp);
+    var w2 = document.getElementById('wait_'+cid); if(w2) w2.remove();
+    function n(){rd.read().then(function(r){
+      if(r.done){resp.innerHTML=renderMarkdown(t);_aiChats[cid].push({role:'assistant',content:t});return;}
+      b+=d.decode(r.value,{stream:true});var ls=b.split('\n');b=ls.pop()||'';
+      ls.forEach(function(l){
+        if(l.startsWith('data: ')){var dd=l.substring(6);
+          if(dd=='[DONE]')return;
+          try{var p=JSON.parse(dd);if(p.choices&&p.choices[0].delta&&p.choices[0].delta.content){t+=p.choices[0].delta.content;resp.innerHTML=renderMarkdown(t);}}catch(e){}
+        }
+      });
+      n();
+    })}n();
+  }).catch(function(err){var w3=document.getElementById('wait_'+cid);if(w3)w3.remove();el.innerHTML+='<span style="color:red">请求失败：'+err.message+'</span>';});
+}
+
+function doSearch() {
+  var kw = document.getElementById("gs").value.trim();
+  if (!kw) { navigate(curPath); return; }
+  var kwl = kw.toLowerCase();
+  var safeKw = escapeHtml(kw);
+  document.getElementById("bc").innerHTML = '🔍 搜索：<span>' + safeKw + '</span>';
+  var qResults = [], knResults = [], hotResults = [], abResults = [], profResults = [];
+
+  // 1. Search knowledge points FIRST (highest priority)
+  for (var k in KNOWLEDGE) {
+    var item = KNOWLEDGE[k], score = 0, sn = '';
+    if (k === kw) { score += 50; sn = k; }
+    else if (k.indexOf(kw) >= 0) { score += 30; sn = k; }
+    else if (k.toLowerCase().indexOf(kwl) >= 0) { score += 20; sn = k; }
+    if (item.overview && item.overview.indexOf(kw) >= 0) { score += 8; sn = sn || item.overview.substring(0, 80); }
+    if (item.key) item.key.forEach(function(x) { if (x.indexOf(kw) >= 0) score += 5; });
+    if (score > 0) knResults.push({name: k, score: score, module: item.module || '', snippet: sn});
+  }
+  knResults.sort(function(a, b) { return b.score - a.score; });
+
+  // 2. Search questions (title weighted more than answer)
+  DATA.forEach(function(q) {
+    var score = 0;
+    if (q.question.indexOf(kw) >= 0) score += 15;
+    else if (q.question.toLowerCase().indexOf(kwl) >= 0) score += 8;
+    if (q.answer && q.answer.indexOf(kw) >= 0) score += 5;
+    if (q.knowledge) q.knowledge.forEach(function(k) { if (k.indexOf(kw) >= 0 || kw.indexOf(k) >= 0) score += 3; });
+    if (score > 0) qResults.push(Object.assign({score: score}, q));
+  });
+  qResults.sort(function(a, b) { return b.score - a.score; });
+
+  // 3. Search professors
+  if (typeof PROFESSORS !== 'undefined') {
+    for (var name in PROFESSORS) {
+      var p = PROFESSORS[name], score = 0;
+      if (name.indexOf(kw) >= 0) score += 20;
+      if (p.research) p.research.forEach(function(r) { if (r.indexOf(kw) >= 0) score += 10; });
+      if (p.recent && p.recent.indexOf(kw) >= 0) score += 5;
+      if (p.exam_link && p.exam_link.indexOf(kw) >= 0) score += 8;
+      if (score > 0) profResults.push({name: name, score: score, data: p});
+    }
+    profResults.sort(function(a, b) { return b.score - a.score; });
+  }
+
+  // 4. Search hot topics
+  if (typeof HOT_TOPICS !== 'undefined' && HOT_TOPICS && HOT_TOPICS.categories) {
+    HOT_TOPICS.categories.forEach(function(cat) {
+      (cat.cards || []).forEach(function(s) {
+        var score = 0;
+        if (s.topic.indexOf(kw) >= 0) score += 10;
+        if (s.news_brief && s.news_brief.indexOf(kw) >= 0) score += 5;
+        if (s.predicted_question && s.predicted_question.indexOf(kw) >= 0) score += 8;
+        if (score > 0) hotResults.push({title: s.topic, score: score, snippet: s.news_brief});
+      });
+    });
+    hotResults.sort(function(a, b) { return b.score - a.score; });
+  }
+
+  // 5. Search answer bank
+  if (ANSWER_BANK && ANSWER_BANK.categories) {
+    ANSWER_BANK.categories.forEach(function(c) { c.items.forEach(function(it) {
+      if (it.name.indexOf(kw) >= 0 || (it.content && it.content.indexOf(kw) >= 0)) abResults.push(it);
+    });});
+  }
+
+  var total = qResults.length + knResults.length + hotResults.length + abResults.length + profResults.length;
+  var h = '<div class="hero"><h1>🔍 搜索「' + safeKw + '」</h1><div class="desc">共找到 <strong>' + total + '</strong> 条结果（知识点' + knResults.length + ' · 真题' + qResults.length + ' · 导师' + profResults.length + ' · 热点' + hotResults.length + ' · 语料' + abResults.length + '）</div></div>';
+
+  // Knowledge results with snippets
+  if (knResults.length) {
+    h += '<div class="pcard"><div class="pcard-hdr"><h3>📖 知识点（' + knResults.length + '个）</h3></div><div class="pcard-body">';
+    knResults.slice(0, 15).forEach(function(r) {
+      h += '<div onclick="navigateByKnowledge(\'' + r.name.replace(/'/g,"\\'") + '\')" style="padding:10px 14px;margin:4px 0;background:#fafaf7;border-radius:8px;cursor:pointer"><strong style="color:var(--bl)">' + r.name + '</strong><span style="font-size:11px;color:#999;margin-left:8px">' + (r.module||'') + '</span>';
+      if (r.snippet) {
+        var ps = r.snippet.indexOf(kw), s2 = Math.max(0, ps - 30), e2 = Math.min(r.snippet.length, ps + kw.length + 40);
+        var snippetText = escapeHtml(r.snippet.substring(s2, e2));
+        h += '<br><span style="font-size:12px;color:var(--ts)">...' + snippetText.replace(escapeHtml(kw), '<mark>' + safeKw + '</mark>') + '...</span>';
+      }
+      h += '</div>';
+    });
+    h += '</div></div>';
+  }
+
+  // Hot topic results
+  if (hotResults.length) {
+    h += '<div class="pcard"><div class="pcard-hdr"><h3>🔥 热点素材（' + hotResults.length + '个板块）</h3></div><div class="pcard-body">';
+    hotResults.forEach(function(r) {
+      h += '<div onclick="navigate(\'hot\')" style="padding:10px 14px;margin:4px 0;background:#fafaf7;border-radius:8px;cursor:pointer"><strong style="color:#7c3aed">' + escapeHtml(r.title) + '</strong>';
+      var ps = r.snippet.indexOf(kw), s2 = Math.max(0, ps - 30), e2 = Math.min(r.snippet.length, ps + kw.length + 40);
+      var snippetText = escapeHtml(r.snippet.substring(s2, e2));
+      h += '<br><span style="font-size:12px;color:var(--ts)">...' + snippetText.replace(escapeHtml(kw), '<mark>' + safeKw + '</mark>') + '...</span>';
+      h += '</div>';
+    });
+    h += '</div></div>';
+  }
+
+  // Professor results
+  if (profResults.length) {
+    h += '<div class="pcard"><div class="pcard-hdr"><h3>👨‍🏫 导师（' + profResults.length + '位）</h3></div><div class="pcard-body">';
+    profResults.forEach(function(r) {
+      h += '<div onclick="navigate(\'professors\')" style="padding:10px 14px;margin:4px 0;background:#fafaf7;border-radius:8px;cursor:pointer"><strong style="color:var(--gn)">' + r.name + '</strong><span style="font-size:11px;color:#999;margin-left:8px">' + (r.data.title||'') + '</span>';
+      if (r.data.research) h += '<br><span style="font-size:12px;color:var(--ts)">研究方向：' + r.data.research.join('、') + '</span>';
+      h += '</div>';
+    });
+    h += '</div></div>';
+  }
+
+  // Question results
+  if (qResults.length) {
+    h += '<h3 style="margin-top:20px;font-size:15px">📝 真题（' + qResults.length + '道）</h3>';
+    qResults.slice(0, 30).forEach(function(q) { h += qCard(q); });
+  }
+
+  // Answer bank results
+  if (abResults.length) {
+    h += '<div class="pcard"><div class="pcard-hdr"><h3>📋 答题语料（' + abResults.length + '条）</h3></div><div class="pcard-body">';
+    abResults.slice(0, 10).forEach(function(r) { h += '<p style="margin:6px 0"><strong>'+r.name+'</strong><br><span style="font-size:13px;color:#555">'+(r.content||'')+'</span></p>'; });
+    h += '</div></div>';
+  }
+
+  if (total === 0) h += '<p style="text-align:center;color:#999;padding:60px;font-size:16px">没有找到匹配的内容，试试换个关键词</p>';
+  document.getElementById("ct").innerHTML = h;
+}
+
+function exportData() {
+  var data = {
+    marks: JSON.parse(localStorage.getItem('r434')||'{}'),
+    knowledgeViews: JSON.parse(localStorage.getItem('r434_kv')||'{}'),
+    cardLog: JSON.parse(localStorage.getItem('r434_cards')||'{}'),
+    wrongLog: JSON.parse(localStorage.getItem('r434_wrong')||'{}'),
+    dailyLog: JSON.parse(localStorage.getItem('r434_dailylog')||'{}'),
+    chatHistory: JSON.parse(localStorage.getItem('r434_chat')||'[]'),
+    exported: new Date().toISOString()
+  };
+  var blob = new Blob([JSON.stringify(data, null, 2)], {type:'application/json'});
+  var a = document.createElement('a'); a.href = URL.createObjectURL(blob);
+  a.download = 'r434_backup_' + new Date().toISOString().slice(0,10) + '.json';
+  a.click();
+}
+
+function importData(e) {
+  var file = e.target.files[0];
+  if (!file) return;
+  var reader = new FileReader();
+  reader.onload = function(ev) {
+    try {
+      var data = JSON.parse(ev.target.result);
+      if (data.marks) localStorage.setItem('r434', JSON.stringify(data.marks));
+      if (data.knowledgeViews) localStorage.setItem('r434_kv', JSON.stringify(data.knowledgeViews));
+      if (data.cardLog) localStorage.setItem('r434_cards', JSON.stringify(data.cardLog));
+      if (data.wrongLog) localStorage.setItem('r434_wrong', JSON.stringify(data.wrongLog));
+      if (data.dailyLog) localStorage.setItem('r434_dailylog', JSON.stringify(data.dailyLog));
+      if (data.chatHistory) localStorage.setItem('r434_chat', JSON.stringify(data.chatHistory));
+      alert('数据导入成功！刷新页面生效。');
+      location.reload();
+    } catch(err) { alert('导入失败：' + err.message); }
+  };
+  reader.readAsText(file);
+}
+
+var aiExplainHistory = [];
+function aiExplain(knowledge) {
+  var div = document.getElementById('aiExplain');
+  var content = document.getElementById('aiExplainContent');
+  var followup = document.getElementById('aiExplainFollowup');
+  div.style.display = 'block';
+  followup.style.display = 'block';
+  var ld = aiLoading('AI正在准备讲解...'); content.innerHTML = ''; content.appendChild(ld);
+  aiExplainHistory = [{role:'user',content:'请讲解知识点：'+knowledge}];
+  var ragCtx = (typeof buildAIContext === 'function') ? buildAIContext(knowledge) : '';
+  var kn = KNOWLEDGE[knowledge] || {};
+  var ctx = '';
+  if (kn.overview) ctx += '\n知识库概述：' + kn.overview;
+  if (kn.key) ctx += '\n核心要点：' + kn.key.join('；');
+  if (kn.formula) ctx += '\n公式：' + kn.formula;
+  if (kn.exam) ctx += '\n历年考察：' + kn.exam;
+  var sys = RUC434_STYLE + '\n你是人大434考研辅导老师，请严格遵循以上写作风格，根据真题标准答案的风格讲解这个知识点，分点作答、条理清晰。术语必须中英文对照。\n\n知识库参考：'+ctx+'\n\n相关真题与语料：'+ragCtx;
+  callDS([{role:'system',content:sys},{role:'user',content:'请讲解知识点：'+knowledge}],'aiExplainContent');
+}
+
+function aiExplainFollowup() {
+  var inp = document.getElementById('aiExplainInput');
+  var q = inp.value.trim();
+  if (!q) return;
+  inp.value = '';
+  var content = document.getElementById('aiExplainContent');
+  content.innerHTML += '<hr style="margin:12px 0;border:none;border-top:1px solid var(--bdr)"><div style="background:var(--pu);color:#fff;padding:8px 12px;border-radius:8px;margin-bottom:8px;font-size:13px">🙋 '+q+'</div><div id="aiExplainResp"></div>';
+  aiExplainHistory.push({role:'user',content:q});
+  var msgs = [{role:'system',content:RUC434_STYLE+'\n你是人大434考研辅导老师。基于之前的讲解继续回答学生的追问，严格遵循以上写作风格。用中文，结构化输出。'}];
+  aiExplainHistory.slice(-10).forEach(function(h){msgs.push({role:h.role,content:h.content});});
+  // Use sendChat-style streaming
+  var respEl = document.getElementById('aiExplainResp');
+  var ld = aiLoading('思考中'); respEl.innerHTML = ''; respEl.appendChild(ld);
+  aiCall('chat',{messages:msgs,stream:true,temperature:0.3}).then(function(r){if(!r.ok)throw Error('HTTP '+r.status);return r.body.getReader();}).then(function(rd){var b='',t='',d=new TextDecoder();function n(){rd.read().then(function(r){if(r.done){respEl.innerHTML=renderMarkdown(t);aiExplainHistory.push({role:'assistant',content:t});return;}b+=d.decode(r.value,{stream:true});var ls=b.split('\n');b=ls.pop()||'';ls.forEach(function(l){if(l.startsWith('data: ')){var dd=l.substring(6);if(dd=='[DONE]')return;try{var p=JSON.parse(dd);if(p.choices&&p.choices[0].delta){var x=p.choices[0].delta.content||'';if(x){t+=x;respEl.innerHTML=renderMarkdown(t);}}}catch(e){}}});n();})}n();}).catch(function(err){respEl.innerHTML='<span style=color:red>请求失败：'+err.message+'</span>';});
+}
+function getPageContext() {
+  var ctx = {type:'home',label:'首页'};
+  if(!curPath)return ctx;
+  if(curPath===''){ctx.type='home';ctx.label='首页'}
+  else if(curPath==='answerbank'){ctx.type='answerbank';ctx.label='答题语料库'}
+  else if(curPath==='macro'){ctx.type='macro';ctx.label='宏观数据'}
+  else if(curPath==='predictions'){ctx.type='predictions';ctx.label='学术预测'}
+  else if(curPath==='professors'){ctx.type='professors';ctx.label='导师研究'}
+  else if(curPath.indexOf('kn:')===0){
+    ctx.type='knowledge';ctx.knowledge=curPath.substring(3);
+    ctx.label='知识点: '+ctx.knowledge;
+    var kn=KNOWLEDGE[ctx.knowledge];
+    if(kn&&kn.overview)ctx.preview=kn.overview.substring(0,200);
+  }else if(curPath.indexOf('/')>0){
+    ctx.type='topic';ctx.path=curPath;
+    var parts=curPath.split('/');ctx.knowledge=parts[parts.length-1];ctx.label='真题: '+ctx.knowledge;
+    var bc=document.getElementById('bc');if(bc)ctx.breadcrumb=bc.textContent;
+    // Get associated question IDs
+    if(TQM&&TQM[curPath])ctx.question_ids=TQM[curPath].slice(0,5);
+  }
+  return ctx;
+}
+
+// ===== INIT =====
+function updateTopbarUser() {
+  var u = localStorage.getItem('r434_user') || '';
+  var tn = document.getElementById('tbName');
+  var ta = document.getElementById('tbAvatar');
+  var tu = document.getElementById('tbUser');
+  if (u) {
+    if (tn) tn.textContent = u;
+    if (ta) ta.textContent = u.charAt(0).toUpperCase();
+    if (tu) { tu.onclick = function(){}; tu.title = u; tu.style.cursor = 'default'; }
+    // Show logout hint on double-click or long-press
+    if (tu) tu.ondblclick = function() {
+      if (confirm('确定退出登录？')) {
+        localStorage.removeItem('r434_token');
+        localStorage.removeItem('r434_user');
+        localStorage.removeItem('r434_guest');
+        location.reload();
+      }
+    };
+  } else {
+    if (tn) tn.textContent = '登录';
+    if (ta) ta.textContent = '?';
+    if (tu) { tu.onclick = function(){ document.getElementById('loginOverlay').style.display = 'flex'; }; tu.title = '点击登录'; tu.style.cursor = 'pointer'; }
+    if (tu) tu.ondblclick = null;
+  }
+}
+
+// ===== WRONG QUESTION SM-2 REVIEW PAGE =====
+function reviewWrongCard(id, quality) {
+  if (!wrongReview[id]) wrongReview[id] = {n:0, ef:2.5, interval:1};
+  var r = sm2NextInterval(wrongReview[id], quality);
+  wrongReview[id] = r;
+  try { localStorage.setItem('r434_wrong_review', JSON.stringify(wrongReview)); } catch(e) {}
+  if (!marks[id]) marks[id] = {};
+  marks[id].done = true;
+  marks[id].date = new Date().toISOString().slice(0,10);
+  saveState();
+  showWrongReview();
+}
+
+function showWrongReview() {
+  var ids = Object.keys(wrongReview);
+  if (!ids.length) { document.getElementById('ct').innerHTML = '<div class="hero" style="text-align:center"><h2>🎉 没有待复习的错题</h2><p style="color:var(--ts)">做完测验后，答错的题目会自动加入复习队列</p></div>'; return; }
+  var now = new Date();
+  var dueIds = [], laterIds = [];
+  ids.forEach(function(id) {
+    var r = wrongReview[id];
+    if (!r.date || (now - new Date(r.date)) > r.interval * 86400000) dueIds.push(id);
+    else laterIds.push(id);
+  });
+  document.getElementById('bc').innerHTML = '<span>📋 错题复习</span>';
+  var h = '<div class="hero"><h1>📋 错题·间隔复习</h1><div class="desc">SM-2 算法调度 · 待复习 <strong>' + dueIds.length + '</strong> 道 | 已安排 ' + laterIds.length + ' 道</div></div>';
+  dueIds.forEach(function(id) {
+    var q = DATA.find(function(x){return x.id===id;});
+    if (!q) return;
+    var r = wrongReview[id] || {}, nextDays = r.n > 0 ? (r.interval || 1) + '天' : '首次';
+    h += '<div class="pcard" style="margin-bottom:12px"><div class="pcard-body">' +
+      '<div style="display:flex;justify-content:space-between;align-items:flex-start;gap:12px"><div style="flex:1"><div style="font-size:14px;line-height:1.8;margin-bottom:8px">' + q.question + '</div>' +
+      '<div class="qa" style="max-height:300px">' + (q.answer || '暂无答案') + '</div></div>' +
+      '<div style="text-align:center;min-width:60px"><div style="font-size:11px;color:var(--ts);margin-bottom:4px">下次：' + nextDays + '</div></div></div>' +
+      '<div style="display:flex;gap:6px;justify-content:center;margin-top:12px">' +
+      '<button onclick="reviewWrongCard(\'' + id + '\',0)" class="btn" style="background:#f44336;color:#fff;font-size:12px;padding:6px 14px">不认识</button>' +
+      '<button onclick="reviewWrongCard(\'' + id + '\',1)" class="btn" style="background:#FF9800;color:#fff;font-size:12px;padding:6px 14px">模糊</button>' +
+      '<button onclick="reviewWrongCard(\'' + id + '\',3)" class="btn" style="background:#4CAF50;color:#fff;font-size:12px;padding:6px 14px">掌握</button></div></div></div>';
+  });
+  if (!dueIds.length) h += '<p style="text-align:center;color:var(--ts);padding:40px">✅ 所有错题都在复习计划中，暂无到期题目</p>';
+  document.getElementById('ct').innerHTML = h;
+}
+
+// ===== AI MOCK EXAM =====
+var mockState = {questions:[], answers:[], startTime:0, timerId:null, phase:'ready'};
+
+/* ===== 答题框自动增高与放大切换 ===== */
+function mockAutoGrow(el) { if (el.scrollHeight > el.clientHeight) el.style.height = (el.scrollHeight + 2) + 'px'; }
+function mockToggleZoom(i, btn) {
+  var t = document.getElementById('ma_' + i); if (!t) return;
+  if (t.dataset.zoom === '1') { t.dataset.zoom = ''; t.style.height = ''; btn.textContent = '⤢ 放大'; }
+  else { t.dataset.zoom = '1'; t.style.height = '60vh'; btn.textContent = '⤡ 还原'; t.scrollIntoView({behavior:'smooth', block:'nearest'}); }
+}
+
+/* ===== 模考记录本地保存(localStorage r434_mock, 最近20次) ===== */
+function loadMockRecords() { try { return JSON.parse(localStorage.getItem('r434_mock') || '[]'); } catch(e) { return []; } }
+function saveMockRecord(rr, tm) {
+  var recs = loadMockRecords();
+  recs.unshift({date: Date.now(), tm: tm, total: rr.total || 0, summary: rr.summary || '',
+    questions: mockState.questions, answers: mockState.answers, results: rr.results || []});
+  if (recs.length > 20) recs = recs.slice(0, 20);
+  try { localStorage.setItem('r434_mock', JSON.stringify(recs)); }
+  catch(e) { try { localStorage.setItem('r434_mock', JSON.stringify(recs.slice(0, 5))); } catch(e2) {} }
+}
+function viewMockRecord(i) {
+  var rec = loadMockRecords()[i]; if (!rec) return;
+  if (mockState.timerId) clearInterval(mockState.timerId);
+  mockState = {questions: rec.questions || [], answers: rec.answers || [], startTime: rec.date, timerId: null, phase: 'done', _grading: rec.results || []};
+  renderMockResult({results: rec.results, total: rec.total, summary: rec.summary, _tm: rec.tm}, true);
+}
+function delMockRecord(i) {
+  var recs = loadMockRecords(); recs.splice(i, 1);
+  try { localStorage.setItem('r434_mock', JSON.stringify(recs)); } catch(e) {}
+  showMockExam();
+}
+
+// ===== 模拟试卷导出 =====
+function mockExportBlank() { mockExportWin(false); }
+function mockExportWithAnswers() { mockExportWin(true); }
+
+function mockExportWin(includeAnswers) {
+  var qs = mockState.questions, tm = Math.floor((Date.now() - (mockState.startTime||Date.now())) / 60000);
+  var typeCount = {简答:0,论述:0,案例:0};
+  qs.forEach(function(q) { typeCount[q.type] = (typeCount[q.type]||0) + 1; });
+
+  var html = '<!DOCTYPE html><html><head><meta charset="UTF-8"><title>人大434模拟试卷</title><style>' +
+    ':root{--bdr:#ddd;--pu:#5e5ce6;--t:#222;--ts:#666;--gn:#30d158;--or:#ff9500;--r:#ff453a}' +
+    'body{font-family:"Microsoft YaHei UI","Microsoft YaHei","PingFang SC","Hiragino Sans GB",sans-serif;max-width:800px;margin:0 auto;padding:40px 30px;color:#222;line-height:1.9}' +
+    '.header{text-align:center;border-bottom:3px double #333;padding-bottom:20px;margin-bottom:30px}' +
+    '.header h1{font-size:24px;margin:0 0 8px 0;letter-spacing:2px}' +
+    '.header .info{font-size:14px;color:#666}' +
+    '.header .info span{margin:0 12px}' +
+    '.q-block{margin-bottom:28px;page-break-inside:avoid}' +
+    '.q-block .q-head{font-weight:700;font-size:15px;margin-bottom:8px}' +
+    '.q-block .q-text{font-size:14px;margin-bottom:10px;text-indent:0}' +
+    '.q-block .q-answer{border:1px dashed #ccc;border-radius:6px;padding:12px;min-height:80px;font-size:13px;color:#666;background:#fafafa}' +
+    '.q-block .q-answer-filled{border:1px solid #e0e0e0;border-radius:6px;padding:12px;font-size:13px;background:#fff}' +
+    '.score-tag{display:inline-block;padding:2px 8px;border-radius:4px;font-size:12px;margin-left:6px;color:#fff}' +
+    '.s-简答{background:#007aff}.s-论述{background:#ff9500}.s-案例{background:#5856d6}' +
+    '.footer{text-align:center;margin-top:40px;padding-top:20px;border-top:1px solid #eee;font-size:12px;color:#999}' +
+    '.section-title{font-size:18px;font-weight:700;margin:30px 0 16px;padding-bottom:6px;border-bottom:1px solid #ccc}' +
+    '@media print{body{padding:20px}.q-block{page-break-inside:avoid}}' +
+    '</style></head><body>' +
+    '<div class="header"><h1>中国人民大学 434 国际商务专业基础</h1><h1>模拟考试试题</h1>' +
+    '<div class="info"><span>考试时间：180分钟</span><span>满分：150分</span>' +
+    '<span>题型：简答' + typeCount['简答'] + ' 论述' + typeCount['论述'] + ' 案例' + typeCount['案例'] + '</span></div></div>';
+
+  // 第一部分：试题
+  html += '<div class="section-title">📝 一、试题部分</div>';
+  qs.forEach(function(q, i) {
+    html += '<div class="q-block"><div class="q-head">' + (i+1) + '. 【' + q.type + '】' +
+      '<span class="score-tag s-' + q.type + '">' + q.score + '分</span></div>' +
+      '<div class="q-text">' + q.question + '</div>';
+    if (includeAnswers) {
+      var ans = (mockState.answers||[])[i] || '';
+      html += '<div class="q-answer-filled" style="white-space:pre-wrap"><strong>学生答案：</strong>' + escapeHtml(ans || '（未作答）') + '</div>';
+    } else {
+      html += '<div class="q-answer">（请在空白处作答）</div>';
+    }
+    html += '</div>';
+  });
+
+  // 如果带答案，加第二部分：参考答案
+  if (includeAnswers && mockState._grading) {
+    html += '<div class="section-title">📋 二、参考答案与评分</div>';
+    (mockState._grading||[]).forEach(function(g, i) {
+      var q = qs[i];
+      html += '<div class="q-block"><div class="q-head">' + (i+1) + '.【' + q.type + '】' +
+        '<span style="color:' + (g.modelAnswer?'var(--gn)':'#888') + ';margin-left:12px;font-size:13px">得分：' + (g.score||0) + '/' + q.score + '</span></div>' +
+        '<div class="q-text">' + q.question + '</div>' +
+        '<div class="q-answer-filled">' + renderMarkdown(q.answer||g.modelAnswer||g.comment||'（未生成参考答案）') + '</div></div>';
+    });
+  }
+
+  html += '<div class="footer">人大434备考系统 · 模拟试卷 · ' + new Date().toLocaleDateString('zh-CN') + '</div></body></html>';
+  
+  var w = window.open('', '_blank', 'width=900,height=700');
+  if (!w) { alert('浏览器拦截了弹窗，请允许本站弹窗后重试导出'); return; }
+  w.document.write(html); w.document.close();
+  setTimeout(function() { w.print(); }, 500);
+}
+
+function showMockExam() {
+  var bb = document.getElementById('backBtn'); if (bb) bb.style.display = 'block';
+  document.getElementById('bc').innerHTML = '<span>🎯 AI模拟考试</span>';
+  mockState = {questions:[], answers:[], startTime:0, timerId:null, phase:'ready'};
+  var h = '<div class="hero"><h1>🎯 AI 模拟考试</h1><div class="desc">AI 根据真题风格和历年考点，生成 10 道模拟题（5 简答 + 3 论述 + 2 案例）。限时 180 分钟，提交后 AI 逐题批改。</div>' +
+    '<div style="margin-top:16px"><button class="btn btn-gen" onclick="startMockExam()" style="font-size:15px;padding:14px 28px">🤖 开始 AI 组卷</button></div></div>';
+  var recs = loadMockRecords();
+  if (recs.length) {
+    h += '<div class="pcard" style="margin-top:14px"><div class="pcard-hdr"><h3>🗂 模考记录（' + recs.length + '）</h3></div><div class="pcard-body">';
+    recs.forEach(function(r, i) {
+      var d = new Date(r.date);
+      h += '<div style="display:flex;align-items:center;gap:10px;padding:8px 4px;border-bottom:.5px solid var(--bdr);font-size:13px">' +
+        '<span style="flex:1;cursor:pointer" onclick="viewMockRecord(' + i + ')">' + d.toLocaleDateString('zh-CN') + ' ' + d.toTimeString().substring(0, 5) + ' · ' + (r.questions || []).length + '题 · 用时' + r.tm + '分钟</span>' +
+        '<strong style="color:' + (r.total >= 90 ? 'var(--gn)' : r.total >= 60 ? 'var(--or)' : 'var(--r)') + '">' + r.total + '分</strong>' +
+        '<button class="ai-btn ai-btn-sm" onclick="viewMockRecord(' + i + ')" style="padding:4px 12px;font-size:11px">查看</button>' +
+        '<button class="ai-btn ai-btn-sm" onclick="delMockRecord(' + i + ')" style="padding:4px 10px;font-size:11px;color:var(--r)">删除</button></div>';
+    });
+    h += '</div></div>';
+  }
+  document.getElementById('ct').innerHTML = h;
+}
+
+function startMockExam() {
+  document.getElementById('ct').innerHTML = '<div style="text-align:center;padding:80px 20px"><div class="spinner"></div><p style="margin-top:16px;color:var(--ts)">AI 正在生成模拟试卷...</p></div>';
+  var ctx = buildAIContext('模拟考试');
+  var sys = '你是人大434国际商务考研命题老师。请严格按照以下要求生成模拟试卷，每道题必须同时生成标准答案。\n' + ctx + '\n' + buildHotContext('') + '\n\n'
+    + '【生成要求】\n'
+    + '1. 共10道题：简答5道(每题10分)、论述3道(每题20分)、案例2道(每题20分)\n'
+    + '2. 题目风格贴合人大434真题：简答极短直问，论述可复合设问\n'
+    + '3. 每道题的标准答案(含评分基准)必须依据上方资料库原文表述，理论定义与要点忠于手册\n'
+    + '4. 案例题/论述题可从上方热点素材中选取真实事件作为背景\n'
+    + '5. 答案用Markdown分层结构：**加粗小标题**+"- "无序列表展开，结尾【考点提示】\n'
+    + '6. JSON输出：{"questions":[{"type":"简答","question":"题面","score":10,"answer":"标准答案(含采分点)"},...]}\n'
+    + '7. 只输出JSON，不要其他文字';
+  var _d = directDS();
+  var _wsT = webSearchTools();
+  var _body = {model:AI_MODEL, messages:[{role:'system',content:sys},{role:'user',content:'生成一套人大434国际商务考研模拟试卷'}], stream:false, temperature:0.5, response_format:{type:'json_object'}};
+  if (_wsT) _body.tools = _wsT;
+  fetch(_d.url, {method:'POST', headers:{Authorization:'Bearer '+_d.key,'Content-Type':'application/json'},
+    body:JSON.stringify(_body)
+  }).then(function(r){return r.json();}).then(function(d){
+    var c = d.choices[0].message.content, m = c.match(/\{[\s\S]*\}/);
+    if (!m) throw Error('AI格式错误');
+    var data = JSON.parse(m[0]); mockState.questions = data.questions || [];
+    mockState.answers = new Array(mockState.questions.length).fill('');
+    mockState.startTime = Date.now(); mockState.phase = 'exam'; renderMockExam();
+  }).catch(function(e){
+    /* AI 组卷失败 → 降级为真题随机组卷, 必须明确告知用户 */
+    var pool = DATA.slice(); shuffleArray(pool); mockState.questions = [];
+    [{t:'简答',n:5},{t:'论述',n:3},{t:'案例',n:2}].forEach(function(tt) {
+      var picked = pool.filter(function(q){return q.type===tt.t}).slice(0,tt.n);
+      picked.forEach(function(q){mockState.questions.push({type:q.type,question:q.question,score:q.type==='简答'?10:20,refId:q.id,answer:q.answer});});
+    });
+    mockState.answers = new Array(mockState.questions.length).fill('');
+    mockState.startTime = Date.now(); mockState.phase = 'exam';
+    mockState.fallback = true; /* 标记降级 */
+    renderMockExam();
+  });
+}
+
+function renderMockExam() {
+  var qs = mockState.questions, m = Math.floor((Date.now()-mockState.startTime)/60000);
+  var h = '';
+  /* 降级提示: AI组卷失败时明确告知 */
+  if (mockState.fallback) {
+    h += '<div style="margin-bottom:12px;padding:12px 16px;border-radius:12px;background:rgba(255,159,10,.10);border:1px solid rgba(255,159,10,.3);color:#fbbf24;font-size:13px">⚠️ AI 组卷失败（网络或服务波动），已自动改用<b>历年真题随机组卷</b>。题目和批改仍正常，可放心作答。想重新用 AI 出卷可返回重试。</div>';
+  }
+  h += '<div style="position:sticky;top:16px;z-index:10;background:rgba(255,255,255,.09);border:1px solid rgba(255,255,255,.18);box-shadow:inset 0 1px 0 rgba(255,255,255,.20), 0 6px 18px rgba(0,0,0,.28);backdrop-filter:blur(20px);border-radius:16px;padding:12px 20px;margin-bottom:20px;display:flex;justify-content:space-between;align-items:center;border:.5px solid rgba(255,255,255,.4)">' +
+    '<div><strong>⏱ <span id="mockTimer">' + m + '分钟</span></strong> | ' + qs.length + '题 | 总分150</div>' +
+    '<div style="display:flex;gap:8px"><button class="ai-btn ai-btn-sm" onclick="mockExportBlank()" style="padding:8px 14px;font-size:12px">📄 导出试卷</button>' +
+    '<button class="btn btn-r" onclick="submitMockExam()" style="padding:8px 20px;font-size:13px">提交批改</button></div></div>';
+  h += '<div id="mockBody">';
+  qs.forEach(function(q,i){var mh=q.type==='简答'?160:240;h += '<div class="pcard"><div class="pcard-hdr"><h3>'+(i+1)+'. '+q.type+'（'+q.score+'分）</h3><button class="ai-btn ai-btn-sm" onclick="mockToggleZoom('+i+',this)" style="padding:4px 12px;font-size:11px">⤢ 放大</button></div>' +
+    '<div class="pcard-body"><div style="font-size:14px;line-height:1.8;margin-bottom:12px">'+q.question+'</div>' +
+    '<textarea id="ma_'+i+'" placeholder="输入你的答案...（右下角可拖拽调整高度）" style="width:100%;min-height:'+mh+'px;padding:12px;border:.5px solid rgba(0,0,0,.1);border-radius:10px;font-size:14px;font-family:inherit;resize:vertical;line-height:1.8" oninput="mockState.answers['+i+']=this.value;mockAutoGrow(this)"></textarea></div></div>';});
+  h += '</div>'; document.getElementById('ct').innerHTML = h;
+  if (mockState.timerId) clearInterval(mockState.timerId);
+  mockState.timerId = setInterval(function(){var el=document.getElementById('mockTimer');if(el){var m2=Math.floor((Date.now()-mockState.startTime)/60000);el.textContent=m2+'分钟';if(m2>150)el.style.color='#f44336';}},30000);
+}
+
+function submitMockExam() {
+  /* 提交前空白检查: 未作答题目数 */
+  var blank = 0;
+  (mockState.answers||[]).forEach(function(a){ if (!a || !a.trim()) blank++; });
+  if (blank > 0) {
+    var ok = confirm('还有 ' + blank + ' 道题未作答，确定提交吗？\n（提交后 AI 会按 0 分处理这些题目）');
+    if (!ok) return;
+  }
+  if (mockState.timerId) clearInterval(mockState.timerId); mockState.phase = 'done';
+  var qs = mockState.questions || [];
+  var results = new Array(qs.length);
+  /* 逐题并行评分(并发2, 复用 _mockGenAnswers 模式): 出一题渲一题, 不再单发等全文 */
+  var queue = qs.map(function(q,i){ return i; });
+  var active = 0, done = 0;
+  var totalScore = 0, totalMax = 0;
+
+  function tick() {
+    var el = document.getElementById('mockGradeProg');
+    if (el) el.textContent = 'AI 逐题批改中 ' + done + '/' + qs.length;
+  }
+  function renderOne(i, r) {
+    var card = document.getElementById('mockGradeCard_' + i);
+    if (!card) return;
+    var q = qs[i], p = q.score > 0 ? Math.round((r.score||0)/q.score*100) : 0;
+    var cl = p >= 80 ? 'var(--gn)' : p >= 50 ? 'var(--or)' : 'var(--r)';
+    card.innerHTML = '<div class="pcard"><div class="pcard-hdr"><h3>' + (i+1) + '. ' + q.type + '（' + q.score + '分）</h3><span style="color:' + cl + ';font-weight:700">' + (r.score||0) + '/' + q.score + '</span></div>' +
+      '<div class="pcard-body"><div style="font-size:14px;line-height:1.8;margin-bottom:8px">' + q.question + '</div>' +
+      '<div style="background:rgba(0,0,0,.02);padding:12px;border-radius:10px;font-size:13px;margin-bottom:8px;white-space:pre-wrap"><strong>你的答案：</strong>' + escapeHtml(mockState.answers[i]||'(未作答)') + '</div>' +
+      (r.comment ? '<div style="color:var(--ts);font-size:13px;background:rgba(255,159,10,.06);border:1px solid rgba(255,159,10,.15);border-radius:10px;padding:10px 12px"><strong>📝 评语：</strong>' + renderMarkdown(r.comment) + '</div>' : '') +
+      (q.answer ? '<details style="margin-top:10px"><summary style="cursor:pointer;font-size:13px;color:#a5b4fc">📋 查看标准答案</summary><div style="font-size:13px;line-height:1.85;padding:12px;margin-top:6px;background:rgba(94,92,230,.08);border:1px solid rgba(148,146,255,.18);border-radius:10px">' + renderMarkdown(q.answer) + '</div></details>' : '') +
+      '</div></div>';
+  }
+  function next() {
+    if (mockState.phase !== 'done') return;
+    if (!queue.length) return;
+    if (active >= 2) return;
+    var i = queue.shift();
+    var q = qs[i];
+    active++;
+    var g = '题目[' + q.type + '(' + q.score + '分)]：' + q.question + '\n【标准答案(评分基准)】：' + ((q.answer||'').substring(0,1000)||'(无, 按学科常识评)') + '\n学生答案：' + (mockState.answers[i]||'(未作答)') + '\n\n';
+    g += '\n评分规则：对照标准答案评分，评语必须点名学生漏掉了标准答案中的哪些要点。按题型灵活打分（简答侧重要点齐全，论述侧重逻辑推导，案例侧重理论运用）。';
+    aiCall('grade', {messages:[{role:'system',content:'你是人大434考研阅卷老师。批改严格但公正。不要求术语中英文对照，不硬性要求联系现实。'},{role:'user',content:g}],temperature:0.3,json:true,max_tokens:800})
+    .then(function(r){ return r.json(); })
+    .then(function(d){
+      var c = d.choices && d.choices[0] ? d.choices[0].message.content : '';
+      var m2 = c ? c.match(/\{[\s\S]*\}/) : null;
+      var r = m2 ? JSON.parse(m2[0]) : {score:0,max:q.score,comment:'评分解析失败'};
+      results[i] = r; renderOne(i, r); done++; totalScore += (r.score||0); totalMax += q.score;
+      tick();
+    }).catch(function(){
+      var r = {score:0,max:q.score,comment:'评分请求失败'};
+      results[i] = r; renderOne(i, r); done++; totalScore += 0; totalMax += q.score;
+      tick();
+    }).finally(function(){
+      active--;
+      if (!queue.length && active === 0) finish();
+    });
+    next();
+  }
+  function finish() {
+    /* 汇总阶段: 单次调用生成总体评价(不阻塞前面的逐题渲染) */
+    var tm = Math.floor((Date.now()-mockState.startTime)/60000);
+    var rr = {results: results, total: totalScore, summary: '批改完成'};
+    var ss = '以下是本次模考' + qs.length + '题的逐题评分。';
+    rr.summary = ss;
+    mockState._grading = results; /* save for export */
+    saveMockRecord(rr, tm);
+    /* 异步补 summary(可失败, 不影响已渲染结果) */
+    var g2 = '以下是' + qs.length + '道题的得分：' + results.map(function(r,i){ return '第'+(i+1)+'题'+(r.score||0)+'/'+qs[i].score+'分'; }).join('、') + '。';
+    aiCall('grade', {messages:[{role:'system',content:'你是人大434考研阅卷老师，输出简短总体评价。'},{role:'user',content:g2 + '\n请用100字内给出本次模考总体评价（含最弱维度+改进方向）。'}],temperature:0.3,json:true,max_tokens:300})
+    .then(function(r){ return r.json(); }).then(function(d){
+      var c = d.choices && d.choices[0] ? d.choices[0].message.content : '';
+      var m2 = c ? c.match(/\{[\s\S]*\}/) : null;
+      if (m2) { try { rr.summary = JSON.parse(m2[0]).summary || rr.summary; } catch(e){} }
+      else if (c && c.trim()) rr.summary = c.trim();
+      var hd = document.getElementById('mockGradeSummary');
+      if (hd) hd.innerHTML = '<div class="pcard" style="border-left:3px solid var(--pu)"><div class="pcard-body" style="font-size:14px;line-height:1.8">📊 <strong>总体评价</strong><div style="margin-top:6px">' + rr.summary + '</div></div></div>';
+    }).catch(function(){});
+    var hd2 = document.getElementById('mockGradeSummary');
+    if (hd2) hd2.innerHTML = '<div class="pcard" style="border-left:3px solid var(--pu)"><div class="pcard-body" style="font-size:14px;line-height:1.8">📊 <strong>总分：' + totalScore + ' 分</strong><div style="margin-top:6px;color:var(--ts);font-size:13px">' + rr.summary + '</div></div></div>';
+  }
+
+  /* 渲染进度框架 */
+  var h = '<div class="hero"><h1>📝 考试结果</h1><div class="desc">AI 逐题批改中，已完成题目会立即显示</div></div>';
+  h += '<div style="text-align:center;margin:8px 0 16px"><span id="mockGradeProg" style="font-size:13px;color:var(--ts)">AI 逐题批改中 0/' + qs.length + '</span></div>';
+  qs.forEach(function(q,i){
+    h += '<div id="mockGradeCard_' + i + '"><div class="pcard"><div class="pcard-hdr"><h3>' + (i+1) + '. ' + q.type + '（' + q.score + '分）</h3><span style="color:var(--ts)">⏳ 评分中...</span></div><div class="pcard-body"><div style="font-size:14px;line-height:1.8">' + q.question + '</div></div></div></div>';
+  });
+  h += '<div id="mockGradeSummary"></div>';
+  h += '<div style="text-align:center;margin-top:20px;display:flex;gap:12px;justify-content:center"><button class="ai-btn ai-btn-sm" onclick="mockExportWithAnswers()" style="padding:10px 20px;font-size:14px">📄 导出试卷+答案</button><button class="btn btn-gen" onclick="showMockExam()">重新模考</button></div>';
+  document.getElementById('ct').innerHTML = h;
+
+  next(); next();
+}
+
+function renderMockResult(rr, isReplay) {
+  var tm = isReplay && rr._tm != null ? rr._tm : Math.floor((Date.now()-mockState.startTime)/60000);
+  if (!isReplay) saveMockRecord(rr, tm);
+  var h = '<div class="hero"><h1>📝 考试结果</h1><div class="desc">用时'+tm+'分钟 | AI评分 <strong>'+(rr.total||0)+'分</strong> | '+(rr.summary||'')+(isReplay?'<div style="margin-top:6px;font-size:11px;color:var(--ts)">📁 历史记录回看</div>':'')+'</div></div>';
+  mockState.questions.forEach(function(q,i){var r=(rr.results||[])[i]||{},p=q.score>0?Math.round((r.score||0)/q.score*100):0,cl=p>=80?'var(--gn)':p>=50?'var(--or)':'var(--r)';
+    h += '<div class="pcard"><div class="pcard-hdr"><h3>'+(i+1)+'. '+q.type+'（'+q.score+'分）</h3><span style="color:'+cl+';font-weight:700">'+(r.score||0)+'/'+q.score+'</span></div>' +
+    '<div class="pcard-body"><div style="font-size:14px;line-height:1.8;margin-bottom:8px">'+q.question+'</div>' +
+    '<div style="background:rgba(0,0,0,.02);padding:12px;border-radius:10px;font-size:13px;margin-bottom:8px;white-space:pre-wrap"><strong>你的答案：</strong>'+escapeHtml(mockState.answers[i]||'(未作答)')+'</div>' +
+    (r.comment ? '<div style="color:var(--ts);font-size:13px;background:rgba(255,159,10,.06);border:1px solid rgba(255,159,10,.15);border-radius:10px;padding:10px 12px"><strong>📝 评语：</strong>'+renderMarkdown(r.comment)+'</div>' : '') +
+    (q.answer ? '<details style="margin-top:10px"><summary style="cursor:pointer;font-size:13px;color:#a5b4fc">📋 查看标准答案</summary><div style="font-size:13px;line-height:1.85;padding:12px;margin-top:6px;background:rgba(94,92,230,.08);border:1px solid rgba(148,146,255,.18);border-radius:10px">'+renderMarkdown(q.answer)+'</div></details>' : '') +
+    '</div></div>';});
+  h += '<div style="text-align:center;margin-top:20px;display:flex;gap:12px;justify-content:center"><button class="ai-btn ai-btn-sm" onclick="mockExportWithAnswers()" style="padding:10px 20px;font-size:14px">📄 导出试卷+答案</button><button class="btn btn-gen" onclick="showMockExam()">重新模考</button></div>';
+  document.getElementById('ct').innerHTML = h;
+}
+
+function showAnswerCheck() {
+  document.getElementById('bc').innerHTML = '<span>✅ 答案批改</span>';
+  
+  // Load history
+  var ach = [];
+  try { ach = JSON.parse(localStorage.getItem('r434_achistory') || '[]'); } catch(e) {}
+  
+  var h = '<div class="hero"><h1>✅ AI 答案批改</h1>' +
+    '<div class="desc">输入题目和你的答案，AI 按人大434评分标准（知识点覆盖4分 + 逻辑结构3分 + 术语准确2分 + 实际联系1分）逐项打分，给出改进建议。</div></div>';
+  
+  h += '<div class="pcard"><div class="pcard-body">';
+  
+  // Question input
+  h += '<div class="pcard-section"><h4>📝 题目</h4>';
+  h += '<div style="display:flex;gap:8px;align-items:center;margin-bottom:8px;flex-wrap:wrap">';
+  h += '<select id="acSelectQ" onchange="var v=this.value;if(v===\'__clear__\'){localStorage.removeItem(\'r434_achistory\');showAnswerCheck();return;}if(v&&v!==\'__hist__\'){var q=null;DATA.forEach(function(x){if(x.id==v)q=x});if(q){document.getElementById(\'acQuestion\').value=q.year+\'年 第\'+q.num+\'题 \'+q.type+\'：\'+q.question}}" style="padding:6px 10px;border:1px solid var(--bdr);border-radius:8px;background:rgba(255,255,255,.04);color:var(--t);font-size:12px;max-width:200px">';
+  h += '<option value="">真题题库</option>';
+  DATA.forEach(function(q) {
+    h += '<option value="' + q.id + '">' + q.year + '年#' + q.num + ' ' + q.type + '</option>';
+  });
+  h += '</select>';
+  
+  // History dropdown
+  if (ach.length > 0) {
+    h += '<select onchange="var v=this.value;if(v===\'__clear__\'){localStorage.removeItem(\'r434_achistory\');showAnswerCheck();return;}if(v)document.getElementById(\'acQuestion\').value=v" style="padding:6px 10px;border:1px solid var(--bdr);border-radius:8px;background:rgba(255,255,255,.04);color:var(--t);font-size:12px;max-width:280px">';
+    h += '<option value="">📜 历史记录（' + ach.length + '条）</option>';
+    ach.forEach(function(item, i) {
+      var preview = item.q.replace(/\n/g,' ').substring(0,40);
+      h += '<option value="' + item.q.replace(/"/g,'&quot;').replace(/'/g,"&#39;") + '">' + (i+1) + '. ' + preview + '</option>';
+    });
+    h += '<option value="__clear__" style="color:var(--r)">🗑 清除历史</option>';
+    h += '</select>';
+  }
+  
+  h += '<span style="font-size:11px;color:#888">或手动输入下方</span></div>';
+  h += '<textarea id="acQuestion" placeholder="在此输入题目..." style="width:100%;min-height:80px;background:rgba(255,255,255,.03);border:1px solid var(--bdr);border-radius:10px;padding:12px;font-size:13px;line-height:1.7;color:var(--t);resize:vertical;font-family:inherit;outline:none"></textarea>';
+  h += '</div>';
+  
+  // Answer input
+  h += '<div class="pcard-section"><h4>✍️ 你的答案</h4>';
+  h += '<textarea id="acAnswer" placeholder="在此输入你的答案..." style="width:100%;min-height:200px;background:rgba(255,255,255,.03);border:1px solid var(--bdr);border-radius:10px;padding:12px;font-size:13px;line-height:1.7;color:var(--t);resize:vertical;font-family:inherit;outline:none"></textarea>';
+  h += '</div>';
+  
+  // Submit
+  h += '<div style="text-align:center;margin-top:16px"><button class="ai-btn" id="acBtn" onclick="doAnswerCheck()" style="padding:12px 32px;font-size:14px;border-radius:20px">🔍 开始批改</button></div>';
+  
+  // Result
+  h += '<div id="acResult" style="display:none;margin-top:16px"></div>';
+  
+  h += '</div></div>';
+  
+  document.getElementById('ct').innerHTML = h;
+}
+
+function doAnswerCheck() {
+  var q = document.getElementById('acQuestion').value.trim();
+  var a = document.getElementById('acAnswer').value.trim();
+  var btn = document.getElementById('acBtn');
+  var result = document.getElementById('acResult');
+  
+  if (!q) { result.style.display = 'block'; result.innerHTML = '<div style="padding:12px;color:rgba(255,69,58,.7);font-size:13px">请先输入题目</div>'; return; }
+  if (!a) { result.style.display = 'block'; result.innerHTML = '<div style="padding:12px;color:rgba(255,69,58,.7);font-size:13px">请先输入你的答案</div>'; return; }
+  if (a.length < 20) { result.style.display = 'block'; result.innerHTML = '<div style="padding:12px;color:rgba(255,69,58,.7);font-size:13px">答案太短（不足20字），请输入完整答案</div>'; return; }
+  
+  // Save question to history (deduped, max 20)
+  var ach = [];
+  try { ach = JSON.parse(localStorage.getItem('r434_achistory') || '[]'); } catch(e) { ach = []; }
+  ach = ach.filter(function(item) { return item.q !== q; });
+  ach.unshift({q: q, t: Date.now()});
+  if (ach.length > 20) ach = ach.slice(0, 20);
+  try { localStorage.setItem('r434_achistory', JSON.stringify(ach)); } catch(e) {}
+  
+  btn.disabled = true; btn.textContent = 'AI 正在批改...';
+  result.style.display = 'block';
+  result.innerHTML = '<div style="padding:24px;text-align:center;color:#888">⏳ AI 正在逐项评分...</div>';
+  
+  // Build grading prompt
+  var sys = '你是人大434国际商务考研阅卷老师，批改标准严格但公正。请对学生的答案逐项评分（满分10分）。\n\n'
+    + '【评分标准（按题型灵活调整）】\n'
+    + '如果是简答题：侧重核心要点是否齐全(5分)+逻辑是否清晰(3分)+术语是否准确(2分)\n'
+    + '如果是论述题：侧重知识框架是否完整(4分)+逻辑推导是否严谨(3分)+专业术语与概念表述是否精准(3分)\n'
+    + '如果是案例题：侧重问题识别是否准确(3分)+理论选用是否恰当(4分)+分析是否结合案例材料(3分)\n\n'
+    + '【注意】不要求术语中英文对照；不硬性要求联系中国现实(看题目本身是否需要)。\n\n'
+    + '输出格式（JSON）：\n'
+    + '{"knowledge":得分,"logic":得分,"terms":得分,"total":总分,"strengths":"优点...","weaknesses":"不足...","improvement":"具体可操作的改进建议...","modelAnswer":"完整参考答案(按题目实际所需篇幅，简答题300-500字，论述题600-1000字，定义先行→分点展开→结论)"}\n\n'
+    + '规则：严格按评分标准给分，不手软也不死板；改进建议必须具体到"你漏了XX要点，应该这样写"；只输出JSON。';
+  
+  // Try to find matching exam question for reference
+  var refInfo = '';
+  DATA.forEach(function(x) {
+    if (q.indexOf(x.question) >= 0 || (x.year && q.indexOf(String(x.year)) >= 0 && q.indexOf(String(x.num)) >= 0)) {
+      refInfo += '\n\n【参考：' + x.id + '】\n题目：' + x.question + '\n标准答案：' + (x.answer||'').substring(0,800);
+    }
+  });
+  var userMsg = '【题目】\n' + q + '\n\n【学生答案】\n' + a + refInfo;
+  
+  var _d = directDS();
+  fetch(_d.url, {
+    method:'POST', headers:{Authorization:'Bearer '+getAPIKey(),'Content-Type':'application/json'},
+    body:JSON.stringify({model:AI_MODEL, tools:(webSearchTools()||[]), response_format:{type:'json_object'},messages:[{role:'system',content:sys},{role:'user',content:userMsg}],max_tokens:6000,temperature:0.1})
+  }).then(function(r){if(!r.ok)throw Error('HTTP '+r.status);return r.json()})
+  .then(function(d){
+    var c = d.choices&&d.choices[0]&&d.choices[0].message?d.choices[0].message.content||'':'';
+    renderAnswerCheckResult(c);
+    btn.disabled = false; btn.textContent = '🔍 开始批改';
+  }).catch(function(e){
+    result.innerHTML = '<div style="padding:16px;color:rgba(255,69,58,.7);font-size:13px">批改失败：'+e.message+' <button class="ai-btn ai-btn-sm" onclick="doAnswerCheck()" style="margin-left:8px;padding:4px 12px;font-size:11px">重试</button></div>';
+    btn.disabled = false; btn.textContent = '🔍 开始批改';
+  });
+}
+
+function renderAnswerCheckResult(content) {
+  var result = document.getElementById('acResult');
+  var json = null;
+  try { json = JSON.parse(content); } catch(e) {
+    var m = content.match(/\{[\s\S]*\}/);
+    if (m) { try { json = JSON.parse(m[0]); } catch(e2) {} }
+  }
+  
+  /* acSalvage: JSON被截断或字符串含裸换行导致parse失败时, 逐字段正则抢救 */
+  if (!json || json.total === undefined) {
+    var sv = {};
+    ['knowledge','logic','terms','realworld','total'].forEach(function(k){
+      var mm = content.match(new RegExp('"' + k + '"\\s*:\\s*([0-9.]+)'));
+      if (mm) sv[k] = parseFloat(mm[1]);
+    });
+    ['strengths','weaknesses','improvement','modelAnswer'].forEach(function(k){
+      var mm = content.match(new RegExp('"' + k + '"\\s*:\\s*"([\\s\\S]*?)(?:"\\s*[,}]|$)'));
+      if (mm) sv[k] = mm[1].replace(/\\n/g, '\n').replace(/\\"/g, '"');
+    });
+    if (sv.total !== undefined) json = sv;
+  }
+  if (!json || json.total === undefined) {
+    result.innerHTML = '<div class="pcard" style="padding:20px;text-align:center"><div style="color:#888;margin-bottom:12px">AI 未返回有效评分</div><button class="ai-btn ai-btn-sm" onclick="doAnswerCheck()" style="padding:6px 16px;font-size:12px">重试</button></div>';
+    return;
+  }
+
+  /* 成绩入库: 批改历史留痕(最近100条), 供学习统计画趋势 */
+  try {
+    var _sc = JSON.parse(localStorage.getItem('r434_acscores') || '[]');
+    var _qEl = document.getElementById('acQuestion');
+    _sc.push({t: Date.now(), q: (_qEl ? _qEl.value.trim() : '').substring(0, 40),
+      total: json.total || 0, knowledge: json.knowledge || 0, logic: json.logic || 0,
+      terms: json.terms || 0, realworld: json.realworld || 0});
+    if (_sc.length > 100) _sc = _sc.slice(-100);
+    localStorage.setItem('r434_acscores', JSON.stringify(_sc));
+  } catch(e) {}
+
+  var total = json.total || 0;
+  var gradeColor = total >= 8 ? 'var(--gn)' : total >= 5 ? 'var(--or)' : 'var(--r)';
+  var gradeLabel = total >= 8 ? '优秀' : total >= 5 ? '中等' : '需加强';
+  
+  var h = '<div class="pcard"><div class="pcard-body">';
+  
+  // Score overview
+  h += '<div style="text-align:center;margin-bottom:20px">';
+  h += '<div style="font-size:48px;font-weight:800;color:' + gradeColor + ';letter-spacing:-1px">' + total + '<span style="font-size:20px">/10</span></div>';
+  h += '<div style="font-size:14px;color:' + gradeColor + ';font-weight:600;margin-top:4px">' + gradeLabel + '</div>';
+  h += '</div>';
+  
+  // Score breakdown
+  h += '<div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:20px">';
+  var items = [
+    {label:'知识覆盖',score:json.knowledge||0,max:json.knowledge > 3 ? 5 : 4},
+    {label:'逻辑结构',score:json.logic||0,max:3},
+    {label:'术语准确',score:json.terms||0,max:3}
+  ];
+  items.forEach(function(it) {
+    var pct = Math.round(it.score/it.max*100);
+    var barColor = pct >= 80 ? 'var(--gn)' : pct >= 50 ? 'var(--or)' : 'var(--r)';
+    h += '<div style="background:rgba(255,255,255,.03);padding:12px;border-radius:10px;text-align:center">';
+    h += '<div style="font-size:11px;color:#888;margin-bottom:4px">' + it.label + '</div>';
+    h += '<div style="font-size:18px;font-weight:700;color:var(--t);margin-bottom:4px">' + it.score + '/' + it.max + '</div>';
+    h += '<div style="background:rgba(255,255,255,.06);border-radius:3px;height:4px"><div style="background:' + barColor + ';height:4px;border-radius:3px;width:' + pct + '%"></div></div>';
+    h += '</div>';
+  });
+  h += '</div>';
+  
+  // Feedback
+  if (json.strengths) {
+    h += '<div class="pcard-section"><h4>✅ 优点</h4><p>' + json.strengths + '</p></div>';
+  }
+  if (json.weaknesses) {
+    h += '<div class="pcard-section"><h4>⚠️ 不足</h4><p>' + json.weaknesses + '</p></div>';
+  }
+  if (json.improvement) {
+    h += '<div class="pcard-section"><h4>💡 改进建议</h4><p>' + json.improvement + '</p></div>';
+  }
+  if (json.modelAnswer) {
+    h += '<div class="pcard-section"><h4>📋 完整参考答案</h4><div style="line-height:1.9">' + renderMarkdown(json.modelAnswer) + '</div></div>';
+  }
+  
+  h += '<div style="text-align:center;margin-top:16px"><button class="ai-btn ai-btn-sm" onclick="doAnswerCheck()" style="padding:8px 20px;font-size:12px">重新批改</button></div>';
+  h += '</div></div>';
+  
+  result.innerHTML = h;
+  result.scrollIntoView({behavior:'smooth'});
+}
+
+var token = getToken();
+if (token) {
+  document.getElementById('loginOverlay').style.display = 'none';
+  loadCloudData(token);
+  // Fetch API key from backend (async, non-blocking)
+  getAPIKey(function(k){ if(!k) console.warn('API key not received, AI features will be limited'); });
+} else if (localStorage.getItem('r434_guest') === '1') {
+  // 游客态: 本地进站, 零后端请求(不取APIKey, 密钥不下发)
+  document.getElementById('loginOverlay').style.display = 'none';
+} else {
+  // Show login, hide main content until logged in
+  document.getElementById('loginOverlay').style.display = 'flex';
+}
+updateTopbarUser();
+document.body.classList.add('sb-collapsed');
+buildNav();
+buildTfidf();
+showHome();
+// Push initial page to nav stack
+if (navStack.length === 0) pushNav('');
+// Stagger homepage items on initial load
+setTimeout(function() {
+  var cards = document.querySelectorAll('#ct .gc, #ct .st, #ct .task');
+  cards.forEach(function(el, i) {
+    el.classList.add('stagger-in');
+    el.style.animationDelay = (i * 0.04) + 's';
+  });
+}, 150);
+// ===== 能力地图 — 逻辑框架图（可折叠底层节点） =====
+function showCapabilityMap() {
+  document.getElementById('bc').innerHTML = '🧭 <span>能力地图</span>';
+  var progress = JSON.parse(localStorage.getItem('r434_cap_progress') || '{}');
+  
+  // Count progress
+  var totalLeaves = 0, completedLeaves = 0;
+  function countP(node) {
+    if (!node.children || !node.children.length) { totalLeaves++; if (progress[node.code]) completedLeaves++; return; }
+    node.children.forEach(function(c) { countP(c); });
+  }
+  if (typeof CAPABILITY_TREE !== 'undefined') countP(CAPABILITY_TREE);
+  var pct = totalLeaves > 0 ? Math.round(completedLeaves / totalLeaves * 100) : 0;
+
+  var tree = typeof CAPABILITY_TREE !== 'undefined' ? CAPABILITY_TREE : null;
+  if (!tree || !tree.children) {
+    document.getElementById('ct').innerHTML = '<div class="hero"><h1>🧭 能力地图</h1></div><div class="pcard" style="padding:40px;text-align:center"><p style="color:rgba(255,255,255,.3)">能力树数据加载中...</p></div>';
+    return;
+  }
+
+  // Keep track of which L3 nodes are expanded (show L4-L5)
+  window._ctEx = window._ctEx || {};
+  
+  // Full layout: compute positions for ALL nodes (L0-L5)
+  // Use larger dimensions
+  var NODE_W = [280, 240, 210, 180, 150, 130];
+  var NODE_H = [58, 50, 44, 38, 32, 28];
+  var DX = 250;   // horizontal gap between levels
+  var LX = 40;    // left padding
+  var VG = 14;    // vertical gap between leaves
+
+  // Assign leaf ordering across the entire tree
+  var leafIdx = 0;
+  function orderLeaves(n) {
+    if (!n.children || !n.children.length) { leafIdx++; n._li = leafIdx - 1; return; }
+    n.children.forEach(orderLeaves);
+    n._lc = n.children.reduce(function(s,c){return s+(c._lc||1);},0);
+  }
+  orderLeaves(tree);
+
+  // Position all nodes
+  function layoutAll(n, d) {
+    var w = NODE_W[Math.min(d, NODE_W.length-1)];
+    var h = NODE_H[Math.min(d, NODE_H.length-1)];
+    var x = LX + d * DX;
+    if (!n.children || !n.children.length) {
+      n._p = {x:x, y:70 + n._li*(h+VG), w:w, h:h, d:d};
+      return;
+    }
+    n.children.forEach(function(c){layoutAll(c, d+1);});
+    var first = n.children[0]._p, last = n.children[n.children.length-1]._p;
+    n._p = {x:x, y:(first.y+last.y)/2, w:w, h:h, d:d};
+  }
+  layoutAll(tree, 0);
+
+  // Canvas bounds
+  var maxX=0, maxY=0;
+  (function scan(n){
+    if (n._p.x+n._p.w>maxX) maxX=n._p.x+n._p.w;
+    if (n._p.y+n._p.h/2>maxY) maxY=n._p.y+n._p.h/2;
+    if (n.children) n.children.forEach(scan);
+  })(tree);
+  var CW = maxX+100, CH = maxY+60;
+
+  // Determine what's visible: L0-L3 always, L4-L5 only if parent L3 expanded
+  function isVisible(n) {
+    if (n._p.d <= 3) return true;
+    // Walk up to find the L3 ancestor
+    var p = n;
+    while (p && p._p && p._p.d > 3) {
+      p = p._parent;
+    }
+    if (p && p._p && p._p.d === 3) return !!window._ctEx[p.code];
+    return false;
+  }
+  // Tag parent references for L4-L5 nodes
+  function tagParent(n, parent) {
+    n._parent = parent;
+    if (n.children) n.children.forEach(function(c){tagParent(c, n);});
+  }
+  tagParent(tree, null);
+
+  // Generate SVG paths (only for visible subtrees)
+  var paths = '';
+  function genP(n) {
+    if (!n.children || !n.children.length) return;
+    var pp = n._p, px = pp.x+pp.w, py = pp.y;
+    n.children.forEach(function(c){
+      // Skip path if child is hidden (L4-L5 collapsed)
+      if (!isVisible(c)) return;
+      var cp = c._p, cx = cp.x, cy = cp.y;
+      var mx = (px+cx)/2;
+      paths += '<path d="M'+px+' '+py+' C'+mx+' '+py+' '+mx+' '+cy+' '+cx+' '+cy+'" fill="none" stroke="rgba(255,255,255,.1)" stroke-width="2" data-path="'+c.code+'"/>';
+      genP(c);
+    });
+  }
+  genP(tree);
+
+  // Generate node cards
+  var tagBg  = {intention:'rgba(232,200,107,.12)', knowledge:'rgba(94,92,230,.12)', framework:'rgba(52,199,89,.12)', expression:'rgba(0,122,255,.12)'};
+  var tagBd  = {intention:'rgba(232,200,107,.25)', knowledge:'rgba(94,92,230,.25)', framework:'rgba(52,199,89,.25)', expression:'rgba(0,122,255,.25)'};
+  var tagTxt = {intention:'#fbbf24', knowledge:'#a5b4fc', framework:'#4ade80', expression:'#60a5fa'};
+  var nodesHTML = '';
+  
+  function genN(n) {
+    var p = n._p, done = progress[n.code];
+    var bg = tagBg[n.tag] || 'rgba(255,255,255,.04)';
+    var bd = tagBd[n.tag] || 'rgba(255,255,255,.12)';
+    var tc = tagTxt[n.tag] || '';
+    if (done) { bg='rgba(52,199,89,.1)'; bd='rgba(52,199,89,.25)'; }
+    
+    var isLeaf = !n.children || !n.children.length;
+    var isL3 = (p.d === 3);
+    var show = isVisible(n);
+    var expanded = isL3 && window._ctEx[n.code];
+    var fs = [16,15,14,13,11,11][Math.min(p.d,5)];
+    var fw = p.d<=1?700:p.d<=2?600:500;
+    var op = 1-p.d*0.06;
+    var hasKids = n.children && n.children.length;
+
+    nodesHTML += '<div class="tmap-node'+(done?' tmap-done':'')+'" style="left:'+p.x+'px;top:'+(p.y-p.h/2)+'px;width:'+p.w+'px;min-height:'+p.h+'px;display:'+(show?'flex':'none')+';opacity:'+op+';background:'+bg+';border-color:'+bd+'" data-code="'+n.code+'" data-depth="'+p.d+'">';
+    
+    // Expand/collapse arrow for L3 nodes
+    if (isL3 && hasKids) {
+      nodesHTML += '<span class="tmap-arr" style="color:'+tc+'">'+(expanded?'▼':'▶')+'</span>';
+    } else if (hasKids && p.d>3) {
+      nodesHTML += '<span class="tmap-arr" style="visibility:hidden">▶</span>';
+    }
+    
+    // Icon
+    var ico = {intention:'🔍',knowledge:'📚',framework:'🏗️',expression:'✍️',task:'📋'};
+    if (p.d<=1) nodesHTML += '<span style="font-size:20px;flex-shrink:0">'+(p.d===0?'🎯':p.d===1?(n.code==='0.1'?'🧠':'✏️'):'')+'</span>';
+    else if (ico[n.tag]) nodesHTML += '<span style="font-size:14px;flex-shrink:0;opacity:.5">'+ico[n.tag]+'</span>';
+    
+    // Label
+    nodesHTML += '<div class="tmap-label" style="font-size:'+fs+'px;font-weight:'+fw+'">'+n.label+'</div>';
+    
+    // Code badge (only L0-L2)
+    if (n.code && p.d<=2) nodesHTML += '<span class="tmap-code">'+n.code+'</span>';
+    if (done) nodesHTML += '<span class="tmap-check">✓</span>';
+    
+    // Training buttons for leaf nodes (visible only when expanded)
+    if (isLeaf && show && typeof CAPABILITY_MAP!=='undefined' && CAPABILITY_MAP[n.code]) {
+      nodesHTML += '<div class="tmap-acts">';
+      CAPABILITY_MAP[n.code].forEach(function(a){
+        nodesHTML += '<button onclick="event.stopPropagation();capLaunch(\''+a.id+'\',\''+(n.code||'')+'\')" class="tmap-btn">'+a.icon+' '+a.desc+'</button>';
+      });
+      nodesHTML += '</div>';
+    }
+    nodesHTML += '</div>';
+    if (n.children) n.children.forEach(genN);
+  }
+  genN(tree);
+
+  // Assemble
+  var h = '';
+  h += '<div class="hero" style="margin-bottom:12px"><h1>🧭 能力地图</h1><p class="desc">逻辑框架图 · 点击'+(window._ctEx && Object.keys(window._ctEx).length?'▼':'▶')+'展开底层训练节点 · '+completedLeaves+'/'+totalLeaves+' 已点亮</p></div>';
+  h += '<div style="margin-bottom:12px">'+progressBar(pct, completedLeaves, totalLeaves)+'</div>';
+  h += '<div class="tmap-wrap" id="tmapWrap">';
+  h += '<svg class="tmap-svg" style="width:'+CW+'px;height:'+CH+'px" viewBox="0 0 '+CW+' '+CH+'">';
+  h += '<defs><filter id="g"><feGaussianBlur stdDeviation="3" result="b"/><feMerge><feMergeNode in="b"/><feMergeNode in="SourceGraphic"/></feMerge></filter></defs>';
+  h += paths;
+  h += '</svg>';
+  h += '<div class="tmap-nodes" style="width:'+CW+'px;height:'+CH+'px">'+nodesHTML+'</div>';
+  h += '</div>';
+
+  document.getElementById('ct').innerHTML = h;
+  document.getElementById('ct').scrollTop = 0;
+  
+  // Attach click handlers to L3 nodes
+  setTimeout(function(){
+    var ct = document.getElementById('ct');
+    if (!ct) return;
+    var nodes = ct.querySelectorAll('.tmap-node[data-depth="3"]');
+    nodes.forEach(function(nd){
+      nd.onclick = function(e){
+        e.stopPropagation();
+        var code = nd.getAttribute('data-code');
+        window._ctEx = window._ctEx || {};
+        window._ctEx[code] = !window._ctEx[code];
+        showCapabilityMap(); // re-render
+      };
+      nd.style.cursor = 'pointer';
+    });
+  }, 50);
+}
+
+function progressBar(pct, done, total) {
+  var r = 28, circ = 2*Math.PI*r, offset = circ*(1-pct/100);
+  var color = pct>=60?'#4ade80':pct>=30?'#fbbf24':'#f87171';
+  return '<div class="pcard" style="padding:10px 16px;display:flex;align-items:center;gap:14px">'+
+    '<svg width="64" height="64" style="flex-shrink:0"><circle cx="32" cy="32" r="'+r+'" fill="none" stroke="rgba(255,255,255,.04)" stroke-width="4"/><circle cx="32" cy="32" r="'+r+'" fill="none" stroke="'+color+'" stroke-width="4" stroke-linecap="round" stroke-dasharray="'+circ+'" stroke-dashoffset="'+offset+'" transform="rotate(-90,32,32)" style="transition:stroke-dashoffset 1s"/><text x="32" y="36" text-anchor="middle" fill="rgba(255,255,255,.9)" font-size="15" font-weight="800">'+pct+'%</text></svg>'+
+    '<div><div style="font-weight:700;font-size:14px">学习进度</div><div style="font-size:12px;color:rgba(255,255,255,.35);margin-top:1px">'+done+'/'+total+' 个节点已完成</div></div></div>';
+}
+
+// ===== 理论可视化 — 工作台 =====
+var tvisCurTheory = '';
+var tvisCurMmd = '';
+
+function showTheoryViz() {
+  var h = '';
+  // Thin status bar instead of hero
+  h += '<div style="display:flex;align-items:center;gap:10px;margin-bottom:10px;padding:8px 16px;background:rgba(255,255,255,.03);backdrop-filter:blur(8px) saturate(180%);-webkit-backdrop-filter:blur(8px) saturate(180%);border-radius:14px;border:.5px solid rgba(255,255,255,.08)">';
+  h += '<span style="font-size:18px">📐</span><span style="font-weight:700;font-size:14px">理论可视化工作台</span>';
+  h += '<span style="font-size:11px;color:#888;flex:1" id="tvis-hero-desc">输入理论名称，AI 生成完整框架图</span>';
+  h += '</div>';
+  
+  // Workbench body — fills remaining height
+  h += '<div class="tviz-body">';
+  // Canvas — large fixed viewport
+  h += '<div class="tviz-canvas-wrap" id="tvizCanvas">';
+  h += '<div class="tviz-placeholder" id="tvizPlaceholder"><div style="font-size:40px;margin-bottom:8px;opacity:.25">📊</div><div style="font-size:13px;color:#888">输入理论名称，AI 生成实现机制流程图</div></div>';
+  h += '<div class="tviz-canvas-display" id="tvizCanvasDisplay" style="display:none"></div>';
+  h += '</div>';
+  // Sidebar
+  h += '<div class="tviz-sidebar" id="tvizSidebar">';
+  h += sideSec('核心要点', 'tvizKeypoints', '生成图表后自动出现');
+  h += sideSec('理论要素', 'tvizElements', '—');
+  h += sideSec('关联理论', 'tvizRelated', '', true);
+  h += sideSec('考点提示', 'tvizExam', '—');
+  h += sideSec('真题链接', 'tvizQuestions', '—');
+  h += '<div class="pcard" style="padding:10px 14px"><div style="font-size:11px;font-weight:700;color:#aaa;margin-bottom:8px;letter-spacing:.6px">我的笔记</div><textarea id="tvizNote" placeholder="在这里写自己的理解..." style="width:100%;min-height:44px;background:rgba(255,255,255,.03);border:.5px solid var(--bdr);border-radius:10px;padding:8px 10px;font-size:12px;color:#ddd;resize:vertical;font-family:inherit;outline:none;line-height:1.5;transition:var(--transition)" onfocus="this.style.borderColor=\'rgba(94,92,230,.3)\'" onblur="this.style.borderColor=\'var(--bdr)\'"></textarea></div>';
+  h += '</div>';
+  h += '</div>';
+  
+  // Bottom input — compact
+  h += '<div class="tviz-footer">';
+  h += '<div class="tviz-chips">';
+  var chips = [
+    {t:'比较优势理论',q:'画出比较优势理论的完整机制流程图'},
+    {t:'H-O理论',q:'画出H-O理论的完整机制流程图，包含四大定理'},
+    {t:'利率平价',q:'画出利率平价理论的完整机制流程图'},
+    {t:'产品生命周期',q:'画出产品生命周期理论三阶段的完整流程图'},
+    {t:'关税效应',q:'画出关税局部均衡分析的完整机制流程图'},
+    {t:'垄断优势',q:'画出垄断优势理论的完整框架图'},
+    {t:'技术差距论',q:'画出技术差距论的完整机制流程图'},
+    {t:'PPPvsIRP',q:'画出购买力平价与利率平价理论的对比图'},
+    {t:'关税效应图',q:'画出关税经济效应图，标注供需曲线和四大福利效应'}
+  ];
+  chips.forEach(function(c){h += '<span class="tviz-chip" onclick="tvisAsk(\''+c.q.replace(/'/g,"\\'")+'\')">'+c.t+'</span>';});
+  h += '</div>';
+  h += '<input type="text" id="tvizInput" class="tviz-input" placeholder="输入理论名称..." onkeydown="if(event.key===\'Enter\')tvisGen()">';
+  h += '<button class="tviz-btn" id="tvizBtn" onclick="tvisGen()">生成</button>';
+  h += '</div>';
+  
+  document.getElementById('ct').innerHTML = h;
+  document.getElementById('ct').scrollTop = 0;
+  
+  // Init mermaid — minimal monochrome theme
+  if (typeof mermaid !== 'undefined') {
+    mermaid.initialize({
+      startOnLoad: false, theme: 'base',
+      themeVariables: {
+        darkMode: true, background: 'transparent',
+        primaryColor: '#1c1c2e', primaryBorderColor: 'rgba(255,255,255,.4)', primaryTextColor: 'rgba(255,255,255,.9)',
+        secondaryColor: '#1c1c2e', secondaryBorderColor: 'rgba(255,255,255,.4)', secondaryTextColor: 'rgba(255,255,255,.9)',
+        tertiaryColor: '#1c1c2e', tertiaryBorderColor: 'rgba(255,255,255,.4)', tertiaryTextColor: 'rgba(255,255,255,.9)',
+        lineColor: 'rgba(255,255,255,.45)', fontSize: '13px',
+        fontFamily: '-apple-system,BlinkMacSystemFont,"PingFang SC","Microsoft YaHei",sans-serif',
+        nodeBorder: 'rgba(255,255,255,.4)', clusterBkg: 'transparent', clusterBorder: 'rgba(255,255,255,.15)',
+        titleColor: 'rgba(255,255,255,.5)', edgeLabelBackground: '#0a0a1a', nodeTextColor: 'rgba(255,255,255,.9)',
+        mainBkg: '#1c1c2e', textColor: 'rgba(255,255,255,.9)'
+      },
+      flowchart: { useMaxWidth: false, htmlLabels: true, curve: 'basis', padding: 20, nodeSpacing: 60, rankSpacing: 80 }
+    });
+  }
+}
+
+function sideSec(title, id, placeholder, isTags) {
+  return '<div class="pcard" style="padding:14px 16px"><div style="font-size:11px;font-weight:700;color:#aaa;margin-bottom:10px;letter-spacing:.6px;text-transform:uppercase">'+title+'</div><div id="'+id+'" style="font-size:13px;line-height:1.8;color:#ddd">'+(placeholder&&!isTags?'<em style="color:#777">'+placeholder+'</em>':'')+'</div></div>';
+}
+
+function tvisAsk(q) { document.getElementById('tvizInput').value = q; tvisGen(); }
+
+function tvisGen() {
+  var q = document.getElementById('tvizInput').value.trim();
+  if (!q) return;
+  var btn = document.getElementById('tvizBtn'); btn.disabled = true; btn.textContent = '生成中...';
+  
+  document.getElementById('tvizPlaceholder').style.display = 'none';
+  var disp = document.getElementById('tvizCanvasDisplay');
+  disp.style.display = 'block';
+  disp.innerHTML = '<div style="padding:24px;color:#888;font-size:14px;text-align:center"><span style="display:inline-block;animation:spin 1s linear infinite">⏳</span> AI 正在分析并生成可视化...</div>';
+  
+  ['tvizKeypoints','tvizElements','tvizRelated','tvizExam','tvizQuestions'].forEach(function(id) {
+    document.getElementById(id).innerHTML = '<em style="color:#666">生成中...</em>';
+  });
+  
+  // Detect economic graph requests
+  var isGraph = /关税.*图|供需.*图|曲线|均衡.*图|贸易.*效应|征收.*关税|配额.*图|汇率.*图|IS.?LM|菲利普斯/i.test(q);
+  
+  var sys;
+  if (isGraph) {
+    sys = '你是经济学图形专家。请输出经济学图形的标注数据，用JSON。\n\n'
+      + '输出格式（严格JSON，不要其他文字）：\n'
+      + '{"mode":"econGraph","type":"tariff","theory":"关税经济效应","labels":{"xAxis":"数量Q","yAxis":"价格P","demand":"D(国内需求)","supply":"S(国内供给)","pw":"Pw(世界价格)","pwPlusT":"Pw+t(含税价格)","q1":"Q1","q2":"Q2","q3":"Q3","q4":"Q4","a":"A消费者剩余\n减少","b":"B无谓损失","c":"C政府\n税收","d":"D无谓损失"},"desc":"简述关税的四大福利效应..."}\n\n'
+      + '规则：type固定"tariff"；labels里的文字不要太长（每个10字以内）；desc用200字简述图形含义。';
+  } else {
+    sys = '你是人大434逻辑框架图专家。请把理论拆解为3-5个逻辑模块，用JSON输出。\n\n'
+      + '输出格式（严格JSON，不要其他文字）：\n'
+      + '{"theory":"理论名","sections":[{"title":"模块标题（如前提假设）","nodes":["节点1文字","节点2文字","节点3文字"]},"..."]}\n\n'
+      + '规则：每个section3-5个节点；节点文字15-25字，把意思说清楚；sections之间是递进关系（假设→机制→推论→政策含义）';
+  }
+
+  var _d = directDS();
+  fetch(_d.url, {
+    method:'POST', headers:{Authorization:'Bearer '+getAPIKey(),'Content-Type':'application/json'},
+    body:JSON.stringify({model:AI_MODEL, tools:(webSearchTools()||[]), response_format:{type:'json_object'},messages:[{role:'system',content:sys},{role:'user',content:'请分析理论：'+q}],temperature:0.3,max_tokens:2048})
+  }).then(function(r){if(!r.ok)throw Error('HTTP '+r.status);return r.json()})
+  .then(function(d){
+    var c = d.choices&&d.choices[0]&&d.choices[0].message?d.choices[0].message.content||'':'';
+    tvisBuildRender(c, q);
+    btn.disabled = false; btn.textContent = '生成图表';
+  }).catch(function(e){
+    disp.innerHTML = '<div style="padding:16px;color:rgba(255,69,58,.7);font-size:12px;text-align:center">请求失败：'+e.message+'</div>';
+    btn.disabled = false; btn.textContent = '重试';
+  });
+}
+
+function tvisBuildRender(content, q) {
+  var disp = document.getElementById('tvizCanvasDisplay');
+  
+  // Parse JSON from AI response
+  var json = null;
+  try { json = JSON.parse(content); } catch(e1) {
+    var m = content.match(/```(?:json)?\s*([\s\S]*?)```/);
+    if (m) { try { json = JSON.parse(m[1]); } catch(e2) {} }
+    if (!json) {
+      var m2 = content.match(/\{[\s\S]*\}/);
+      if (m2) { try { json = JSON.parse(m2[0]); } catch(e3) {} }
+    }
+  }
+  
+  if (!json || (!json.sections && !json.mode)) {
+    disp.innerHTML = '<div class="pcard" style="padding:24px;text-align:center"><div style="font-size:40px;margin-bottom:8px;opacity:.3">📊</div><div style="color:#888;margin-bottom:8px">AI 未生成有效图表结构</div><button class="tviz-btn" style="padding:6px 16px;font-size:12px" onclick="tvisGen()">重试</button></div>';
+    return;
+  }
+  
+  // Route to econ graph renderer if mode is graph
+  if (json.mode === 'econGraph') {
+    tvisRenderEconGraph(json, q);
+    return;
+  }
+  
+  if (!json.sections || !json.sections.length) {
+    disp.innerHTML = '<div class="pcard" style="padding:24px;text-align:center"><div style="font-size:40px;margin-bottom:8px;opacity:.3">📊</div><div style="color:#888;margin-bottom:8px">AI 未生成有效图表结构</div><button class="tviz-btn" style="padding:6px 16px;font-size:12px" onclick="tvisGen()">重试</button></div>';
+    return;
+  }
+  
+  // Build Mermaid flowchart from JSON
+  tvisCurTheory = json.theory || q;
+  var mmd = 'flowchart TB\n';
+  var secIds = [];
+  
+  json.sections.forEach(function(sec, i) {
+    var sid = 'S' + i;
+    secIds.push(sid);
+    mmd += '  subgraph ' + sid + '["' + (sec.title||'').replace(/"/g,'') + '"]\n';
+    mmd += '    direction LR\n';
+    sec.nodes.forEach(function(node, j) {
+      var nid = sid + '_' + j;
+      var txt = String(node).replace(/"/g,'').replace(/\[/g,'(').replace(/\]/g,')');
+      mmd += '    ' + nid + '["' + txt + '"]\n';
+      if (j > 0) mmd += '    ' + sid + '_' + (j-1) + ' --> ' + nid + '\n';
+    });
+    mmd += '  end\n';
+    if (i > 0) mmd += '  ' + secIds[i-1] + ' -.-> ' + sid + '\n';
+  });
+  
+  tvisCurMmd = mmd;
+  disp.innerHTML = '<div class="mermaid" id="tvizMmd"></div>';
+  document.getElementById('tvizMmd').textContent = mmd;
+  
+  try { mermaid.run({nodes:[document.getElementById('tvizMmd')]}); }
+  catch(e) {
+    disp.innerHTML = '<div class="pcard" style="padding:16px;background:rgba(255,69,58,.04);border:.5px solid rgba(255,69,58,.15)"><div style="color:rgba(255,69,58,.7);font-size:13px;font-weight:600;margin-bottom:8px">⚠️ 渲染失败</div><div style="color:#888;font-size:12px;margin-bottom:10px">'+e.message+'</div><button class="tviz-btn" style="padding:6px 14px;font-size:12px" onclick="tvisGen()">重试</button></div>';
+  }
+  
+  var mm = q.match(/(.+?)(?:理论|模型|定理|分析)/);
+  var name = mm ? mm[0] : q;
+  document.getElementById('tvis-hero-desc').textContent = '当前：' + (tvisCurTheory || name) + ' · ' + json.sections.length + '个模块';
+  tvisFillRealData(q);
+}
+
+// Canvas-based economics graph renderer
+function tvisRenderEconGraph(json, q) {
+  var disp = document.getElementById('tvizCanvasDisplay');
+  var L = json.labels || {};
+  
+  var h = '<div style="position:relative;padding:16px 0">';
+  h += '<div style="font-size:14px;font-weight:700;color:#ddd;text-align:center;margin-bottom:12px">📈 ' + (json.theory || q) + '</div>';
+  h += '<canvas id="econCanvas" width="600" height="420" style="width:100%;max-width:600px;height:auto;display:block;margin:0 auto"></canvas>';
+  if (json.desc) h += '<div style="max-width:600px;margin:12px auto 0;padding:10px 14px;background:rgba(255,255,255,.03);border-radius:8px;font-size:12px;line-height:1.7;color:#aaa">' + json.desc + '</div>';
+  h += '</div>';
+  disp.innerHTML = h;
+  
+  setTimeout(function() {
+    var c = document.getElementById('econCanvas');
+    if (c) drawEconCanvas(c, L);
+  }, 150);
+  
+  var mm = q.match(/(.+?)(?:图|效应|模型|定理|分析)/);
+  document.getElementById('tvis-hero-desc').textContent = '当前：' + (json.theory || q) + ' · 经济学图形';
+}
+
+// Standalone Canvas widget renderer for econ-graph code blocks in chat
+function renderEconGraphWidget(gid) {
+  var el = document.getElementById(gid);
+  if (!el) return;
+  var raw = el.getAttribute('data-graph');
+  if (!raw) return;
+  try {
+    var json = JSON.parse(raw.replace(/&quot;/g,'"'));
+    var L = json.labels || {};
+    var h = '<canvas width="600" height="400" style="width:100%;max-width:550px;height:auto;display:block;margin:0 auto"></canvas>';
+    if (json.desc) h += '<div style="max-width:550px;margin:8px auto 0;padding:10px 14px;background:rgba(255,255,255,.03);border-radius:8px;font-size:12px;line-height:1.7;color:#aaa">' + json.desc + '</div>';
+    el.innerHTML = h;
+    var c = el.querySelector('canvas');
+    if (!c) return;
+    setTimeout(function() { drawEconCanvas(c, L); }, 100);
+  } catch(e) { el.innerHTML = '<div style="padding:16px;color:#888;font-size:12px">图形数据解析失败</div>'; }
+}
+
+// Shared drawing function for Canvas economics graphs
+function drawEconCanvas(c, L) {
+  var ctx = c.getContext('2d');
+  var W = c.width, H = c.height, mL = 80, mR = 50, mT = 50, mB = 90;
+  ctx.clearRect(0, 0, W, H);
+  var paY = mT + 10, ptY = mT + (H - mT - mB) * 0.38, pwY = mT + (H - mT - mB) * 0.66, p0Y = H - mB - 30;
+  var qsX = mL + 130, qs1X = mL + 230, qd1X = mL + 380, qdX = mL + 480;
+  ctx.strokeStyle = '#ccc'; ctx.lineWidth = 1.5;
+  ctx.beginPath(); ctx.moveTo(mL, mT); ctx.lineTo(mL, H - mB); ctx.lineTo(W - mR, H - mB); ctx.stroke();
+  ctx.fillStyle = '#999';
+  ctx.beginPath(); ctx.moveTo(mL, mT); ctx.lineTo(mL - 5, mT + 10); ctx.lineTo(mL + 5, mT + 10); ctx.fill();
+  ctx.beginPath(); ctx.moveTo(W - mR, H - mB); ctx.lineTo(W - mR - 10, H - mB - 5); ctx.lineTo(W - mR - 10, H - mB + 5); ctx.fill();
+  ctx.fillStyle = '#999'; ctx.font = '13px sans-serif'; ctx.textAlign = 'center';
+  ctx.fillText(L.xAxis || '数量 Q', W / 2, H - mB + 22);
+  ctx.save(); ctx.translate(20, H / 2 - 30); ctx.rotate(-Math.PI / 2);
+  ctx.fillText(L.yAxis || '价格 P', 0, 0); ctx.restore();
+  ctx.strokeStyle = 'rgba(255,255,255,.8)'; ctx.lineWidth = 1.2;
+  ctx.beginPath(); ctx.moveTo(mL, paY); ctx.lineTo(W - mR, paY); ctx.stroke();
+  ctx.fillStyle = '#fff'; ctx.font = '12px sans-serif';
+  ctx.fillText(L.pa || 'Pa', mL + 4, paY - 6);
+  ctx.strokeStyle = 'rgba(255,255,255,.7)'; ctx.setLineDash([6, 4]);
+  ctx.beginPath(); ctx.moveTo(mL, ptY); ctx.lineTo(W - mR, ptY); ctx.stroke(); ctx.setLineDash([]);
+  ctx.fillText(L.pt || 'Pt', mL + 4, ptY - 6);
+  ctx.strokeStyle = 'rgba(255,255,255,.7)'; ctx.setLineDash([3, 3]);
+  ctx.beginPath(); ctx.moveTo(mL, pwY); ctx.lineTo(W - mR, pwY); ctx.stroke(); ctx.setLineDash([]);
+  ctx.fillText(L.pw || 'Pw', mL + 4, pwY - 6);
+  ctx.strokeStyle = '#ff7b5e'; ctx.lineWidth = 2.5;
+  ctx.beginPath(); ctx.moveTo(mL + 20, p0Y); ctx.lineTo(qsX, paY); ctx.lineTo(qs1X, ptY); ctx.stroke();
+  ctx.fillStyle = '#ff7b5e'; ctx.font = 'bold 14px sans-serif';
+  ctx.fillText(L.supply || 'S', mL + 8, H - mB - 5);
+  ctx.strokeStyle = '#5e9cff'; ctx.lineWidth = 2.5;
+  ctx.beginPath(); ctx.moveTo(mL + 20, paY - 60); ctx.lineTo(qdX, paY); ctx.lineTo(qd1X, ptY); ctx.stroke();
+  ctx.fillStyle = '#5e9cff'; ctx.font = 'bold 14px sans-serif';
+  ctx.fillText(L.demand || 'D', W - mR - 25, ptY - 8);
+  ctx.globalAlpha = 0.18;
+  ctx.fillStyle = '#ff5e5e';
+  ctx.beginPath(); ctx.moveTo(qsX, paY); ctx.lineTo(qsX, ptY); ctx.lineTo(qs1X, ptY); ctx.closePath(); ctx.fill();
+  ctx.beginPath(); ctx.moveTo(qs1X, ptY); ctx.lineTo(qsX, paY); ctx.lineTo(qs1X, paY); ctx.closePath(); ctx.fill();
+  ctx.fillStyle = '#ffb55e';
+  ctx.fillRect(qs1X, pwY, qd1X - qs1X, ptY - pwY);
+  ctx.fillStyle = '#5e9cff';
+  ctx.beginPath(); ctx.moveTo(qsX, ptY); ctx.lineTo(qsX, pwY); ctx.lineTo(qs1X, pwY); ctx.closePath(); ctx.fill();
+  ctx.fillStyle = '#9d5eff';
+  ctx.beginPath(); ctx.moveTo(qd1X, ptY); ctx.lineTo(qd1X, pwY); ctx.lineTo(qd1X + 50, pwY); ctx.closePath(); ctx.fill();
+  ctx.globalAlpha = 1;
+  ctx.fillStyle = 'rgba(255,255,255,.85)'; ctx.font = 'bold 11px sans-serif'; ctx.textAlign = 'center';
+  ctx.fillText(L.a || 'a', (qsX + qs1X) / 2 - 8, (paY + ptY) / 2);
+  ctx.fillText(L.b || 'b', (qsX + qs1X) / 2 + 6, (paY + ptY) / 2);
+  ctx.fillText(L.c || 'c', (qs1X + qd1X) / 2, (ptY + pwY) / 2 + 3);
+  ctx.fillText(L.e || 'e', (qsX + qs1X) / 2 - 4, (ptY + pwY) / 2);
+  ctx.fillText(L.d || 'd', qd1X + 18, (ptY + pwY) / 2);
+  ctx.fillStyle = '#aaa'; ctx.font = '11px sans-serif'; ctx.textAlign = 'center';
+  ctx.fillText(L.qs || 'Qs', qsX, H - mB + 18);
+  ctx.fillText(L.q1 || "Qs'", qs1X, H - mB + 18);
+  ctx.fillText(L.q2 || "Qd'", qd1X, H - mB + 18);
+  ctx.fillText(L.qds || 'Qd', qdX, H - mB + 18);
+  ctx.strokeStyle = '#5e9cff'; ctx.lineWidth = 1.5;
+  ctx.beginPath(); ctx.moveTo(qsX, H - mB + 30); ctx.lineTo(qdX, H - mB + 30);
+  ctx.moveTo(qsX, H - mB + 26); ctx.lineTo(qsX, H - mB + 34);
+  ctx.moveTo(qdX, H - mB + 26); ctx.lineTo(qdX, H - mB + 34); ctx.stroke();
+  ctx.fillStyle = '#5e9cff';
+  ctx.fillText(L.m1 || 'M1', (qsX + qdX) / 2, H - mB + 44);
+  ctx.strokeStyle = '#ffb55e';
+  ctx.beginPath(); ctx.moveTo(qs1X, H - mB + 58); ctx.lineTo(qd1X, H - mB + 58);
+  ctx.moveTo(qs1X, H - mB + 54); ctx.lineTo(qs1X, H - mB + 62);
+  ctx.moveTo(qd1X, H - mB + 54); ctx.lineTo(qd1X, H - mB + 62); ctx.stroke();
+  ctx.fillStyle = '#ffb55e';
+  ctx.fillText(L.m2 || 'M2', (qs1X + qd1X) / 2, H - mB + 72);
+  ctx.fillStyle = '#999'; ctx.font = '10px sans-serif';
+  ctx.fillText('生产扭曲', qsX + 30, H - mB - 12);
+  ctx.fillText('消费扭曲', qd1X + 18, H - mB - 12);
+}
+
+// Fill sidebar with real KNOWLEDGE + DATA
+// Convert markdown headings to flat list with depth-based indentation
+function renderMkTree(md) {
+  var lines = md.split('\n');
+  var html = '<div class="mktree">';
+  lines.forEach(function(line) {
+    var m = line.match(/^(#{1,6})\s+(.+)/);
+    if (!m) return;
+    var lv = m[1].length;
+    var txt = m[2].replace(/\*\*(.+?)\*\*/g, '<strong>$1</strong>');
+    var indent = (lv - 1) * 24;
+    html += '<div class="mkt-line lv'+Math.min(lv,5)+'" style="padding-left:'+indent+'px;margin-top:'+(lv===1?0:4)+'px"><span class="mkt-dot"></span><span class="mkt-txt">'+txt+'</span></div>';
+  });
+  html += '</div>';
+  return html;
+}
+
+function tvisFillRealData(query) {
+  var knKey = tvisFindKnKey(query);
+  if (!knKey) return;
+  var kn = KNOWLEDGE[knKey];
+  if (!kn) return;
+  
+  // Core points from knowledge.key
+  if (kn.key && kn.key.length) {
+    tvisU('tvizKeypoints', kn.key.map(function(k){return '- ' + k}).join('\n'), 'list');
+  }
+  
+  // Theory elements from assumptions + overview
+  var elemLines = [];
+  if (kn.assumptions && kn.assumptions.length) {
+    elemLines.push('**前提假设：**');
+    kn.assumptions.slice(0,5).forEach(function(a){elemLines.push('- ' + a)});
+  }
+  if (kn.evaluation_pros && kn.evaluation_pros.length) {
+    elemLines.push('');
+    elemLines.push('**理论优点：**');
+    kn.evaluation_pros.slice(0,3).forEach(function(p){elemLines.push('- ' + p)});
+  }
+  if (kn.evaluation_cons && kn.evaluation_cons.length) {
+    elemLines.push('');
+    elemLines.push('**理论局限：**');
+    kn.evaluation_cons.slice(0,3).forEach(function(c){elemLines.push('- ' + c)});
+  }
+  if (elemLines.length) tvisU('tvizElements', elemLines.join('\n'), 'text');
+  
+  // Related theories - find others in same module
+  var mod = kn.module || '';
+  var related = [];
+  Object.keys(KNOWLEDGE).forEach(function(k) {
+    if (k !== knKey && KNOWLEDGE[k].module === mod) related.push(k);
+  });
+  if (related.length) {
+    tvisU('tvizRelated', related.slice(0,4).map(function(r){return '- ' + r}).join('\n'), 'tags');
+  }
+  
+  // Exam tips
+  if (kn.exam) {
+    tvisU('tvizExam', kn.exam, 'text');
+  }
+  
+  // Real questions from DATA
+  var questions = tvisFindQuestions(knKey, mod);
+  if (questions.length) {
+    var lines = questions.slice(0,6).map(function(q){
+      return '- **' + q.year + '年' + q.type + '**：' + q.question.substring(0,60) + (q.question.length>60?'...':'');
+    });
+    tvisU('tvizQuestions', lines.join('\n'), 'text');
+  }
+}
+
+// Find KNOWLEDGE key from user query
+function tvisFindKnKey(query) {
+  if (!query || typeof KNOWLEDGE === 'undefined') return null;
+  var q = query.replace(/画出|的完整|机制流程图|框架图|对比图/g, '').trim();
+  
+  // Exact match
+  if (KNOWLEDGE[q]) return q;
+  
+  // Try keys containing query or query containing key
+  var best = null, bestLen = 0;
+  Object.keys(KNOWLEDGE).forEach(function(k) {
+    if (k.indexOf(q) >= 0 || q.indexOf(k) >= 0) {
+      if (k.length > bestLen) { bestLen = k.length; best = k; }
+    }
+  });
+  if (best) return best;
+  
+  // Try partial match
+  var parts = q.split(/[，,、\s]+/);
+  for (var i = 0; i < parts.length; i++) {
+    if (parts[i].length < 2) continue;
+    Object.keys(KNOWLEDGE).forEach(function(k) {
+      if (k.indexOf(parts[i]) >= 0 && k.length > bestLen) {
+        bestLen = k.length; best = k;
+      }
+    });
+  }
+  return best;
+}
+
+// Find real exam questions for a knowledge key
+function tvisFindQuestions(knKey, mod) {
+  if (typeof DATA === 'undefined' || typeof TQM === 'undefined') return [];
+  // Direct TQM lookup - find paths that contain the knowledge key
+  var qids = {};
+  Object.keys(TQM).forEach(function(path) {
+    if (path.indexOf(knKey) >= 0 || (mod && path.indexOf(mod.split('/').pop()) >= 0)) {
+      var ids = Array.isArray(TQM[path]) ? TQM[path] : TQM[path].split(',');
+      ids.forEach(function(id) { qids[id] = true; });
+    }
+  });
+  return DATA.filter(function(q) { return qids[q.id]; }).sort(function(a,b){return b.year-a.year;});
+}
+
+function tvisU(id, content, type) {
+  var el = document.getElementById(id); if (!el) return;
+  if (!content) { el.innerHTML = '<em style="color:#555">—</em>'; return; }
+  if (type === 'tags') {
+    var tags = content.split('\n').filter(function(l){return l.trim()}).map(function(l){return l.replace(/^[-•·]\s*/,'')});
+    el.innerHTML = '<div style="display:flex;flex-wrap:wrap;gap:5px">'+tags.map(function(t){var tn=t.split(/[（(]/)[0].trim();return '<span class="tviz-tag" onclick="tvisAsk(\'画出 '+tn+' 的完整机制流程图\')">'+t+'</span>'}).join('')+'</div>';
+  } else {
+    // Use renderMarkdown for proper formatting
+    el.innerHTML = renderMarkdown(content);
+    // Style list items if any
+    var lis = el.querySelectorAll('li');
+    lis.forEach(function(li) {
+      li.style.cssText = 'margin:4px 0;padding-left:12px;position:relative;list-style:none;line-height:1.7';
+      if (!li.querySelector('span')) {
+        var dot = document.createElement('span');
+        dot.style.cssText = 'position:absolute;left:0;top:8px;width:4px;height:4px;border-radius:50%;background:var(--pu);opacity:.45';
+        li.insertBefore(dot, li.firstChild);
+      }
+    });
+    var uls = el.querySelectorAll('ul');
+    uls.forEach(function(ul) { ul.style.paddingLeft = '0'; });
+  }
+}
+
+function extractTSection(text, label) {
+  var idx = text.indexOf('### '+label);
+  if (idx<0) { idx = text.indexOf('**'+label+'**'); if (idx<0) return ''; }
+  var start = text.indexOf('\n', idx); if (start<0) return '';
+  var sub = text.substring(start+1);
+  var end = sub.indexOf('\n### '); if (end<0) end = sub.indexOf('\n**'); if (end<0) end = sub.length;
+  return sub.substring(0, end).trim();
+}
+
+// Keep renderMermaidBlocks for other parts of the platform
+function renderMermaidBlocks(container) {
+  if (!container || typeof mermaid === 'undefined') return;
+  var blocks = container.querySelectorAll('.mermaid-block');
+  blocks.forEach(function(block) {
+    if (block.getAttribute('data-rendered')) return;
+    block.setAttribute('data-rendered', '1');
+    var code = block.getAttribute('data-mermaid') || '';
+    code = code.replace(/&quot;/g,'"').replace(/&amp;/g,'&').replace(/&lt;/g,'<').replace(/&gt;/g,'>');
+    var mmdDiv = document.createElement('div');
+    mmdDiv.className = 'mermaid'; mmdDiv.textContent = code;
+    block.appendChild(mmdDiv);
+    try { mermaid.run({ nodes: [mmdDiv] }); } catch(e) {
+      block.innerHTML = '<pre style="font-size:11px;color:rgba(255,255,255,.4);padding:10px">Mermaid error: '+e.message+'</pre>';
+    }
+  });
+}
+
+function capLaunch(actionId, capabilityCode) {
+  if (capabilityCode) {
+    try {
+      var p = JSON.parse(localStorage.getItem('r434_cap_progress') || '{}');
+      p[capabilityCode] = true;
+      localStorage.setItem('r434_cap_progress', JSON.stringify(p));
+    } catch(e) {}
+  }
+  }
+
+// ===== INIT DONE =====
+
+// ===== INIT DONE =====
+// Service Worker disabled due to persistent caching issues
+// To re-enable PWA offline support, uncomment:
+// if ('serviceWorker' in navigator) { navigator.serviceWorker.register('sw.js'); }
+
+// 液态玻璃位移图生成
+(function() {
+  'use strict';
+  var W = 400, H = 300;
+  var canvas = document.createElement('canvas');
+  canvas.width = W; canvas.height = H;
+  var ctx = canvas.getContext('2d');
+
+  function roundedRectSDF(x, y, w, h, r) {
+    var qx = Math.abs(x) - w + r;
+    var qy = Math.abs(y) - h + r;
+    return Math.min(Math.max(qx, qy), 0) +
+           Math.sqrt(Math.max(qx, 0) * Math.max(qx, 0) + Math.max(qy, 0) * Math.max(qy, 0)) - r;
+  }
+
+  function smoothStep(edge0, edge1, x) {
+    var t = Math.max(0, Math.min(1, (x - edge0) / (edge1 - edge0)));
+    return t * t * (3 - 2 * t);
+  }
+
+  function generateDisplacementMap() {
+    var imageData = ctx.createImageData(W, H);
+    var data = imageData.data;
+    var maxScale = 0;
+    var rawValues = [];
+
+    for (var i = 0; i < data.length; i += 4) {
+      var px = (i / 4) % W;
+      var py = Math.floor((i / 4) / W);
+      var ux = px / W - 0.5;
+      var uy = py / H - 0.5;
+
+      var dist = roundedRectSDF(ux, uy, 0.42, 0.38, 0.12);
+      var displacement = smoothStep(0.6, 0, dist - 0.05);
+      var scaled = smoothStep(0, 1, displacement);
+
+      var dx = (ux * scaled + 0.5) * W - px;
+      var dy = (uy * scaled + 0.5) * H - py;
+
+      maxScale = Math.max(maxScale, Math.abs(dx), Math.abs(dy));
+      rawValues.push(dx, dy);
+    }
+
+    maxScale *= 0.5 || 1;
+
+    var idx = 0;
+    for (var i = 0; i < data.length; i += 4) {
+      var r = rawValues[idx++] / maxScale + 0.5;
+      var g = rawValues[idx++] / maxScale + 0.5;
+      data[i]     = r * 255;
+      data[i + 1] = g * 255;
+      data[i + 2] = 0;
+      data[i + 3] = 255;
+    }
+
+    ctx.putImageData(imageData, 0, 0);
+
+    var feImage = document.getElementById('displacement-map');
+    if (feImage) {
+      feImage.setAttributeNS('http://www.w3.org/1999/xlink', 'href', canvas.toDataURL());
+    }
+  }
+
+  generateDisplacementMap();
+  window.addEventListener('resize', generateDisplacementMap);
+})();
+/* ================= v3.1 增强模块 =================
+ * 追加式实现，不改动上方原有代码：
+ * ② 批改v2：core_points 要点对照(确定性) + 成绩历史
+ * ③ 背诵闭环：考点金句卡(遮挡背诵) + 错题优先入卡
+ * ④ 首页今日主线：卡片到期/错题到期/今日一题
+ * ================================================== */
+
+(function(){
+  var css = '.mask-line{filter:blur(6px);cursor:pointer;transition:filter .25s;border-radius:6px;user-select:none}' +
+    '.mask-line.revealed{filter:none;user-select:auto}' +
+    '.daily-bar{display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:10px;margin-bottom:16px}' +
+    '.daily-item{background:rgba(255,255,255,.04);border:1px solid var(--bdr);border-radius:12px;padding:12px 14px;display:flex;flex-direction:column;gap:6px}' +
+    '.daily-item .dl-t{font-size:12px;color:var(--ts)}.daily-item .dl-v{font-size:16px;font-weight:700}' +
+    '.cov-hit{color:#4ade80}.cov-part{color:#fbbf24}.cov-miss{color:#f87171}' +
+    '.cards-tab{display:flex;gap:8px;margin:0 0 14px}.cards-tab button{padding:7px 16px;border-radius:16px;border:1px solid var(--bdr);background:rgba(255,255,255,.04);color:var(--t);font-size:13px;cursor:pointer}.cards-tab button.on{background:var(--pu);color:#fff;border-color:var(--pu)}';
+  var st = document.createElement('style'); st.textContent = css; document.head.appendChild(st);
+})();
+
+var _cardsTab = 'kn';
+var _acLastQid = null;
+var _acLastAnswer = '';
+
+/* ---------- 通用工具 ---------- */
+function _norm434(s){ return String(s||'').replace(/[^\u4e00-\u9fa5A-Za-z0-9]/g,'').toLowerCase(); }
+function _bigrams434(s){ var t=_norm434(s), r=[], i; for(i=0;i<t.length-1;i++) r.push(t.substr(i,2)); return r; }
+function qaById(qid){ if(typeof Q_ANALYSIS==='undefined'||!Q_ANALYSIS.questions) return null; var hit=null; Q_ANALYSIS.questions.forEach(function(x){ if(String(x.id)===String(qid)) hit=x; }); return hit; }
+function dataById(qid){ var hit=null; DATA.forEach(function(x){ if(String(x.id)===String(qid)) hit=x; }); return hit; }
+function _cardDue(log){ return !log || !log.date || (new Date() - new Date(log.date)) > (log.interval||1)*86400000; }
+
+/* ---------- ② 批改v2：确定性要点对照 ---------- */
+function acCoverage(ans, qa) {
+  var normAns = _norm434(ans);
+  var res = { kw: [], points: [], pct: 0 };
+  (qa.keywords||[]).forEach(function(k){
+    var s = String(k);
+    var zh = s.split(/[（(]/)[0].trim();
+    var enM = s.match(/[（(]([^)）]+)[)）]/);
+    var en = enM ? enM[1] : '';
+    var hit = (zh && normAns.indexOf(_norm434(zh))>=0) || (en && normAns.indexOf(_norm434(en))>=0);
+    res.kw.push({term:s, hit:hit});
+  });
+  (qa.core_points||[]).forEach(function(p){
+    var bg = _bigrams434(p), hits=0;
+    bg.forEach(function(b){ if(normAns.indexOf(b)>=0) hits++; });
+    var ratio = bg.length ? hits/bg.length : 0;
+    res.points.push({text:p, level: ratio>=0.45?2:(ratio>=0.2?1:0)});
+  });
+  var total = res.kw.length + res.points.length;
+  var got = 0;
+  res.kw.forEach(function(k){ if(k.hit) got++; });
+  res.points.forEach(function(p){ if(p.level===2) got++; else if(p.level===1) got+=0.5; });
+  res.pct = total ? Math.round(got/total*100) : 0;
+  return res;
+}
+
+function acCoverageHtml(cov) {
+  var h = '<div class="pcard" style="margin-top:14px"><div class="pcard-body">';
+  h += '<h4 style="margin:0 0 10px">📋 要点对照（自动核对，不依赖AI）· 覆盖率 <span style="color:' + (cov.pct>=70?'var(--gn)':cov.pct>=40?'var(--or)':'var(--r)') + '">' + cov.pct + '%</span></h4>';
+  if (cov.points.length) {
+    h += '<div style="font-size:12px;color:var(--ts);margin-bottom:6px">核心要点</div>';
+    cov.points.forEach(function(p){
+      var ic = p.level===2 ? '<span class="cov-hit">✔ 已覆盖</span>' : p.level===1 ? '<span class="cov-part">◐ 部分</span>' : '<span class="cov-miss">✘ 缺失</span>';
+      h += '<div style="display:flex;gap:8px;align-items:flex-start;padding:6px 0;border-bottom:1px dashed rgba(255,255,255,.06);font-size:13px;line-height:1.6"><span style="flex:0 0 62px;font-size:11px">' + ic + '</span><span>' + escapeHtml(p.text) + '</span></div>';
+    });
+  }
+  if (cov.kw.length) {
+    h += '<div style="font-size:12px;color:var(--ts);margin:10px 0 6px">关键术语</div><div style="display:flex;flex-wrap:wrap;gap:6px">';
+    cov.kw.forEach(function(k){
+      h += '<span style="padding:3px 10px;border-radius:12px;font-size:11px;border:1px solid ' + (k.hit?'rgba(74,222,128,.4);color:#4ade80':'rgba(248,113,113,.4);color:#f87171') + '">' + (k.hit?'✔ ':'✘ ') + escapeHtml(k.term) + '</span>';
+    });
+    h += '</div>';
+  }
+  h += '<div style="font-size:11px;color:var(--ts);margin-top:10px">缺失/部分覆盖的要点就是失分点，建议对照补写后再批改一次。</div>';
+  h += '</div></div>';
+  return h;
+}
+
+function acSaveGrade(json, qid, covPct, qText) {
+  var log = [];
+  try { log = JSON.parse(localStorage.getItem('r434_gradelog')||'[]'); } catch(e) {}
+  log.unshift({ t: Date.now(), d: new Date().toISOString().slice(0,10), qid: qid||'', q: (qText||'').substring(0,36),
+    total: json.total||0, k: json.knowledge||0, l: json.logic||0, tm: json.terms||0, r: json.realworld||0, cov: covPct===undefined?null:covPct });
+  if (log.length > 100) log = log.slice(0,100);
+  try { localStorage.setItem('r434_gradelog', JSON.stringify(log)); } catch(e) {}
+}
+
+function acHistoryHtml() {
+  var log = [];
+  try { log = JSON.parse(localStorage.getItem('r434_gradelog')||'[]'); } catch(e) {}
+  if (!log.length) return '';
+  var recent = log.slice(0,10);
+  var avg5 = 0, prev5 = 0, n1=0, n2=0;
+  log.slice(0,5).forEach(function(x){ avg5+=x.total; n1++; });
+  log.slice(5,10).forEach(function(x){ prev5+=x.total; n2++; });
+  avg5 = n1?(avg5/n1):0; prev5 = n2?(prev5/n2):0;
+  var trend = n2 ? (avg5>prev5+0.2?' <span style="color:var(--gn)">↑进步中</span>':avg5<prev5-0.2?' <span style="color:var(--r)">↓退步</span>':' <span style="color:var(--ts)">→持平</span>') : '';
+  var h = '<div class="pcard" style="margin-top:14px"><div class="pcard-body"><h4 style="margin:0 0 10px">📈 批改历史（近' + recent.length + '次 · 均分 ' + avg5.toFixed(1) + '/10' + trend + '）</h4>';
+  recent.forEach(function(x){
+    var c = x.total>=8?'var(--gn)':x.total>=5?'var(--or)':'var(--r)';
+    h += '<div style="display:flex;gap:10px;align-items:center;padding:6px 0;border-bottom:1px dashed rgba(255,255,255,.06);font-size:12px">'
+      + '<span style="flex:0 0 70px;color:var(--ts)">' + x.d + '</span>'
+      + '<span style="flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">' + escapeHtml(x.q||x.qid||'手动输入题') + '</span>'
+      + (x.cov!==null&&x.cov!==undefined ? '<span style="flex:0 0 62px;color:var(--ts)">要点' + x.cov + '%</span>' : '')
+      + '<span style="flex:0 0 46px;text-align:right;font-weight:700;color:' + c + '">' + x.total + '/10</span></div>';
+  });
+  h += '</div></div>';
+  return h;
+}
+
+function doAnswerCheck() {
+  var q = document.getElementById('acQuestion').value.trim();
+  var a = document.getElementById('acAnswer').value.trim();
+  var btn = document.getElementById('acBtn');
+  var result = document.getElementById('acResult');
+  if (!q) { result.style.display='block'; result.innerHTML='<div style="padding:12px;color:rgba(255,69,58,.7);font-size:13px">请先输入题目</div>'; return; }
+  if (!a) { result.style.display='block'; result.innerHTML='<div style="padding:12px;color:rgba(255,69,58,.7);font-size:13px">请先输入你的答案</div>'; return; }
+  if (a.length < 20) { result.style.display='block'; result.innerHTML='<div style="padding:12px;color:rgba(255,69,58,.7);font-size:13px">答案太短（不足20字），请输入完整答案</div>'; return; }
+
+  var ach = [];
+  try { ach = JSON.parse(localStorage.getItem('r434_achistory')||'[]'); } catch(e) { ach=[]; }
+  ach = ach.filter(function(item){ return item.q !== q; });
+  ach.unshift({q:q, t:Date.now()});
+  if (ach.length > 20) ach = ach.slice(0,20);
+  try { localStorage.setItem('r434_achistory', JSON.stringify(ach)); } catch(e) {}
+
+  // 定位题目id：下拉框优先，其次文本匹配
+  var qid = null;
+  var sel = document.getElementById('acSelectQ');
+  if (sel && sel.value && sel.value.indexOf('__') !== 0) qid = sel.value;
+  var refInfo = '';
+  DATA.forEach(function(x){
+    if (q.indexOf(x.question) >= 0 || (x.year && q.indexOf(String(x.year)) >= 0 && q.indexOf(String(x.num)) >= 0)) {
+      if (!qid) qid = x.id;
+      refInfo += '\n\n【参考：' + x.id + '】\n题目：' + x.question + '\n标准答案：' + (x.answer||'').substring(0,800);
+    }
+  });
+  _acLastQid = qid; _acLastAnswer = a;
+
+  // 逐题拆解要点注入评分提示词
+  var qa = qid ? qaById(qid) : null;
+  var pointInfo = '';
+  if (qa) {
+    pointInfo = '\n\n【本题评分要点（知识点覆盖维度必须逐条核对）】\n';
+    (qa.core_points||[]).forEach(function(p,i){ pointInfo += (i+1) + '. ' + p + '\n'; });
+    /* 手册锚点: 题目关联知识点的假设/要点/评价一并作为评分依据 */
+    var _q0 = DATA.find(function(x){ return x.id === qid; });
+    if (_q0 && _q0.knowledge) {
+      (Array.isArray(_q0.knowledge) ? _q0.knowledge : [_q0.knowledge]).forEach(function(knName){
+        var _kn2 = KNOWLEDGE[knName];
+        if (!_kn2) return;
+        pointInfo += '\n【背诵手册·' + knName + '(评分对照)】\n';
+        if (_kn2.assumptions && _kn2.assumptions.length) pointInfo += '假设: ' + _kn2.assumptions.slice(0,5).join('；') + '\n';
+        if (_kn2.key && _kn2.key.length) pointInfo += '要点: ' + _kn2.key.slice(0,6).join('；') + '\n';
+        if (_kn2.evaluation_pros && _kn2.evaluation_pros.length) pointInfo += '评价(优): ' + _kn2.evaluation_pros.slice(0,3).join('；') + '\n';
+        if (_kn2.evaluation_cons && _kn2.evaluation_cons.length) pointInfo += '评价(限): ' + _kn2.evaluation_cons.slice(0,3).join('；') + '\n';
+      });
+    }
+    if (qa.keywords && qa.keywords.length) pointInfo += '关键术语：' + qa.keywords.join('、') + '\n';
+  }
+
+  btn.disabled = true; btn.textContent = 'AI 正在批改...';
+  result.style.display = 'block';
+  result.innerHTML = '<div style="padding:24px;text-align:center;color:#888">⏳ AI 正在逐项评分...</div>';
+
+  var sys = '你是人大434国际商务考研阅卷老师，批改标准严格但公正。请对学生的答案逐项评分（满分10分）。\n\n'
+    + '【评分标准（按题型灵活调整）】\n'
+    + '如果是简答题：侧重核心要点是否齐全(5分)+逻辑是否清晰(3分)+术语是否准确(2分)\n'
+    + '如果是论述题：侧重知识框架是否完整(4分)+逻辑推导是否严谨(3分)+专业术语与概念表述是否精准(3分)\n'
+    + '如果是案例题：侧重问题识别是否准确(3分)+理论选用是否恰当(4分)+分析是否结合案例材料(3分)\n\n'
+    + '【注意】不要求术语中英文对照；不硬性要求联系中国现实(看题目本身是否需要)。\n\n'
+    + '输出格式（JSON）：\n'
+    + '{"knowledge":得分,"logic":得分,"terms":得分,"total":总分,"strengths":"优点...","weaknesses":"不足...","improvement":"具体可操作的改进建议...","modelAnswer":"完整参考答案(按题目实际所需篇幅，简答题300-500字，论述题600-1000字，定义先行→分点展开→结论)"}\n\n'
+    + '规则：严格按评分标准给分，不手软也不死板；改进建议必须具体到"你漏了XX要点，应该这样写"；只输出JSON。';
+  var _prof = (typeof buildStudyProfile === 'function') ? buildStudyProfile() : '';
+  var userMsg = '【题目】\n' + q + '\n\n【学生答案】\n' + a + refInfo + pointInfo + (_prof ? '\n\n' + _prof + '\n(评语请特别关注该考生的历史薄弱维度是否在本次答案中改善)' : '');
+
+  aiCall('grade', {messages:[{role:'system',content:sys},{role:'user',content:userMsg}],max_tokens:6000,temperature:0.1,json:true})
+  .then(function(r){ if(!r.ok) throw Error('HTTP '+r.status); return r.json(); })
+  .then(function(d){
+    var c = d.choices&&d.choices[0]&&d.choices[0].message ? d.choices[0].message.content||'' : '';
+    renderAnswerCheckResult(c);
+    // 追加：要点对照 + 历史入库
+    var json = null;
+    try { json = JSON.parse(c); } catch(e){ var m=c.match(/\{[\s\S]*\}/); if(m){ try{ json=JSON.parse(m[0]); }catch(e2){} } }
+    var covPct;
+    var qa2 = _acLastQid ? qaById(_acLastQid) : null;
+    if (qa2) {
+      var cov = acCoverage(_acLastAnswer, qa2);
+      covPct = cov.pct;
+      var rr = document.getElementById('acResult');
+      if (rr) rr.insertAdjacentHTML('beforeend', acCoverageHtml(cov));
+    }
+    if (json && json.total !== undefined) {
+      acSaveGrade(json, _acLastQid, covPct, q);
+      var old = document.getElementById('acHistBox');
+      if (old) old.outerHTML = '<div id="acHistBox">' + acHistoryHtml() + '</div>';
+    }
+    btn.disabled = false; btn.textContent = '🔍 开始批改';
+  }).catch(function(e){
+    result.innerHTML = '<div style="padding:16px;color:rgba(255,69,58,.7);font-size:13px">批改失败：'+e.message+' <button class="ai-btn ai-btn-sm" onclick="doAnswerCheck()" style="margin-left:8px;padding:4px 12px;font-size:11px">重试</button></div>';
+    btn.disabled = false; btn.textContent = '🔍 开始批改';
+  });
+}
+
+/* 批改页包装：预填今日一题 + 追加历史区 */
+(function(){
+  var _orig = showAnswerCheck;
+  showAnswerCheck = function(){
+    _orig();
+    var ct = document.getElementById('ct');
+    if (ct && !document.getElementById('acHistBox')) ct.insertAdjacentHTML('beforeend', '<div id="acHistBox">' + acHistoryHtml() + '</div>');
+    var pend = null;
+    try { pend = localStorage.getItem('r434_daily_pending'); } catch(e) {}
+    if (pend) {
+      localStorage.removeItem('r434_daily_pending');
+      var q = dataById(pend);
+      if (q) {
+        var box = document.getElementById('acQuestion');
+        if (box) box.value = q.year + '年 第' + q.num + '题 ' + q.type + '：' + q.question;
+        var sel = document.getElementById('acSelectQ');
+        if (sel) sel.value = pend;
+        var ans = document.getElementById('acAnswer');
+        if (ans) ans.focus();
+      }
+    }
+  };
+})();
+
+/* ---------- ③ 背诵闭环：知识卡 + 考点金句卡(遮挡背诵) ---------- */
+function cardsSwitchTab(tab){ _cardsTab = tab; showCards(); }
+
+function _qaDeck() {
+  if (typeof Q_ANALYSIS === 'undefined' || !Q_ANALYSIS.questions) return null;
+  var wlog = {};
+  try { wlog = JSON.parse(localStorage.getItem('r434_wrong')||'{}'); } catch(e) {}
+  var cardLog = {};
+  try { cardLog = JSON.parse(localStorage.getItem('r434_cards')||'{}'); } catch(e) {}
+  var deck = [];
+  Q_ANALYSIS.questions.forEach(function(qa){
+    if (!qa.memorizable || !qa.memorizable.length) return;
+    var log = cardLog['qa_'+qa.id];
+    deck.push({ qa: qa, wrong: wlog[qa.id]||0, log: log||null, due: _cardDue(log) });
+  });
+  // 排序：错题次数降序 > 到期优先 > 年份新在前
+  deck.sort(function(a,b){
+    if (a.wrong !== b.wrong) return b.wrong - a.wrong;
+    if (a.due !== b.due) return a.due ? -1 : 1;
+    return (b.qa.year||0) - (a.qa.year||0);
+  });
+  return deck;
+}
 
 function showCards() {
   document.getElementById('bc').innerHTML = '<span>🧠 记忆卡片</span>';
@@ -8922,424 +10859,6 @@ function _dailyBarHtml() {
   h += '</div></div></div>';
   return h;
 }
-
-function showMockExam() {
-  var bb = document.getElementById('backBtn'); if (bb) bb.style.display = 'block';
-  document.getElementById('bc').innerHTML = '<span>🎯 AI模拟考试</span>';
-  mockState = {questions:[], answers:[], startTime:0, timerId:null, phase:'ready'};
-  var h = '<div class="hero"><h1>🎯 AI 模拟考试</h1><div class="desc">AI 根据真题风格和历年考点，生成 10 道模拟题（5 简答 + 3 论述 + 2 案例）。限时 180 分钟，提交后 AI 逐题批改。</div>' +
-    '<div style="margin-top:16px"><button class="btn btn-gen" onclick="startMockExam()" style="font-size:15px;padding:14px 28px">🤖 开始 AI 组卷</button></div></div>';
-  var recs = loadMockRecords();
-  if (recs.length) {
-    h += '<div class="pcard" style="margin-top:14px"><div class="pcard-hdr"><h3>🗂 模考记录（' + recs.length + '）</h3></div><div class="pcard-body">';
-    recs.forEach(function(r, i) {
-      var d = new Date(r.date);
-      h += '<div style="display:flex;align-items:center;gap:10px;padding:8px 4px;border-bottom:.5px solid var(--bdr);font-size:13px">' +
-        '<span style="flex:1;cursor:pointer" onclick="viewMockRecord(' + i + ')">' + d.toLocaleDateString('zh-CN') + ' ' + d.toTimeString().substring(0, 5) + ' · ' + (r.questions || []).length + '题 · 用时' + r.tm + '分钟</span>' +
-        '<strong style="color:' + (r.total >= 90 ? 'var(--gn)' : r.total >= 60 ? 'var(--or)' : 'var(--r)') + '">' + r.total + '分</strong>' +
-        '<button class="ai-btn ai-btn-sm" onclick="viewMockRecord(' + i + ')" style="padding:4px 12px;font-size:11px">查看</button>' +
-        '<button class="ai-btn ai-btn-sm" onclick="delMockRecord(' + i + ')" style="padding:4px 10px;font-size:11px;color:var(--r)">删除</button></div>';
-    });
-    h += '</div></div>';
-  }
-  document.getElementById('ct').innerHTML = h;
-}
-
-function startMockExam() {
-  document.getElementById('ct').innerHTML = '<div style="text-align:center;padding:80px 20px"><div class="spinner"></div><p style="margin-top:16px;color:var(--ts)">AI 正在生成模拟试卷...</p></div>';
-  var ctx = buildAIContext('模拟考试');
-  var sys = '你是人大434国际商务考研命题老师。请严格按照以下要求生成模拟试卷，每道题必须同时生成标准答案。\n' + ctx + '\n' + buildHotContext('') + '\n\n'
-    + '【生成要求】\n'
-    + '1. 共10道题：简答5道(每题10分)、论述3道(每题20分)、案例2道(每题20分)\n'
-    + '2. 题目风格贴合人大434真题：简答极短直问，论述可复合设问\n'
-    + '3. 每道题的标准答案(含评分基准)必须依据上方资料库原文表述，理论定义与要点忠于手册\n'
-    + '4. 案例题/论述题可从上方热点素材中选取真实事件作为背景\n'
-    + '5. 答案用Markdown分层结构：**加粗小标题**+"- "无序列表展开，结尾【考点提示】\n'
-    + '6. JSON输出：{"questions":[{"type":"简答","question":"题面","score":10,"answer":"标准答案(含采分点)"},...]}\n'
-    + '7. 只输出JSON，不要其他文字';
-  var _d = directDS();
-  var _wsT = webSearchTools();
-  var _body = {model:AI_MODEL, messages:[{role:'system',content:sys},{role:'user',content:'生成一套人大434国际商务考研模拟试卷'}], stream:false, temperature:0.5, response_format:{type:'json_object'}};
-  if (_wsT) _body.tools = _wsT;
-  fetch(_d.url, {method:'POST', headers:{Authorization:'Bearer '+_d.key,'Content-Type':'application/json'},
-    body:JSON.stringify(_body)
-  }).then(function(r){return r.json();}).then(function(d){
-    var c = d.choices[0].message.content, m = c.match(/\{[\s\S]*\}/);
-    if (!m) throw Error('AI格式错误');
-    var data = JSON.parse(m[0]); mockState.questions = data.questions || [];
-    mockState.answers = new Array(mockState.questions.length).fill('');
-    mockState.startTime = Date.now(); mockState.phase = 'exam'; renderMockExam();
-  }).catch(function(e){
-    /* AI 组卷失败 → 降级为真题随机组卷, 必须明确告知用户 */
-    var pool = DATA.slice(); shuffleArray(pool); mockState.questions = [];
-    [{t:'简答',n:5},{t:'论述',n:3},{t:'案例',n:2}].forEach(function(tt) {
-      var picked = pool.filter(function(q){return q.type===tt.t}).slice(0,tt.n);
-      picked.forEach(function(q){mockState.questions.push({type:q.type,question:q.question,score:q.type==='简答'?10:20,refId:q.id,answer:q.answer});});
-    });
-    mockState.answers = new Array(mockState.questions.length).fill('');
-    mockState.startTime = Date.now(); mockState.phase = 'exam';
-    mockState.fallback = true; /* 标记降级 */
-    renderMockExam();
-  });
-}
-
-function renderMockExam() {
-  var qs = mockState.questions, m = Math.floor((Date.now()-mockState.startTime)/60000);
-  var h = '';
-  /* 降级提示: AI组卷失败时明确告知 */
-  if (mockState.fallback) {
-    h += '<div style="margin-bottom:12px;padding:12px 16px;border-radius:12px;background:rgba(255,159,10,.10);border:1px solid rgba(255,159,10,.3);color:#fbbf24;font-size:13px">⚠️ AI 组卷失败（网络或服务波动），已自动改用<b>历年真题随机组卷</b>。题目和批改仍正常，可放心作答。想重新用 AI 出卷可返回重试。</div>';
-  }
-  h += '<div style="position:sticky;top:16px;z-index:10;background:rgba(255,255,255,.09);border:1px solid rgba(255,255,255,.18);box-shadow:inset 0 1px 0 rgba(255,255,255,.20), 0 6px 18px rgba(0,0,0,.28);backdrop-filter:blur(20px);border-radius:16px;padding:12px 20px;margin-bottom:20px;display:flex;justify-content:space-between;align-items:center;border:.5px solid rgba(255,255,255,.4)">' +
-    '<div><strong>⏱ <span id="mockTimer">' + m + '分钟</span></strong> | ' + qs.length + '题 | 总分150</div>' +
-    '<div style="display:flex;gap:8px"><button class="ai-btn ai-btn-sm" onclick="mockExportBlank()" style="padding:8px 14px;font-size:12px">📄 导出试卷</button>' +
-    '<button class="btn btn-r" onclick="submitMockExam()" style="padding:8px 20px;font-size:13px">提交批改</button></div></div>';
-  h += '<div id="mockBody">';
-  qs.forEach(function(q,i){var mh=q.type==='简答'?160:240;h += '<div class="pcard"><div class="pcard-hdr"><h3>'+(i+1)+'. '+q.type+'（'+q.score+'分）</h3><button class="ai-btn ai-btn-sm" onclick="mockToggleZoom('+i+',this)" style="padding:4px 12px;font-size:11px">⤢ 放大</button></div>' +
-    '<div class="pcard-body"><div style="font-size:14px;line-height:1.8;margin-bottom:12px">'+q.question+'</div>' +
-    '<textarea id="ma_'+i+'" placeholder="输入你的答案...（右下角可拖拽调整高度）" style="width:100%;min-height:'+mh+'px;padding:12px;border:.5px solid rgba(0,0,0,.1);border-radius:10px;font-size:14px;font-family:inherit;resize:vertical;line-height:1.8" oninput="mockState.answers['+i+']=this.value;mockAutoGrow(this)"></textarea></div></div>';});
-  h += '</div>'; document.getElementById('ct').innerHTML = h;
-  if (mockState.timerId) clearInterval(mockState.timerId);
-  mockState.timerId = setInterval(function(){var el=document.getElementById('mockTimer');if(el){var m2=Math.floor((Date.now()-mockState.startTime)/60000);el.textContent=m2+'分钟';if(m2>150)el.style.color='#f44336';}},30000);
-}
-
-function submitMockExam() {
-  /* 提交前空白检查: 未作答题目数 */
-  var blank = 0;
-  (mockState.answers||[]).forEach(function(a){ if (!a || !a.trim()) blank++; });
-  if (blank > 0) {
-    var ok = confirm('还有 ' + blank + ' 道题未作答，确定提交吗？\n（提交后 AI 会按 0 分处理这些题目）');
-    if (!ok) return;
-  }
-  if (mockState.timerId) clearInterval(mockState.timerId); mockState.phase = 'done';
-  var qs = mockState.questions || [];
-  var results = new Array(qs.length);
-  /* 逐题并行评分(并发2, 复用 _mockGenAnswers 模式): 出一题渲一题, 不再单发等全文 */
-  var queue = qs.map(function(q,i){ return i; });
-  var active = 0, done = 0;
-  var totalScore = 0, totalMax = 0;
-
-  function tick() {
-    var el = document.getElementById('mockGradeProg');
-    if (el) el.textContent = 'AI 逐题批改中 ' + done + '/' + qs.length;
-  }
-  function renderOne(i, r) {
-    var card = document.getElementById('mockGradeCard_' + i);
-    if (!card) return;
-    var q = qs[i], p = q.score > 0 ? Math.round((r.score||0)/q.score*100) : 0;
-    var cl = p >= 80 ? 'var(--gn)' : p >= 50 ? 'var(--or)' : 'var(--r)';
-    card.innerHTML = '<div class="pcard"><div class="pcard-hdr"><h3>' + (i+1) + '. ' + q.type + '（' + q.score + '分）</h3><span style="color:' + cl + ';font-weight:700">' + (r.score||0) + '/' + q.score + '</span></div>' +
-      '<div class="pcard-body"><div style="font-size:14px;line-height:1.8;margin-bottom:8px">' + q.question + '</div>' +
-      '<div style="background:rgba(0,0,0,.02);padding:12px;border-radius:10px;font-size:13px;margin-bottom:8px;white-space:pre-wrap"><strong>你的答案：</strong>' + escapeHtml(mockState.answers[i]||'(未作答)') + '</div>' +
-      (r.comment ? '<div style="color:var(--ts);font-size:13px;background:rgba(255,159,10,.06);border:1px solid rgba(255,159,10,.15);border-radius:10px;padding:10px 12px"><strong>📝 评语：</strong>' + renderMarkdown(r.comment) + '</div>' : '') +
-      (q.answer ? '<details style="margin-top:10px"><summary style="cursor:pointer;font-size:13px;color:#a5b4fc">📋 查看标准答案</summary><div style="font-size:13px;line-height:1.85;padding:12px;margin-top:6px;background:rgba(94,92,230,.08);border:1px solid rgba(148,146,255,.18);border-radius:10px">' + renderMarkdown(q.answer) + '</div></details>' : '') +
-      '</div></div>';
-  }
-  function next() {
-    if (mockState.phase !== 'done') return;
-    if (!queue.length) return;
-    if (active >= 2) return;
-    var i = queue.shift();
-    var q = qs[i];
-    active++;
-    var g = '题目[' + q.type + '(' + q.score + '分)]：' + q.question + '\n【标准答案(评分基准)】：' + ((q.answer||'').substring(0,1000)||'(无, 按学科常识评)') + '\n学生答案：' + (mockState.answers[i]||'(未作答)') + '\n\n';
-    g += '\n评分规则：对照标准答案评分，评语必须点名学生漏掉了标准答案中的哪些要点。按题型灵活打分（简答侧重要点齐全，论述侧重逻辑推导，案例侧重理论运用）。';
-    aiCall('grade', {messages:[{role:'system',content:'你是人大434考研阅卷老师。批改严格但公正。不要求术语中英文对照，不硬性要求联系现实。'},{role:'user',content:g}],temperature:0.3,json:true,max_tokens:800})
-    .then(function(r){ return r.json(); })
-    .then(function(d){
-      var c = d.choices && d.choices[0] ? d.choices[0].message.content : '';
-      var m2 = c ? c.match(/\{[\s\S]*\}/) : null;
-      var r = m2 ? JSON.parse(m2[0]) : {score:0,max:q.score,comment:'评分解析失败'};
-      results[i] = r; renderOne(i, r); done++; totalScore += (r.score||0); totalMax += q.score;
-      tick();
-    }).catch(function(){
-      var r = {score:0,max:q.score,comment:'评分请求失败'};
-      results[i] = r; renderOne(i, r); done++; totalScore += 0; totalMax += q.score;
-      tick();
-    }).finally(function(){
-      active--;
-      if (!queue.length && active === 0) finish();
-    });
-    next();
-  }
-  function finish() {
-    /* 汇总阶段: 单次调用生成总体评价(不阻塞前面的逐题渲染) */
-    var tm = Math.floor((Date.now()-mockState.startTime)/60000);
-    var rr = {results: results, total: totalScore, summary: '批改完成'};
-    var ss = '以下是本次模考' + qs.length + '题的逐题评分。';
-    rr.summary = ss;
-    mockState._grading = results; /* save for export */
-    saveMockRecord(rr, tm);
-    /* 异步补 summary(可失败, 不影响已渲染结果) */
-    var g2 = '以下是' + qs.length + '道题的得分：' + results.map(function(r,i){ return '第'+(i+1)+'题'+(r.score||0)+'/'+qs[i].score+'分'; }).join('、') + '。';
-    aiCall('grade', {messages:[{role:'system',content:'你是人大434考研阅卷老师，输出简短总体评价。'},{role:'user',content:g2 + '\n请用100字内给出本次模考总体评价（含最弱维度+改进方向）。'}],temperature:0.3,json:true,max_tokens:300})
-    .then(function(r){ return r.json(); }).then(function(d){
-      var c = d.choices && d.choices[0] ? d.choices[0].message.content : '';
-      var m2 = c ? c.match(/\{[\s\S]*\}/) : null;
-      if (m2) { try { rr.summary = JSON.parse(m2[0]).summary || rr.summary; } catch(e){} }
-      else if (c && c.trim()) rr.summary = c.trim();
-      var hd = document.getElementById('mockGradeSummary');
-      if (hd) hd.innerHTML = '<div class="pcard" style="border-left:3px solid var(--pu)"><div class="pcard-body" style="font-size:14px;line-height:1.8">📊 <strong>总体评价</strong><div style="margin-top:6px">' + rr.summary + '</div></div></div>';
-    }).catch(function(){});
-    var hd2 = document.getElementById('mockGradeSummary');
-    if (hd2) hd2.innerHTML = '<div class="pcard" style="border-left:3px solid var(--pu)"><div class="pcard-body" style="font-size:14px;line-height:1.8">📊 <strong>总分：' + totalScore + ' 分</strong><div style="margin-top:6px;color:var(--ts);font-size:13px">' + rr.summary + '</div></div></div>';
-  }
-
-  /* 渲染进度框架 */
-  var h = '<div class="hero"><h1>📝 考试结果</h1><div class="desc">AI 逐题批改中，已完成题目会立即显示</div></div>';
-  h += '<div style="text-align:center;margin:8px 0 16px"><span id="mockGradeProg" style="font-size:13px;color:var(--ts)">AI 逐题批改中 0/' + qs.length + '</span></div>';
-  qs.forEach(function(q,i){
-    h += '<div id="mockGradeCard_' + i + '"><div class="pcard"><div class="pcard-hdr"><h3>' + (i+1) + '. ' + q.type + '（' + q.score + '分）</h3><span style="color:var(--ts)">⏳ 评分中...</span></div><div class="pcard-body"><div style="font-size:14px;line-height:1.8">' + q.question + '</div></div></div></div>';
-  });
-  h += '<div id="mockGradeSummary"></div>';
-  h += '<div style="text-align:center;margin-top:20px;display:flex;gap:12px;justify-content:center"><button class="ai-btn ai-btn-sm" onclick="mockExportWithAnswers()" style="padding:10px 20px;font-size:14px">📄 导出试卷+答案</button><button class="btn btn-gen" onclick="showMockExam()">重新模考</button></div>';
-  document.getElementById('ct').innerHTML = h;
-
-  next(); next();
-}
-
-function renderMockResult(rr, isReplay) {
-  var tm = isReplay && rr._tm != null ? rr._tm : Math.floor((Date.now()-mockState.startTime)/60000);
-  if (!isReplay) saveMockRecord(rr, tm);
-  var h = '<div class="hero"><h1>📝 考试结果</h1><div class="desc">用时'+tm+'分钟 | AI评分 <strong>'+(rr.total||0)+'分</strong> | '+(rr.summary||'')+(isReplay?'<div style="margin-top:6px;font-size:11px;color:var(--ts)">📁 历史记录回看</div>':'')+'</div></div>';
-  mockState.questions.forEach(function(q,i){var r=(rr.results||[])[i]||{},p=q.score>0?Math.round((r.score||0)/q.score*100):0,cl=p>=80?'var(--gn)':p>=50?'var(--or)':'var(--r)';
-    h += '<div class="pcard"><div class="pcard-hdr"><h3>'+(i+1)+'. '+q.type+'（'+q.score+'分）</h3><span style="color:'+cl+';font-weight:700">'+(r.score||0)+'/'+q.score+'</span></div>' +
-    '<div class="pcard-body"><div style="font-size:14px;line-height:1.8;margin-bottom:8px">'+q.question+'</div>' +
-    '<div style="background:rgba(0,0,0,.02);padding:12px;border-radius:10px;font-size:13px;margin-bottom:8px;white-space:pre-wrap"><strong>你的答案：</strong>'+escapeHtml(mockState.answers[i]||'(未作答)')+'</div>' +
-    (r.comment ? '<div style="color:var(--ts);font-size:13px;background:rgba(255,159,10,.06);border:1px solid rgba(255,159,10,.15);border-radius:10px;padding:10px 12px"><strong>📝 评语：</strong>'+renderMarkdown(r.comment)+'</div>' : '') +
-    (q.answer ? '<details style="margin-top:10px"><summary style="cursor:pointer;font-size:13px;color:#a5b4fc">📋 查看标准答案</summary><div style="font-size:13px;line-height:1.85;padding:12px;margin-top:6px;background:rgba(94,92,230,.08);border:1px solid rgba(148,146,255,.18);border-radius:10px">'+renderMarkdown(q.answer)+'</div></details>' : '') +
-    '</div></div>';});
-  h += '<div style="text-align:center;margin-top:20px;display:flex;gap:12px;justify-content:center"><button class="ai-btn ai-btn-sm" onclick="mockExportWithAnswers()" style="padding:10px 20px;font-size:14px">📄 导出试卷+答案</button><button class="btn btn-gen" onclick="showMockExam()">重新模考</button></div>';
-  document.getElementById('ct').innerHTML = h;
-}
-
-function showAnswerCheck() {
-  document.getElementById('bc').innerHTML = '<span>✅ 答案批改</span>';
-  
-  // Load history
-  var ach = [];
-  try { ach = JSON.parse(localStorage.getItem('r434_achistory') || '[]'); } catch(e) {}
-  
-  var h = '<div class="hero"><h1>✅ AI 答案批改</h1>' +
-    '<div class="desc">输入题目和你的答案，AI 按人大434评分标准（知识点覆盖4分 + 逻辑结构3分 + 术语准确2分 + 实际联系1分）逐项打分，给出改进建议。</div></div>';
-  
-  h += '<div class="pcard"><div class="pcard-body">';
-  
-  // Question input
-  h += '<div class="pcard-section"><h4>📝 题目</h4>';
-  h += '<div style="display:flex;gap:8px;align-items:center;margin-bottom:8px;flex-wrap:wrap">';
-  h += '<select id="acSelectQ" onchange="var v=this.value;if(v===\'__clear__\'){localStorage.removeItem(\'r434_achistory\');showAnswerCheck();return;}if(v&&v!==\'__hist__\'){var q=null;DATA.forEach(function(x){if(x.id==v)q=x});if(q){document.getElementById(\'acQuestion\').value=q.year+\'年 第\'+q.num+\'题 \'+q.type+\'：\'+q.question}}" style="padding:6px 10px;border:1px solid var(--bdr);border-radius:8px;background:rgba(255,255,255,.04);color:var(--t);font-size:12px;max-width:200px">';
-  h += '<option value="">真题题库</option>';
-  DATA.forEach(function(q) {
-    h += '<option value="' + q.id + '">' + q.year + '年#' + q.num + ' ' + q.type + '</option>';
-  });
-  h += '</select>';
-  
-  // History dropdown
-  if (ach.length > 0) {
-    h += '<select onchange="var v=this.value;if(v===\'__clear__\'){localStorage.removeItem(\'r434_achistory\');showAnswerCheck();return;}if(v)document.getElementById(\'acQuestion\').value=v" style="padding:6px 10px;border:1px solid var(--bdr);border-radius:8px;background:rgba(255,255,255,.04);color:var(--t);font-size:12px;max-width:280px">';
-    h += '<option value="">📜 历史记录（' + ach.length + '条）</option>';
-    ach.forEach(function(item, i) {
-      var preview = item.q.replace(/\n/g,' ').substring(0,40);
-      h += '<option value="' + item.q.replace(/"/g,'&quot;').replace(/'/g,"&#39;") + '">' + (i+1) + '. ' + preview + '</option>';
-    });
-    h += '<option value="__clear__" style="color:var(--r)">🗑 清除历史</option>';
-    h += '</select>';
-  }
-  
-  h += '<span style="font-size:11px;color:#888">或手动输入下方</span></div>';
-  h += '<textarea id="acQuestion" placeholder="在此输入题目..." style="width:100%;min-height:80px;background:rgba(255,255,255,.03);border:1px solid var(--bdr);border-radius:10px;padding:12px;font-size:13px;line-height:1.7;color:var(--t);resize:vertical;font-family:inherit;outline:none"></textarea>';
-  h += '</div>';
-  
-  // Answer input
-  h += '<div class="pcard-section"><h4>✍️ 你的答案</h4>';
-  h += '<textarea id="acAnswer" placeholder="在此输入你的答案..." style="width:100%;min-height:200px;background:rgba(255,255,255,.03);border:1px solid var(--bdr);border-radius:10px;padding:12px;font-size:13px;line-height:1.7;color:var(--t);resize:vertical;font-family:inherit;outline:none"></textarea>';
-  h += '</div>';
-  
-  // Submit
-  h += '<div style="text-align:center;margin-top:16px"><button class="ai-btn" id="acBtn" onclick="doAnswerCheck()" style="padding:12px 32px;font-size:14px;border-radius:20px">🔍 开始批改</button></div>';
-  
-  // Result
-  h += '<div id="acResult" style="display:none;margin-top:16px"></div>';
-  
-  h += '</div></div>';
-  
-  document.getElementById('ct').innerHTML = h;
-}
-
-function doAnswerCheck() {
-  var q = document.getElementById('acQuestion').value.trim();
-  var a = document.getElementById('acAnswer').value.trim();
-  var btn = document.getElementById('acBtn');
-  var result = document.getElementById('acResult');
-  
-  if (!q) { result.style.display = 'block'; result.innerHTML = '<div style="padding:12px;color:rgba(255,69,58,.7);font-size:13px">请先输入题目</div>'; return; }
-  if (!a) { result.style.display = 'block'; result.innerHTML = '<div style="padding:12px;color:rgba(255,69,58,.7);font-size:13px">请先输入你的答案</div>'; return; }
-  if (a.length < 20) { result.style.display = 'block'; result.innerHTML = '<div style="padding:12px;color:rgba(255,69,58,.7);font-size:13px">答案太短（不足20字），请输入完整答案</div>'; return; }
-  
-  // Save question to history (deduped, max 20)
-  var ach = [];
-  try { ach = JSON.parse(localStorage.getItem('r434_achistory') || '[]'); } catch(e) { ach = []; }
-  ach = ach.filter(function(item) { return item.q !== q; });
-  ach.unshift({q: q, t: Date.now()});
-  if (ach.length > 20) ach = ach.slice(0, 20);
-  try { localStorage.setItem('r434_achistory', JSON.stringify(ach)); } catch(e) {}
-  
-  btn.disabled = true; btn.textContent = 'AI 正在批改...';
-  result.style.display = 'block';
-  result.innerHTML = '<div style="padding:24px;text-align:center;color:#888">⏳ AI 正在逐项评分...</div>';
-  
-  // Build grading prompt
-  var sys = '你是人大434国际商务考研阅卷老师，批改标准严格但公正。请对学生的答案逐项评分（满分10分）。\n\n'
-    + '【评分标准（按题型灵活调整）】\n'
-    + '如果是简答题：侧重核心要点是否齐全(5分)+逻辑是否清晰(3分)+术语是否准确(2分)\n'
-    + '如果是论述题：侧重知识框架是否完整(4分)+逻辑推导是否严谨(3分)+专业术语与概念表述是否精准(3分)\n'
-    + '如果是案例题：侧重问题识别是否准确(3分)+理论选用是否恰当(4分)+分析是否结合案例材料(3分)\n\n'
-    + '【注意】不要求术语中英文对照；不硬性要求联系中国现实(看题目本身是否需要)。\n\n'
-    + '输出格式（JSON）：\n'
-    + '{"knowledge":得分,"logic":得分,"terms":得分,"total":总分,"strengths":"优点...","weaknesses":"不足...","improvement":"具体可操作的改进建议...","modelAnswer":"完整参考答案(按题目实际所需篇幅，简答题300-500字，论述题600-1000字，定义先行→分点展开→结论)"}\n\n'
-    + '规则：严格按评分标准给分，不手软也不死板；改进建议必须具体到"你漏了XX要点，应该这样写"；只输出JSON。';
-  
-  // Try to find matching exam question for reference
-  var refInfo = '';
-  DATA.forEach(function(x) {
-    if (q.indexOf(x.question) >= 0 || (x.year && q.indexOf(String(x.year)) >= 0 && q.indexOf(String(x.num)) >= 0)) {
-      refInfo += '\n\n【参考：' + x.id + '】\n题目：' + x.question + '\n标准答案：' + (x.answer||'').substring(0,800);
-    }
-  });
-  var userMsg = '【题目】\n' + q + '\n\n【学生答案】\n' + a + refInfo;
-  
-  var _d = directDS();
-  fetch(_d.url, {
-    method:'POST', headers:{Authorization:'Bearer '+getAPIKey(),'Content-Type':'application/json'},
-    body:JSON.stringify({model:AI_MODEL, tools:(webSearchTools()||[]), response_format:{type:'json_object'},messages:[{role:'system',content:sys},{role:'user',content:userMsg}],max_tokens:6000,temperature:0.1})
-  }).then(function(r){if(!r.ok)throw Error('HTTP '+r.status);return r.json()})
-  .then(function(d){
-    var c = d.choices&&d.choices[0]&&d.choices[0].message?d.choices[0].message.content||'':'';
-    renderAnswerCheckResult(c);
-    btn.disabled = false; btn.textContent = '🔍 开始批改';
-  }).catch(function(e){
-    result.innerHTML = '<div style="padding:16px;color:rgba(255,69,58,.7);font-size:13px">批改失败：'+e.message+' <button class="ai-btn ai-btn-sm" onclick="doAnswerCheck()" style="margin-left:8px;padding:4px 12px;font-size:11px">重试</button></div>';
-    btn.disabled = false; btn.textContent = '🔍 开始批改';
-  });
-}
-
-function renderAnswerCheckResult(content) {
-  var result = document.getElementById('acResult');
-  var json = null;
-  try { json = JSON.parse(content); } catch(e) {
-    var m = content.match(/\{[\s\S]*\}/);
-    if (m) { try { json = JSON.parse(m[0]); } catch(e2) {} }
-  }
-  
-  /* acSalvage: JSON被截断或字符串含裸换行导致parse失败时, 逐字段正则抢救 */
-  if (!json || json.total === undefined) {
-    var sv = {};
-    ['knowledge','logic','terms','realworld','total'].forEach(function(k){
-      var mm = content.match(new RegExp('"' + k + '"\\s*:\\s*([0-9.]+)'));
-      if (mm) sv[k] = parseFloat(mm[1]);
-    });
-    ['strengths','weaknesses','improvement','modelAnswer'].forEach(function(k){
-      var mm = content.match(new RegExp('"' + k + '"\\s*:\\s*"([\\s\\S]*?)(?:"\\s*[,}]|$)'));
-      if (mm) sv[k] = mm[1].replace(/\\n/g, '\n').replace(/\\"/g, '"');
-    });
-    if (sv.total !== undefined) json = sv;
-  }
-  if (!json || json.total === undefined) {
-    result.innerHTML = '<div class="pcard" style="padding:20px;text-align:center"><div style="color:#888;margin-bottom:12px">AI 未返回有效评分</div><button class="ai-btn ai-btn-sm" onclick="doAnswerCheck()" style="padding:6px 16px;font-size:12px">重试</button></div>';
-    return;
-  }
-
-  /* 成绩入库: 批改历史留痕(最近100条), 供学习统计画趋势 */
-  try {
-    var _sc = JSON.parse(localStorage.getItem('r434_acscores') || '[]');
-    var _qEl = document.getElementById('acQuestion');
-    _sc.push({t: Date.now(), q: (_qEl ? _qEl.value.trim() : '').substring(0, 40),
-      total: json.total || 0, knowledge: json.knowledge || 0, logic: json.logic || 0,
-      terms: json.terms || 0, realworld: json.realworld || 0});
-    if (_sc.length > 100) _sc = _sc.slice(-100);
-    localStorage.setItem('r434_acscores', JSON.stringify(_sc));
-  } catch(e) {}
-
-  var total = json.total || 0;
-  var gradeColor = total >= 8 ? 'var(--gn)' : total >= 5 ? 'var(--or)' : 'var(--r)';
-  var gradeLabel = total >= 8 ? '优秀' : total >= 5 ? '中等' : '需加强';
-  
-  var h = '<div class="pcard"><div class="pcard-body">';
-  
-  // Score overview
-  h += '<div style="text-align:center;margin-bottom:20px">';
-  h += '<div style="font-size:48px;font-weight:800;color:' + gradeColor + ';letter-spacing:-1px">' + total + '<span style="font-size:20px">/10</span></div>';
-  h += '<div style="font-size:14px;color:' + gradeColor + ';font-weight:600;margin-top:4px">' + gradeLabel + '</div>';
-  h += '</div>';
-  
-  // Score breakdown
-  h += '<div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:20px">';
-  var items = [
-    {label:'知识覆盖',score:json.knowledge||0,max:json.knowledge > 3 ? 5 : 4},
-    {label:'逻辑结构',score:json.logic||0,max:3},
-    {label:'术语准确',score:json.terms||0,max:3}
-  ];
-  items.forEach(function(it) {
-    var pct = Math.round(it.score/it.max*100);
-    var barColor = pct >= 80 ? 'var(--gn)' : pct >= 50 ? 'var(--or)' : 'var(--r)';
-    h += '<div style="background:rgba(255,255,255,.03);padding:12px;border-radius:10px;text-align:center">';
-    h += '<div style="font-size:11px;color:#888;margin-bottom:4px">' + it.label + '</div>';
-    h += '<div style="font-size:18px;font-weight:700;color:var(--t);margin-bottom:4px">' + it.score + '/' + it.max + '</div>';
-    h += '<div style="background:rgba(255,255,255,.06);border-radius:3px;height:4px"><div style="background:' + barColor + ';height:4px;border-radius:3px;width:' + pct + '%"></div></div>';
-    h += '</div>';
-  });
-  h += '</div>';
-  
-  // Feedback
-  if (json.strengths) {
-    h += '<div class="pcard-section"><h4>✅ 优点</h4><p>' + json.strengths + '</p></div>';
-  }
-  if (json.weaknesses) {
-    h += '<div class="pcard-section"><h4>⚠️ 不足</h4><p>' + json.weaknesses + '</p></div>';
-  }
-  if (json.improvement) {
-    h += '<div class="pcard-section"><h4>💡 改进建议</h4><p>' + json.improvement + '</p></div>';
-  }
-  if (json.modelAnswer) {
-    h += '<div class="pcard-section"><h4>📋 完整参考答案</h4><div style="line-height:1.9">' + renderMarkdown(json.modelAnswer) + '</div></div>';
-  }
-  
-  h += '<div style="text-align:center;margin-top:16px"><button class="ai-btn ai-btn-sm" onclick="doAnswerCheck()" style="padding:8px 20px;font-size:12px">重新批改</button></div>';
-  h += '</div></div>';
-  
-  result.innerHTML = h;
-  result.scrollIntoView({behavior:'smooth'});
-}
-
-var token = getToken();
-if (token) {
-  document.getElementById('loginOverlay').style.display = 'none';
-  loadCloudData(token);
-  // Fetch API key from backend (async, non-blocking)
-  getAPIKey(function(k){ if(!k) console.warn('API key not received, AI features will be limited'); });
-} else if (localStorage.getItem('r434_guest') === '1') {
-  // 游客态: 本地进站, 零后端请求(不取APIKey, 密钥不下发)
-  document.getElementById('loginOverlay').style.display = 'none';
-} else {
-  // Show login, hide main content until logged in
-  document.getElementById('loginOverlay').style.display = 'flex';
-}
-updateTopbarUser();
-document.body.classList.add('sb-collapsed');
-buildNav();
-buildTfidf();
-showHome();
-// Push initial page to nav stack
-if (navStack.length === 0) pushNav('');
-// Stagger homepage items on initial load
-setTimeout(function() {
-  var cards = document.querySelectorAll('#ct .gc, #ct .st, #ct .task');
-  cards.forEach(function(el, i) {
-    el.classList.add('stagger-in');
-    el.style.animationDelay = (i * 0.04) + 's';
-  });
-}, 150);
 
 /* ---------- v3.4 导航6中心制 + 写作中心tab ---------- */
 (function(){
@@ -10760,6 +12279,7 @@ setTimeout(function() {
 (function(){
   /* 同一中心内的tab互切: 返回时应跳过这些横跳, 直接回到进中心之前的页面 */
   var GROUPS = [
+    ['corpushub', 'answerbank', 'capmap', 'modcorpus', 'mycorpus'],   /* 语料中心 */
     ['review', 'cards', 'recite'],                                    /* 背诵中心 */
     ['answercheck', 'mockexam']                        /* 写作中心 */
   ];
