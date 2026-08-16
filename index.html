@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<!-- v2.1 · 2026-08-16 01:49 · modular -->
+<!-- v2.1 · 2026-08-16 06:04 · modular -->
 <html lang="zh-CN">
 <head>
 <meta charset="UTF-8">
@@ -4526,15 +4526,13 @@ function showMyCards(){
 var _tfidf={docs:[],df:{},totalDocs:0};
 var _lazyReady = false; /* 懒加载完成门禁: true 后才允许 wiki 模式, 未就绪用轻量上下文, 绝不回退 legacy 全量 */
 function tokenize(s){
-  s=String(s||"").toLowerCase();
-  var out=[];
-  // 英文/数字按空格切
-  s.replace(/[a-z0-9]+/g,function(m){ if(m.length>1)out.push(m); return " "; })
-  // 中文: 整句去重保留(命中专有名词) + bigram 切分(支持任意查询分词)
-   .replace(/[^\u4e00-\u9fa5]+/g,"|").split("|").forEach(function(seg){
-    if(!seg)return;
-    out.push(seg);
-    for(var i=0;i<seg.length-1;i++)out.push(seg.substring(i,i+2));
+  var out = [];
+  String(s).toLowerCase().replace(/[^\u4e00-\u9fa5a-z0-9]/g, ' ').split(/\s+/).forEach(function(seg){
+    if (!seg) return;
+    if (/[\u4e00-\u9fa5]/.test(seg)) {
+      if (seg.length <= 2) { out.push(seg); return; }
+      for (var i = 0; i < seg.length - 1; i++) out.push(seg.substr(i, 2));  /* 中文二元切分 */
+    } else if (seg.length > 1) out.push(seg);
   });
   return out;
 }
@@ -9284,193 +9282,6 @@ setTimeout(function() {
     el.style.animationDelay = (i * 0.04) + 's';
   });
 }, 150);
-// ===== 能力地图 — 逻辑框架图（可折叠底层节点） =====
-function showCapabilityMap() {
-  document.getElementById('bc').innerHTML = '🧭 <span>能力地图</span>';
-  var progress = JSON.parse(localStorage.getItem('r434_cap_progress') || '{}');
-  
-  // Count progress
-  var totalLeaves = 0, completedLeaves = 0;
-  function countP(node) {
-    if (!node.children || !node.children.length) { totalLeaves++; if (progress[node.code]) completedLeaves++; return; }
-    node.children.forEach(function(c) { countP(c); });
-  }
-  if (typeof CAPABILITY_TREE !== 'undefined') countP(CAPABILITY_TREE);
-  var pct = totalLeaves > 0 ? Math.round(completedLeaves / totalLeaves * 100) : 0;
-
-  var tree = typeof CAPABILITY_TREE !== 'undefined' ? CAPABILITY_TREE : null;
-  if (!tree || !tree.children) {
-    document.getElementById('ct').innerHTML = '<div class="hero"><h1>🧭 能力地图</h1></div><div class="pcard" style="padding:40px;text-align:center"><p style="color:rgba(255,255,255,.3)">能力树数据加载中...</p></div>';
-    return;
-  }
-
-  // Keep track of which L3 nodes are expanded (show L4-L5)
-  window._ctEx = window._ctEx || {};
-  
-  // Full layout: compute positions for ALL nodes (L0-L5)
-  // Use larger dimensions
-  var NODE_W = [280, 240, 210, 180, 150, 130];
-  var NODE_H = [58, 50, 44, 38, 32, 28];
-  var DX = 250;   // horizontal gap between levels
-  var LX = 40;    // left padding
-  var VG = 14;    // vertical gap between leaves
-
-  // Assign leaf ordering across the entire tree
-  var leafIdx = 0;
-  function orderLeaves(n) {
-    if (!n.children || !n.children.length) { leafIdx++; n._li = leafIdx - 1; return; }
-    n.children.forEach(orderLeaves);
-    n._lc = n.children.reduce(function(s,c){return s+(c._lc||1);},0);
-  }
-  orderLeaves(tree);
-
-  // Position all nodes
-  function layoutAll(n, d) {
-    var w = NODE_W[Math.min(d, NODE_W.length-1)];
-    var h = NODE_H[Math.min(d, NODE_H.length-1)];
-    var x = LX + d * DX;
-    if (!n.children || !n.children.length) {
-      n._p = {x:x, y:70 + n._li*(h+VG), w:w, h:h, d:d};
-      return;
-    }
-    n.children.forEach(function(c){layoutAll(c, d+1);});
-    var first = n.children[0]._p, last = n.children[n.children.length-1]._p;
-    n._p = {x:x, y:(first.y+last.y)/2, w:w, h:h, d:d};
-  }
-  layoutAll(tree, 0);
-
-  // Canvas bounds
-  var maxX=0, maxY=0;
-  (function scan(n){
-    if (n._p.x+n._p.w>maxX) maxX=n._p.x+n._p.w;
-    if (n._p.y+n._p.h/2>maxY) maxY=n._p.y+n._p.h/2;
-    if (n.children) n.children.forEach(scan);
-  })(tree);
-  var CW = maxX+100, CH = maxY+60;
-
-  // Determine what's visible: L0-L3 always, L4-L5 only if parent L3 expanded
-  function isVisible(n) {
-    if (n._p.d <= 3) return true;
-    // Walk up to find the L3 ancestor
-    var p = n;
-    while (p && p._p && p._p.d > 3) {
-      p = p._parent;
-    }
-    if (p && p._p && p._p.d === 3) return !!window._ctEx[p.code];
-    return false;
-  }
-  // Tag parent references for L4-L5 nodes
-  function tagParent(n, parent) {
-    n._parent = parent;
-    if (n.children) n.children.forEach(function(c){tagParent(c, n);});
-  }
-  tagParent(tree, null);
-
-  // Generate SVG paths (only for visible subtrees)
-  var paths = '';
-  function genP(n) {
-    if (!n.children || !n.children.length) return;
-    var pp = n._p, px = pp.x+pp.w, py = pp.y;
-    n.children.forEach(function(c){
-      // Skip path if child is hidden (L4-L5 collapsed)
-      if (!isVisible(c)) return;
-      var cp = c._p, cx = cp.x, cy = cp.y;
-      var mx = (px+cx)/2;
-      paths += '<path d="M'+px+' '+py+' C'+mx+' '+py+' '+mx+' '+cy+' '+cx+' '+cy+'" fill="none" stroke="rgba(255,255,255,.1)" stroke-width="2" data-path="'+c.code+'"/>';
-      genP(c);
-    });
-  }
-  genP(tree);
-
-  // Generate node cards
-  var tagBg  = {intention:'rgba(232,200,107,.12)', knowledge:'rgba(94,92,230,.12)', framework:'rgba(52,199,89,.12)', expression:'rgba(0,122,255,.12)'};
-  var tagBd  = {intention:'rgba(232,200,107,.25)', knowledge:'rgba(94,92,230,.25)', framework:'rgba(52,199,89,.25)', expression:'rgba(0,122,255,.25)'};
-  var tagTxt = {intention:'#fbbf24', knowledge:'#a5b4fc', framework:'#4ade80', expression:'#60a5fa'};
-  var nodesHTML = '';
-  
-  function genN(n) {
-    var p = n._p, done = progress[n.code];
-    var bg = tagBg[n.tag] || 'rgba(255,255,255,.04)';
-    var bd = tagBd[n.tag] || 'rgba(255,255,255,.12)';
-    var tc = tagTxt[n.tag] || '';
-    if (done) { bg='rgba(52,199,89,.1)'; bd='rgba(52,199,89,.25)'; }
-    
-    var isLeaf = !n.children || !n.children.length;
-    var isL3 = (p.d === 3);
-    var show = isVisible(n);
-    var expanded = isL3 && window._ctEx[n.code];
-    var fs = [16,15,14,13,11,11][Math.min(p.d,5)];
-    var fw = p.d<=1?700:p.d<=2?600:500;
-    var op = 1-p.d*0.06;
-    var hasKids = n.children && n.children.length;
-
-    nodesHTML += '<div class="tmap-node'+(done?' tmap-done':'')+'" style="left:'+p.x+'px;top:'+(p.y-p.h/2)+'px;width:'+p.w+'px;min-height:'+p.h+'px;display:'+(show?'flex':'none')+';opacity:'+op+';background:'+bg+';border-color:'+bd+'" data-code="'+n.code+'" data-depth="'+p.d+'">';
-    
-    // Expand/collapse arrow for L3 nodes
-    if (isL3 && hasKids) {
-      nodesHTML += '<span class="tmap-arr" style="color:'+tc+'">'+(expanded?'▼':'▶')+'</span>';
-    } else if (hasKids && p.d>3) {
-      nodesHTML += '<span class="tmap-arr" style="visibility:hidden">▶</span>';
-    }
-    
-    // Icon
-    var ico = {intention:'🔍',knowledge:'📚',framework:'🏗️',expression:'✍️',task:'📋'};
-    if (p.d<=1) nodesHTML += '<span style="font-size:20px;flex-shrink:0">'+(p.d===0?'🎯':p.d===1?(n.code==='0.1'?'🧠':'✏️'):'')+'</span>';
-    else if (ico[n.tag]) nodesHTML += '<span style="font-size:14px;flex-shrink:0;opacity:.5">'+ico[n.tag]+'</span>';
-    
-    // Label
-    nodesHTML += '<div class="tmap-label" style="font-size:'+fs+'px;font-weight:'+fw+'">'+n.label+'</div>';
-    
-    // Code badge (only L0-L2)
-    if (n.code && p.d<=2) nodesHTML += '<span class="tmap-code">'+n.code+'</span>';
-    if (done) nodesHTML += '<span class="tmap-check">✓</span>';
-    
-    // Training buttons for leaf nodes (visible only when expanded)
-    if (isLeaf && show && typeof CAPABILITY_MAP!=='undefined' && CAPABILITY_MAP[n.code]) {
-      nodesHTML += '<div class="tmap-acts">';
-      CAPABILITY_MAP[n.code].forEach(function(a){
-        nodesHTML += '<button onclick="event.stopPropagation();capLaunch(\''+a.id+'\',\''+(n.code||'')+'\')" class="tmap-btn">'+a.icon+' '+a.desc+'</button>';
-      });
-      nodesHTML += '</div>';
-    }
-    nodesHTML += '</div>';
-    if (n.children) n.children.forEach(genN);
-  }
-  genN(tree);
-
-  // Assemble
-  var h = '';
-  h += '<div class="hero" style="margin-bottom:12px"><h1>🧭 能力地图</h1><p class="desc">逻辑框架图 · 点击'+(window._ctEx && Object.keys(window._ctEx).length?'▼':'▶')+'展开底层训练节点 · '+completedLeaves+'/'+totalLeaves+' 已点亮</p></div>';
-  h += '<div style="margin-bottom:12px">'+progressBar(pct, completedLeaves, totalLeaves)+'</div>';
-  h += '<div class="tmap-wrap" id="tmapWrap">';
-  h += '<svg class="tmap-svg" style="width:'+CW+'px;height:'+CH+'px" viewBox="0 0 '+CW+' '+CH+'">';
-  h += '<defs><filter id="g"><feGaussianBlur stdDeviation="3" result="b"/><feMerge><feMergeNode in="b"/><feMergeNode in="SourceGraphic"/></feMerge></filter></defs>';
-  h += paths;
-  h += '</svg>';
-  h += '<div class="tmap-nodes" style="width:'+CW+'px;height:'+CH+'px">'+nodesHTML+'</div>';
-  h += '</div>';
-
-  document.getElementById('ct').innerHTML = h;
-  document.getElementById('ct').scrollTop = 0;
-  
-  // Attach click handlers to L3 nodes
-  setTimeout(function(){
-    var ct = document.getElementById('ct');
-    if (!ct) return;
-    var nodes = ct.querySelectorAll('.tmap-node[data-depth="3"]');
-    nodes.forEach(function(nd){
-      nd.onclick = function(e){
-        e.stopPropagation();
-        var code = nd.getAttribute('data-code');
-        window._ctEx = window._ctEx || {};
-        window._ctEx[code] = !window._ctEx[code];
-        showCapabilityMap(); // re-render
-      };
-      nd.style.cursor = 'pointer';
-    });
-  }, 50);
-}
-
 function progressBar(pct, done, total) {
   var r = 28, circ = 2*Math.PI*r, offset = circ*(1-pct/100);
   var color = pct>=60?'#4ade80':pct>=30?'#fbbf24':'#f87171';
@@ -9945,16 +9756,6 @@ function renderMermaidBlocks(container) {
     }
   });
 }
-
-function capLaunch(actionId, capabilityCode) {
-  if (capabilityCode) {
-    try {
-      var p = JSON.parse(localStorage.getItem('r434_cap_progress') || '{}');
-      p[capabilityCode] = true;
-      localStorage.setItem('r434_cap_progress', JSON.stringify(p));
-    } catch(e) {}
-  }
-  }
 
 // ===== INIT DONE =====
 
@@ -12360,7 +12161,7 @@ function _dailyBarHtml() {
   /* 全部需要保护的学习数据键 */
   var KEYS = ['r434', 'r434_kv', 'r434_chat', 'r434_ch_theory', 'r434_ch_case', 'r434_ch_phrase',
     'r434_mycorpus', 'r434_mycorpus_bak', 'r434_cards', 'r434_recite', 'r434_wrong', 'r434_wrong_review',
-    'r434_gradelog', 'r434_dailylog', 'r434_daily_pending', 'r434_achistory', 'r434_cap_progress',
+    'r434_gradelog', 'r434_dailylog', 'r434_daily_pending', 'r434_achistory', 
     'r434_tviz_notes', 'r434_mock', 'r434_acscores', 'r434_mycards'];
 
   function collectAll(){
@@ -13009,21 +12810,8 @@ function _dailyBarHtml() {
   };
 })();
 
-/* ---------- v3.20 RAG中文分词修复: bigram切分 + 重建索引(语音通话检索命中率修复) ---------- */
-(function(){
-  tokenize = function(s){
-    var out = [];
-    String(s).toLowerCase().replace(/[^\u4e00-\u9fa5a-z0-9]/g, ' ').split(/\s+/).forEach(function(seg){
-      if (!seg) return;
-      if (/[\u4e00-\u9fa5]/.test(seg)) {
-        if (seg.length <= 2) { out.push(seg); return; }
-        for (var i = 0; i < seg.length - 1; i++) out.push(seg.substr(i, 2));  /* 中文二元切分 */
-      } else if (seg.length > 1) out.push(seg);
-    });
-    return out;
-  };
-  try { buildTfidf(); } catch(e) {}
-})();
+/* ---------- v3.20 RAG中文分词修复: bigram切分(已合并进 tokenize 定义, 此处仅重建索引) ---------- */
+try { buildTfidf(); } catch(e) {}
 
 /* ---------- v3.21 语音流水线: 句子级TTS并行合成+保序播放(开口~3s) + 点状态球打断 ---------- */
 (function(){
