@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<!-- v2.1 · 2026-08-22 12:28 · modular -->
+<!-- v2.1 · 2026-08-22 12:31 · modular -->
 <html lang="zh-CN">
 <head>
 <meta charset="UTF-8">
@@ -1097,7 +1097,21 @@ body::after{content:"" !important;display:block !important;position:fixed !impor
 .trio-grid .cd-info{justify-content:space-between;gap:8px}
 .cd-prog-lbl{display:flex;justify-content:space-between;font-size:10.5px;color:var(--ts);margin-bottom:5px;font-variant-numeric:tabular-nums}
 .cd-prog-track{height:4px;border-radius:2px;background:rgba(255,255,255,.09);overflow:hidden}
-.cd-prog-fill{height:100%;border-radius:2px;background:var(--cdc);transition:width .6s cubic-bezier(.22,1,.36,1)}</style>
+.cd-prog-fill{height:100%;border-radius:2px;background:var(--cdc);transition:width .6s cubic-bezier(.22,1,.36,1)}
+
+/* ===== Phase3i · 移动端布局修复 ===== */
+@media(max-width:760px){
+  /* 特异性对齐: 必须同样带.duoin才能压过桌面两列规则 */
+  .trio-grid,.trio-grid.duo{grid-template-columns:minmax(0,1fr)}
+  .trio-grid{gap:12px;margin-bottom:14px}
+  .trio-grid .cd-bar{padding:14px 16px}
+  .cd-ring-wrap{width:84px;height:84px}
+  .cd-ring-wrap svg{width:84px;height:84px}
+  .cd-ring-num strong{font-size:21px}
+  .cd-cells{gap:0 10px;padding-top:8px}
+  .cd-cells span{font-size:14px}
+  .home-title{margin:0 0 10px}
+}</style>
 </head>
 <body>
 
