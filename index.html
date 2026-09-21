@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<!-- v2.1 · 2026-08-22 12:31 · modular -->
+<!-- v2.1 · 2026-09-21 08:19 · modular -->
 <html lang="zh-CN">
 <head>
 <meta charset="UTF-8">
@@ -22,6 +22,7 @@ window.ensureLib = (function() {
     chart: {
       test: function(){ return typeof window.Chart !== 'undefined'; },
       urls: [
+        'assets/chart.umd.min.js',
         'https://cdn.jsdelivr.net/npm/chart.js@4.4.7/dist/chart.umd.min.js',
         'https://unpkg.com/chart.js@4.4.7/dist/chart.umd.min.js'
       ]
@@ -940,21 +941,12 @@ body::after{background:rgba(6,8,20,.18) !important}
 .hero{-webkit-backdrop-filter:blur(18px) saturate(1.45) !important; backdrop-filter:blur(18px) saturate(1.45) !important; background:linear-gradient(135deg, rgba(130,128,255,.22), rgba(94,92,230,.08)) !important; border:1px solid rgba(180,178,255,.26) !important; border-radius:32px !important; box-shadow:inset 0 10px 10px -8px rgba(255,255,255,.85),inset 8px 0 12px -10px rgba(255,255,255,.38),inset -8px 0 12px -10px rgba(200,198,255,.26),inset 0 -12px 14px -8px rgba(24,12,70,.55),inset 0 0 0 1px rgba(200,198,255,.20),inset 0 -26px 32px -26px rgba(24,12,70,.48),0 3px 10px rgba(0,0,0,.24), 0 32px 72px rgba(24,14,80,.54) !important; padding:20px 26px !important}
 .pcard:hover,.gc:hover,.today:hover,.banner:hover,.pcard:active,.gc:active,.today:active,.banner:active,.pcard:focus-within,.gc:focus-within{background:linear-gradient(180deg, rgba(255,255,255,.09), rgba(255,255,255,.03)), rgba(12,14,30,.10) !important}
 .menu-btn,.tb-left button{-webkit-backdrop-filter:blur(16px) saturate(1.4) !important; backdrop-filter:blur(16px) saturate(1.4) !important; background:rgba(255,255,255,.09) !important; border:1px solid rgba(255,255,255,.18) !important; box-shadow:inset 0 4px 5px -4px rgba(255,255,255,.7), inset 0 -4px 5px -4px rgba(0,6,26,.4), inset 0 0 0 1px rgba(255,255,255,.14) !important}
-.topbar{-webkit-backdrop-filter:blur(22px) saturate(1.6) !important; backdrop-filter:blur(22px) saturate(1.6) !important; background:rgba(18,20,40,.30) !important; border:1px solid rgba(255,255,255,.20) !important; border-radius:999px !important; box-shadow:inset 0 1.5px 0 rgba(255,255,255,.34), inset 0 -1px 0 rgba(0,6,26,.25), 0 10px 34px rgba(0,0,0,.34) !important; overflow:visible !important}
-.tb-center input{-webkit-backdrop-filter:blur(6px) !important; backdrop-filter:blur(6px) !important; background:rgba(10,12,28,.28) !important; border:1px solid rgba(255,255,255,.14) !important; border-radius:999px !important; box-shadow:inset 0 3px 5px -3px rgba(0,6,26,.4), inset 0 -2px 4px -3px rgba(255,255,255,.25) !important; color:var(--t) !important}
-.content.ai-mode{overflow:hidden !important; padding:0 !important; position:relative}
-.ai-chat-wrap{-webkit-backdrop-filter:none !important; backdrop-filter:none !important; background:transparent !important; border:none !important; border-radius:0 !important; box-shadow:none !important; display:flex; flex-direction:column; height:100% !important; overflow:hidden !important; position:relative}
-.ai-chat-wrap > div:first-child{margin:0 !important; position:absolute !important; right:22px; top:80px; z-index:6}
-.ai-chat-body{-webkit-mask-image:none !important; background:transparent !important; flex:1 1 0 !important; mask-image:none !important; max-width:none !important; padding:76px 18px 110px !important; width:100% !important}
+
+/* AI对话布局(现行): 面包屑已隐藏, 输入条为贴底停靠式 */
+.content.ai-mode{overflow:hidden !important; position:relative}
+.ai-chat-wrap{display:flex;flex-direction:column;height:100%;position:relative}
 .ai-msg{max-width:96% !important}
 .ai-msg-bot,.ai-welcome{max-width:96% !important}
-.ai-chat-textarea{background:rgba(10,12,28,.30) !important; border:1px solid rgba(255,255,255,.14) !important; color:var(--t) !important}
-.ai-chat-input-bar{-webkit-backdrop-filter:blur(20px) saturate(1.2) !important; backdrop-filter:blur(20px) saturate(1.2) !important; background:rgba(255,255,255,.06) !important; border:1px solid rgba(255,255,255,.20) !important; border-radius:26px !important; border-top:1px solid rgba(255,255,255,.12) !important; bottom:20px; box-shadow:inset 0 1.5px 0 rgba(255,255,255,.34), inset 0 -1px 0 rgba(0,6,26,.25), 0 12px 34px rgba(0,0,0,.4) !important; left:50%; max-width:864px; overflow:visible !important; padding:12px 14px !important; position:absolute !important; transform:translateX(-50%); width:calc(100% - 36px); z-index:2}
-.ai-chat-input-bar .ai-chat-voice,.ai-chat-input-bar .ai-chat-textarea,.ai-chat-input-bar .ai-chat-send{position:relative; z-index:3}
-#ct textarea.ai-chat-textarea{-webkit-backdrop-filter:none !important; backdrop-filter:none !important; background:linear-gradient(180deg, rgba(255,255,255,.10), rgba(255,255,255,.02) 50%, rgba(255,255,255,.05)) !important; border:none !important; box-shadow:inset 0 0 0 1px rgba(255,255,255,.22), inset 0 5px 5px -4px rgba(255,255,255,.65), inset 0 -5px 6px -4px rgba(255,255,255,.16) !important}
-#ct textarea.ai-chat-textarea:focus{box-shadow:inset 0 0 0 1px rgba(255,255,255,.34), inset 0 5px 5px -4px rgba(255,255,255,.75), inset 0 -5px 6px -4px rgba(255,255,255,.20), 0 0 0 3px rgba(94,92,230,.18) !important}
-.ai-chat-voice{background:linear-gradient(180deg, rgba(255,255,255,.10), rgba(255,255,255,.03)) !important; border:none !important; box-shadow:inset 0 0 0 1px rgba(255,255,255,.22), inset 0 4px 4px -3px rgba(255,255,255,.60), inset 0 -4px 5px -3px rgba(255,255,255,.14) !important}
-.ai-chat-voice:hover{background:rgba(94,92,230,.22) !important}
 .mc-lk{align-items:center; cursor:pointer; display:inline-flex; flex:0 0 auto; gap:4px; margin-left:6px; user-select:none}
 .mc-lk span{background:rgba(94,92,230,.14); border:1px solid rgba(94,92,230,.35); border-radius:9px; color:#a5b4fc; font-size:10px; padding:1px 7px; white-space:nowrap}
 .mc-lk span.lk-q{background:rgba(255,159,10,.10); border-color:rgba(255,159,10,.35); color:#fbbf24}
@@ -1028,7 +1020,6 @@ body::after{content:"" !important;display:block !important;position:fixed !impor
 /* ── 浮层(L3): 顶栏/侧栏/输入条 ── */
 .topbar{background:linear-gradient(180deg,var(--float),rgba(24,27,33,.66)) !important;-webkit-backdrop-filter:blur(24px) saturate(1.4) !important;backdrop-filter:blur(24px) saturate(1.4) !important;border-color:rgba(255,255,255,.09) !important}
 .sidebar{background:linear-gradient(180deg,rgba(26,29,36,.82),rgba(20,23,29,.86)) !important;-webkit-backdrop-filter:blur(26px) saturate(1.3) !important;backdrop-filter:blur(26px) saturate(1.3) !important;border-color:rgba(255,255,255,.08) !important}
-.ai-chat-input-bar{background:var(--float) !important;-webkit-backdrop-filter:blur(24px) !important;backdrop-filter:blur(24px) !important}
 .tb-center input,#ct input:not([type=checkbox]):not([type=radio]),#ct textarea,#ct select,.ai-chat-textarea{background:rgba(255,255,255,.045) !important;border:1px solid rgba(255,255,255,.10) !important;color:#f2f4fa !important}
 .tb-center input:focus,#ct input:focus,#ct textarea:focus,.ai-chat-textarea:focus{border-color:rgba(255,255,255,.30) !important;box-shadow:0 0 0 3px rgba(255,255,255,.06) !important}
 /* ── AI气泡 ── */
@@ -1111,7 +1102,160 @@ body::after{content:"" !important;display:block !important;position:fixed !impor
   .cd-cells{gap:0 10px;padding-top:8px}
   .cd-cells span{font-size:14px}
   .home-title{margin:0 0 10px}
-}</style>
+}
+
+/* ===== 图标系统 ===== */
+.icw{display:inline-flex;vertical-align:-.14em;margin-right:.32em}
+.icw .ic,.ic{width:1.06em;height:1.06em;color:inherit;opacity:.92;flex-shrink:0}
+.sec-hd h3{display:flex;align-items:center;gap:8px}
+
+/* ===== Phase4b · 动效层 ===== */
+@keyframes rise{from{opacity:0;transform:translateY(10px)}to{opacity:1;transform:none}}
+@keyframes drawRing{from{stroke-dashoffset:var(--circ)}to{stroke-dashoffset:var(--off,var(--circ))}}
+@keyframes pageIn{from{opacity:0;transform:translateY(7px)}to{opacity:1;transform:none}}
+.trio-grid>*,.grid .gc,.hero,.pcard,.banner,.today,.kn-hero,.today-pc{animation:rise .5s cubic-bezier(.22,1,.36,1) both}
+.grid .gc:nth-child(2){animation-delay:.04s}.grid .gc:nth-child(3){animation-delay:.08s}
+.grid .gc:nth-child(4){animation-delay:.12s}.grid .gc:nth-child(5){animation-delay:.16s}
+.grid .gc:nth-child(6){animation-delay:.2s}.grid .gc:nth-child(n+7){animation-delay:.24s}
+.trio-grid>*:nth-child(2){animation-delay:.07s}
+.cd-ring-wrap circle:last-of-type{animation:drawRing .8s cubic-bezier(.22,1,.36,1) both}
+.pcard,.gc,.banner,.today,.kn-hero{transition:transform .25s cubic-bezier(.22,1,.36,1),box-shadow .25s,border-color .25s}
+@media(hover:hover){
+  .pcard:hover,.gc:hover,.trio-grid .pcard:hover{transform:translateY(-2px)}
+  .trio-grid .daily-item:hover,.task:hover{background:rgba(255,255,255,.045)}
+}
+.gc:active,.trio-grid .daily-item:active,.ai-btn:active,.btn-r:active,.btn-b:active,.btn-gen:active{transform:scale(.982)}
+@media(prefers-reduced-motion:reduce){
+  .trio-grid>*,.grid .gc,.hero,.pcard,.banner,.today,.kn-hero,.cd-ring-wrap circle:last-of-type{animation:none!important}
+  *{transition-duration:.01ms!important}
+}
+
+/* ===== Phase4c/4d · 区块标题编辑风 + 圆角归一 ===== */
+.sec-hd{align-items:center !important;margin:20px 2px 12px}
+.sec-hd::before{content:'';width:3px;height:14px;border-radius:2px;background:linear-gradient(180deg,#a5b4fc,#5e5ce6);flex-shrink:0}
+.sec-hd h3{font-size:15px;font-weight:700;letter-spacing:.3px;color:var(--t)}
+.pcard,.gc,.today,.banner,.kn-hero{border-radius:16px !important}
+.qc,.quiz-box{border-radius:16px !important}
+.qa,.quiz-a{border-radius:12px !important}
+
+/* ===== Phase4e · 质感包: 全局光源/渐变标题/胶囊签/斜向流光/留白 ===== */
+/* 顶光+暗角(玻璃的全局照明) */
+body::before{content:'' !important;display:block !important;position:fixed !important;inset:0 !important;z-index:-1 !important;pointer-events:none !important;
+  background:linear-gradient(180deg,rgba(255,255,255,.05),transparent 260px),radial-gradient(120% 90% at 50% 40%,transparent 62%,rgba(0,0,0,.30)) !important}
+/* 渐变标题 */
+.home-title{background:linear-gradient(180deg,#ffffff 20%,#b9c2e8);-webkit-background-clip:text;background-clip:text;color:transparent}
+/* 统计胶囊签 */
+.sts{gap:8px}
+.sts .st{padding:5px 13px;border-radius:999px;background:rgba(255,255,255,.05);border:1px solid rgba(255,255,255,.085);font-size:12.5px}
+.sts .st strong{color:#fff;font-weight:700}
+/* 卡片斜向流光膜(叠于纵向薄膜上) */
+.pcard,.gc,.today,.banner,.kn-hero{background:linear-gradient(115deg,rgba(255,255,255,.05),rgba(255,255,255,.012) 34%,transparent 58%),linear-gradient(180deg,rgba(255,255,255,.038),rgba(255,255,255,.014)) !important}
+.hero{background:linear-gradient(115deg,rgba(255,255,255,.065),rgba(255,255,255,.02) 40%,transparent 62%),linear-gradient(180deg,rgba(255,255,255,.05),rgba(255,255,255,.028)) !important}
+/* 留白节奏 */
+.sec-hd{margin-top:26px}
+.grid{gap:16px}
+.trio-grid{gap:16px;margin-bottom:18px}
+/* 微交互: 箭头滑动+图标提亮 */
+.trio-grid .daily-item .dl-a{transition:transform .2s,opacity .2s}
+.trio-grid .daily-item:hover .dl-a{transform:translateX(3px);opacity:.95}
+.gc:hover .icw{filter:brightness(1.18)}
+
+/* ===== 冷雾主题(用户选定固化): 蓝黑底+冷蓝光晕 ===== */
+body{background:linear-gradient(180deg,#181e2e 0%,#111624 46%,#0b0e18 100%) !important}
+body::after{background:
+  radial-gradient(52% 38% at 50% -6%,rgba(130,165,255,.10) 0%,transparent 64%),
+  radial-gradient(44% 34% at 88% 104%,rgba(130,165,255,.10) 0%,transparent 62%),
+  url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='160' height='160'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='2'/%3E%3C/filter%3E%3Crect width='160' height='160' filter='url(%23n)'/%3E%3C/svg%3E") !important;
+  background-size:auto,auto,160px 160px !important}
+.pcard,.gc,.today,.banner,.kn-hero{border-color:rgba(210,225,255,.115) !important}
+.topbar,.sidebar{border-color:rgba(210,225,255,.115) !important}
+
+/* ===== Phase6 · 真液态玻璃回归 + 显存预算 ===== */
+/* 结构化冷雾极光: 三色场给blur提供可折射的色彩变化 */
+body::after{background:
+  radial-gradient(42% 34% at 16% 10%,rgba(122,162,255,.22),transparent 68%),
+  radial-gradient(30% 28% at 84% 20%,rgba(89,212,232,.15),transparent 70%),
+  radial-gradient(40% 46% at 70% 92%,rgba(157,143,255,.14),transparent 72%),
+  url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='160' height='160'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='2'/%3E%3C/filter%3E%3Crect width='160' height='160' filter='url(%23n)'/%3E%3C/svg%3E") !important;
+  background-size:auto,auto,auto,160px 160px !important}
+/* 主表面: 全光学玻璃(强饱和采样+棱边双高光) */
+.hero,.today,.pcard,.banner,.kn-hero,trio-grid .cd-bar,.trio-grid .cd-bar{
+  -webkit-backdrop-filter:blur(24px) saturate(1.65) !important;backdrop-filter:blur(24px) saturate(1.65) !important;
+  box-shadow:inset 0 1px 0 rgba(255,255,255,.14),inset 0 -1px 0 rgba(0,0,0,.30),0 18px 50px rgba(0,0,0,.36) !important}
+.trio-grid .cd-bar{-webkit-backdrop-filter:blur(24px) saturate(1.65) !important;backdrop-filter:blur(24px) saturate(1.65) !important}
+/* 小卡: 净膜无模糊(极光透过来产生位置差色彩=玻璃感, 显存零开销) */
+.grid .gc{-webkit-backdrop-filter:none !important;backdrop-filter:none !important;
+  background:linear-gradient(115deg,rgba(255,255,255,.065),rgba(255,255,255,.02) 40%,transparent 62%),linear-gradient(180deg,rgba(255,255,255,.05),rgba(255,255,255,.025)) !important}
+
+/* ===== Phase7 · 侧栏统一冷雾 ===== */
+.sidebar{background:linear-gradient(180deg,rgba(30,37,54,.62),rgba(18,22,33,.76)) !important;
+  -webkit-backdrop-filter:blur(28px) saturate(1.55) !important;backdrop-filter:blur(28px) saturate(1.55) !important;
+  border-right:1px solid rgba(210,225,255,.10) !important;
+  box-shadow:inset -1px 0 0 rgba(0,0,0,.24),10px 0 36px rgba(0,0,0,.22) !important}
+.sidebar-hdr h2{font-size:15px;font-weight:800;letter-spacing:.2px;color:#f2f4fa}
+.ni{margin:1px 10px;padding:8px 12px;border-radius:10px;font-size:13px;color:#a9b1c4;border-left:none;transition:background .15s,color .15s}
+.ni:hover{background:rgba(255,255,255,.05);color:#e9edf8}
+.ni.active,.ni.lv0.active{background:linear-gradient(135deg,rgba(135,155,255,.17),rgba(135,155,255,.06));color:#e2e8ff;box-shadow:inset 0 0 0 1px rgba(165,180,252,.24)}
+.ni .badge{background:rgba(255,255,255,.06);color:#8a93a8}
+.sidebar-section-label{padding-left:14px;font-size:10.5px;letter-spacing:1.4px;color:#6d7590}
+.sidebar-btm button{background:rgba(255,255,255,.04);border-radius:10px}
+.sidebar-btm button:hover{background:rgba(255,255,255,.085)}
+.sidebar-btm button.active{background:var(--pu)}
+
+/* ===== Phase8 · AI对话全屏化 ===== */
+.content.ai-mode{padding:calc(66px + env(safe-area-inset-top,0px)) 14px calc(12px + env(safe-area-inset-bottom,0px)) 14px !important}
+.ai-chat-body{padding:14px 6px 6px !important}
+.ai-chat-input-bar{margin-bottom:2px}
+
+/* ===== Phase9 · 顶栏/输入条玻璃化 + AI对话净空 ===== */
+.topbar{background:rgba(24,28,38,.55) !important;
+  -webkit-backdrop-filter:blur(22px) saturate(1.6) !important;backdrop-filter:blur(22px) saturate(1.6) !important;
+  border-color:rgba(210,225,255,.13) !important;outline-color:rgba(210,225,255,.09) !important;
+  box-shadow:0 6px 24px rgba(0,0,0,.28),inset 0 1px 0 rgba(255,255,255,.10) !important}
+.ai-chat-input-bar{background:rgba(255,255,255,.045) !important;border:1px solid var(--skin-line,rgba(210,225,255,.115)) !important;
+  -webkit-backdrop-filter:blur(18px) saturate(1.5) !important;backdrop-filter:blur(18px) saturate(1.5) !important;
+  padding:8px 12px !important;border-radius:18px !important}
+.ai-chat-textarea{background:transparent !important;max-height:110px;min-height:22px}
+.content.ai-mode{padding-top:calc(86px + env(safe-area-inset-top,0px)) !important}
+.ai-chat-wrap{position:relative}
+.ai-chat-wrap>div:first-of-type{position:absolute;top:0;right:2px;z-index:5;margin:0 !important}
+.ai-chat-body{padding-top:34px !important}
+
+/* ===== Phase9b · AI对话真全屏 ===== */
+body.ai-full .topbar{display:none !important}
+body.ai-full .content.ai-mode{padding-top:calc(10px + env(safe-area-inset-top,0px)) !important}
+.ai-fab-back{position:absolute;top:calc(8px + env(safe-area-inset-top,0px));left:12px;z-index:6;width:34px;height:34px;
+  border-radius:50%;border:1px solid rgba(210,225,255,.14);background:rgba(24,28,38,.55);
+  -webkit-backdrop-filter:blur(16px);backdrop-filter:blur(16px);color:#dfe5f5;font-size:15px;cursor:pointer}
+.ai-fab-back:hover{background:rgba(40,46,60,.65)}
+
+/* ===== AI对话末行遮挡修复 + 输入条烟雾玻璃 ===== */
+.ai-chat-body{padding-bottom:20px !important}
+.ai-msg:last-child{margin-bottom:4px}
+.ai-chat-input-bar{background:rgba(26,30,40,.44) !important;
+  -webkit-backdrop-filter:blur(24px) saturate(1.7) !important;backdrop-filter:blur(24px) saturate(1.7) !important;
+  border-color:rgba(210,225,255,.14) !important}
+
+/* ===== 输入条贴底式(去悬浮) ===== */
+.content.ai-mode{padding-bottom:0 !important}
+.ai-chat-input-bar{position:relative;bottom:auto;margin:0 !important;
+  background:#10121a !important;border:none !important;border-top:.5px solid rgba(210,225,255,.12) !important;
+  border-radius:0 !important;-webkit-backdrop-filter:none !important;backdrop-filter:none !important;
+  padding:10px 14px calc(10px + env(safe-area-inset-bottom,0px)) !important}
+
+/* ===== 输入条·大R角冷雾坞 ===== */
+.content.ai-mode{padding-bottom:calc(12px + env(safe-area-inset-bottom,0px)) !important}
+.ai-chat-input-bar{margin:0 12px !important;border-radius:22px !important;
+  background:rgba(30,36,52,.55) !important;border:1px solid rgba(210,225,255,.13) !important;
+  -webkit-backdrop-filter:blur(20px) saturate(1.5) !important;backdrop-filter:blur(20px) saturate(1.5) !important;
+  box-shadow:inset 0 1px 0 rgba(255,255,255,.08),0 8px 24px rgba(0,0,0,.24) !important;
+  padding:9px 12px !important}
+.ai-chat-textarea{background:transparent !important;border:none !important;box-shadow:none !important;color:#e8ecf7}
+
+
+
+/* ===== 导航6中心制(原运行时注入→静态化) ===== */
+.nav6-group{margin:2px 0}.nav6-hdr{display:flex;align-items:center;gap:6px;padding:8px 12px;cursor:pointer;font-size:13px;font-weight:700;color:var(--t);border-radius:8px;user-select:none}.nav6-hdr:hover{background:rgba(255,255,255,.05)}.nav6-hdr .nav6-arrow{font-size:10px;color:var(--ts);transition:transform .2s}.nav6-group.open .nav6-arrow{transform:rotate(90deg)}.nav6-hdr .nav6-count{margin-left:auto;font-size:10px;color:var(--ts)}.nav6-items{display:none;padding-left:6px}.nav6-group.open .nav6-items{display:block}.write-tabs{margin-bottom:12px}</style>
 </head>
 <body>
 
@@ -4680,6 +4824,9 @@ var AI_PROVIDERS = {
       if (opts.stream) b.stream = true;
       if (typeof opts.temperature === 'number') b.temperature = opts.temperature;
       if (opts.json) b.response_format = { type: 'json_object' };
+      /* V4.1-Flash 思考默认开启(effort=50): 思考阶段只产 reasoning_content 不产 content,
+         且 JSON 模式仅非思考态支持 → 除显式 opts.thinking 外一律关闭; json 场景强制关闭 */
+      b.thinking = { type: (opts.thinking && !opts.json) ? 'enabled' : 'disabled' };
       return b;  // 不注入 web_search (Chat API 不支持)
     }
   }
@@ -5471,6 +5618,7 @@ function showExamYear(year) {
   navigate('year:' + year, String(year));
 }
 function navigate(p, topicName, skipHistory) {
+  try{document.body.classList.remove('ai-full')}catch(e){}
   if (p === undefined) return;
   // Clean up AI page state when navigating away
   if (p !== 'aichat') {
@@ -5562,7 +5710,7 @@ function showHome() {recordTrend();var bb=document.getElementById('backBtn');if(
   var totalPct = n > 0 ? Math.round(d / n * 100) : 0;
   var ringColor = totalPct >= 80 ? 'var(--gn)' : totalPct >= 40 ? 'var(--pu)' : 'var(--or)';
   var circle = 104, stroke = 8, r = (circle-stroke)/2, circum = 2 * Math.PI * r, offset = circum * (1 - totalPct/100);
-  var ringSvg = '<svg width="'+circle+'" height="'+circle+'" style="display:block;filter:drop-shadow(0 2px 8px rgba(154,164,178,.22))"><circle cx="'+circle/2+'" cy="'+circle/2+'" r="'+r+'" fill="none" stroke="rgba(94,92,230,.08)" stroke-width="'+stroke+'"/><circle cx="'+circle/2+'" cy="'+circle/2+'" r="'+r+'" fill="none" stroke="'+ringColor+'" stroke-width="'+stroke+'" stroke-linecap="round" stroke-dasharray="'+circum+'" stroke-dashoffset="'+offset+'" transform="rotate(-90 '+circle/2+' '+circle/2+')" style="transition:stroke-dashoffset .8s ease-out"/><text x="'+circle/2+'" y="'+circle/2+'" text-anchor="middle" dy=".35em" font-size="22" font-weight="800" fill="var(--t)">'+totalPct+'%</text></svg>';
+  var ringSvg = '<svg width="'+circle+'" height="'+circle+'" style="display:block"><defs><linearGradient id="ringGrad" x1="0" y1="0" x2="1" y2="1"><stop offset="0%" stop-color="#e8edf8"/><stop offset="100%" stop-color="#8f9bb8"/></linearGradient></defs><g style="filter:drop-shadow(0 2px 10px rgba(148,163,184,.28))"><circle cx="'+circle/2+'" cy="'+circle/2+'" r="'+r+'" fill="none" stroke="rgba(255,255,255,.08)" stroke-width="'+stroke+'"/><circle cx="'+circle/2+'" cy="'+circle/2+'" r="'+r+'" fill="none" stroke="url(#ringGrad)" stroke-width="'+stroke+'" stroke-linecap="round" stroke-dasharray="'+circum+'" stroke-dashoffset="'+offset+'" transform="rotate(-90 '+circle/2+' '+circle/2+')" style="transition:stroke-dashoffset .8s ease-out"/><text x="'+circle/2+'" y="'+circle/2+'" text-anchor="middle" dy=".35em" font-size="22" font-weight="800" fill="var(--t)">'+totalPct+'%</text></g></svg>';
   h += '<h1 class="home-title">📖 人大434国际商务备考系统</h1>';
   h += '<div class="hero"><div style="display:flex;align-items:center;gap:28px;flex-wrap:wrap">'+
     '<div>'+ringSvg+'</div><div style="flex:1;min-width:200px">'+
@@ -5685,7 +5833,7 @@ function showHome() {recordTrend();var bb=document.getElementById('backBtn');if(
   });
   h += '</table></div></div>';
   
-  document.getElementById("ct").innerHTML = h;
+  document.getElementById("ct").innerHTML = h;try{countUp('.sts strong')}catch(e){}
 }
 
 function showKnContent(key, topicName) {
@@ -6110,8 +6258,10 @@ function renderMarkdown(text) {
 
 function showAI() {
   var bc = document.getElementById("bc");
-  if (bc) { bc.style.display = ''; bc.innerHTML = '<span>💬 AI 备考助手</span>'; }
+  if (bc) { bc.style.display = 'none'; }
+  document.body.classList.add('ai-full');
   var h = '';
+  h += '<button class="ai-fab-back" onclick="goBack()" title="返回">←</button>';
   h += '<div class="ai-chat-wrap">';
   h += '<div style="display:flex;justify-content:flex-end;margin-bottom:4px"><button class="ai-chat-hdr-btn" onclick="clearAIChat()">清空历史</button></div>';
   h += '<div id="ai-chat-body" class="ai-chat-body">';
@@ -6132,7 +6282,7 @@ function showAI() {
   h += '</div>';
   h += '<div class="ai-chat-input-bar">';
   h += '<button id="voiceBtn" class="ai-chat-voice" onclick="toggleVoiceMode()" title="语音对话模式">🎤</button>';
-  h += '<textarea id="ai-chat-input" class="ai-chat-textarea" placeholder="输入你的问题... (Enter发送，Shift+Enter换行)" rows="2" onkeydown="if(event.key===\'Enter\' && !event.shiftKey){event.preventDefault();sendAIMessage()}"></textarea>';
+  h += '<textarea id="ai-chat-input" class="ai-chat-textarea" placeholder="输入你的问题... (Enter发送，Shift+Enter换行)" rows="1" onkeydown="if(event.key===\'Enter\' && !event.shiftKey){event.preventDefault();sendAIMessage()}"></textarea>';
   h += '<button class="ai-chat-send" onclick="sendAIMessage()">发送</button>';
   h += '</div></div>';
   // Render into main content area like all other pages
@@ -6951,7 +7101,7 @@ function initMacroCharts() {
       var ctx1 = document.getElementById('chartCfets');
       if (ctx1) {
         var s = getSeries(cfets);
-        new Chart(ctx1, {
+        mkChart(ctx1, {
           type: 'line',
           data: {
             labels: s.labels,
@@ -6978,7 +7128,7 @@ function initMacroCharts() {
     if (ctx2) {
       var s1 = getSeries(usdcny);
       var s2 = getSeries(usdspot);
-      new Chart(ctx2, {
+      mkChart(ctx2, {
         type: 'line',
         data: {
           labels: s1.labels,
@@ -6998,7 +7148,7 @@ function initMacroCharts() {
     if (ctx3) {
       var sc = getSeries(cpi);
       var sp = getSeries(ppi);
-      new Chart(ctx3, {
+      mkChart(ctx3, {
         type: 'line',
         data: {
           labels: sc.labels,
@@ -7018,7 +7168,7 @@ function initMacroCharts() {
     if (ctx4) {
       var spmi = getSeries(pmi);
       var sm2 = getSeries(m2);
-      new Chart(ctx4, {
+      mkChart(ctx4, {
         type: 'line',
         data: {
           labels: spmi.labels,
@@ -7045,7 +7195,7 @@ function initMacroCharts() {
     var ctx5 = document.getElementById('chartTrade');
     if (ctx5) {
       var st = getSeries(trade);
-      new Chart(ctx5, {
+      mkChart(ctx5, {
         type: 'bar',
         data: {
           labels: st.labels,
@@ -8352,7 +8502,7 @@ function showStats() {
         var total = Object.keys(catQids).length;
         moduleComp[mod] = total > 0 ? Math.round(catDone/total*100) : 0;
       });
-      new Chart(ctx, {
+      mkChart(ctx, {
         type: 'radar', data: {
           labels: radarLabels,
           datasets: [
@@ -8371,7 +8521,7 @@ function showStats() {
       var datasets = modOrder.map(function(mod, mi) {
         return {label: mod, data: tKeys.map(function(d) {return (masteryTrend[d]||{})[mod]||0;}), borderColor: colors[mi], backgroundColor: colors[mi]+'22', tension: 0.4, fill: false, pointRadius: 2};
       });
-      new Chart(tctx, {type:'line', data:{labels:tKeys, datasets:datasets}, options:{responsive:true, maintainAspectRatio:false, plugins:{legend:{position:'bottom',labels:{boxWidth:12,font:{size:10}}}}, scales:{y:{min:0,max:100,ticks:{callback:function(v){return v+'%'}}}}}});
+      mkChart(tctx, {type:'line', data:{labels:tKeys, datasets:datasets}, options:{responsive:true, maintainAspectRatio:false, plugins:{legend:{position:'bottom',labels:{boxWidth:12,font:{size:10}}}}, scales:{y:{min:0,max:100,ticks:{callback:function(v){return v+'%'}}}}}});
     }
     };
     if (typeof Chart !== 'undefined') _drawCharts();
@@ -13593,11 +13743,7 @@ function showReview() {
   + '.tb-left [onclick*="toggleSidebar"],.topbar [onclick*="toggleSidebar"]{position:relative;z-index:201}'
 
   /* ===== 顶栏液态化 ===== */
-  + '.topbar{background:linear-gradient(180deg, rgba(255,255,255,.10), rgba(255,255,255,.04)) !important;'
-  +   'backdrop-filter:blur(26px) saturate(170%) !important;'
-  +   '-webkit-backdrop-filter:blur(26px) saturate(170%) !important;'
-  +   'border:1px solid rgba(255,255,255,.15) !important;'
-  +   'box-shadow:inset 0 1.5px 0 rgba(255,255,255,.22), 0 8px 26px rgba(0,0,0,.24) !important}'
+  /* 顶栏样式统一由 theme-current.css 管理 */
   + '.tb-center input{background:rgba(255,255,255,.09) !important;border:1px solid rgba(255,255,255,.16) !important;'
   +   'box-shadow:inset 0 1px 0 rgba(255,255,255,.14), inset 0 2px 6px rgba(0,0,0,.12);color:var(--t) !important}'
 
@@ -14341,13 +14487,16 @@ function drawScoreTrends() {
   try { ac = JSON.parse(localStorage.getItem('r434_acscores') || '[]'); } catch(e) {}
   try { mock = JSON.parse(localStorage.getItem('r434_mock') || '[]'); } catch(e) {}
   function fmt(t) { var d = new Date(t); return (d.getMonth()+1) + '/' + d.getDate(); }
-  var base = {responsive:true, plugins:{legend:{labels:{color:'rgba(255,255,255,.7)', font:{size:11}}}},
-    scales:{x:{ticks:{color:'rgba(255,255,255,.5)', font:{size:10}}, grid:{color:'rgba(255,255,255,.06)'}},
-            y:{ticks:{color:'rgba(255,255,255,.5)', font:{size:10}}, grid:{color:'rgba(255,255,255,.06)'}}}};
+  var base = {responsive:true,
+  elements:{bar:{borderRadius:6,borderSkipped:false}},
+  plugins:{legend:{labels:{color:'#8a93a3',boxWidth:8,boxHeight:8,font:{size:11}}},
+    tooltip:{backgroundColor:'rgba(22,25,32,.96)',titleColor:'#f2f4fa',bodyColor:'#c9cede',borderColor:'rgba(255,255,255,.1)',borderWidth:1,cornerRadius:10,padding:10,titleFont:{size:12},bodyFont:{size:12}}},
+  scales:{x:{ticks:{color:'#7c83a3',font:{size:10}},grid:{color:'rgba(255,255,255,.06)'}},
+          y:{ticks:{color:'#7c83a3',font:{size:10}},grid:{color:'rgba(255,255,255,.06)'}}}};
   var el1 = document.getElementById('acTrendChart');
   if (el1 && ac.length) {
     var recent = ac.slice(-20);
-    new Chart(el1, {type:'line', data:{labels: recent.map(function(r){return fmt(r.t);}),
+    mkChart(el1, {type:'line', data:{labels: recent.map(function(r){return fmt(r.t);}),
       datasets:[{label:'答案批改得分(满分10)', data: recent.map(function(r){return r.total;}),
         borderColor:'#a5b4fc', backgroundColor:'rgba(94,92,230,.18)', fill:true, tension:.3, pointRadius:3}]},
       options: Object.assign({}, base, {scales: Object.assign({}, base.scales, {y: Object.assign({}, base.scales.y, {min:0, max:10})})})});
@@ -14355,7 +14504,7 @@ function drawScoreTrends() {
   var el2 = document.getElementById('mockTrendChart');
   if (el2 && mock.length) {
     var ms = mock.slice(0, 20).reverse(); /* r434_mock 是最新在前 */
-    new Chart(el2, {type:'line', data:{labels: ms.map(function(r){return fmt(r.date);}),
+    mkChart(el2, {type:'line', data:{labels: ms.map(function(r){return fmt(r.date);}),
       datasets:[{label:'AI模考总分(满分150)', data: ms.map(function(r){return r.total;}),
         borderColor:'#4ade80', backgroundColor:'rgba(48,209,88,.14)', fill:true, tension:.3, pointRadius:3}]},
       options: Object.assign({}, base, {scales: Object.assign({}, base.scales, {y: Object.assign({}, base.scales.y, {min:0, max:150})})})});
@@ -15023,6 +15172,96 @@ function renderLiveMacro(d) {
     closeModelPicker(); showModelPicker();
   };
   window.closeModelPicker = function(){ var w = document.getElementById('modelPickWrap'); if (w) w.parentNode.removeChild(w); };
+})();
+
+
+
+
+/* ===== Chart实例注册表(防泄漏) ===== */
+var __chartReg=new Map();
+function mkChart(el,cfg){var key=(el&&el.id)||el;var old=__chartReg.get(key);if(old){try{old.destroy()}catch(e){}}
+  var c=new Chart(el,cfg);__chartReg.set(key,c);return c}
+/* ===== 图表全局主题 ===== */
+(function(){
+  function applyCT(){ if(!window.Chart) return;
+    Chart.defaults.color='#8a93a3';
+    Chart.defaults.borderColor='rgba(255,255,255,.07)';
+    Chart.defaults.font.size=11;
+    if(Chart.defaults.plugins&&Chart.defaults.plugins.tooltip){
+      Chart.defaults.plugins.tooltip.backgroundColor='rgba(22,25,32,.96)';
+      Chart.defaults.plugins.tooltip.cornerRadius=10; }
+  }
+  var n=0,t=setInterval(function(){ if(window.Chart){clearInterval(t);applyCT();} if(++n>60)clearInterval(t); },250);
+})();
+/* ===== 数字滚动 ===== */
+function countUp(sel){var els=document.querySelectorAll(sel);if(!els.length)return;[].forEach.call(els,function(el){var v=parseInt(el.textContent,10);if(isNaN(v)||v===0)return;var t0=null,D=650;function step(t){if(!t0)t0=t;var p=Math.min(1,(t-t0)/D);p=1-Math.pow(1-p,3);el.textContent=Math.round(v*p);if(p<1)requestAnimationFrame(step)}requestAnimationFrame(step)});}
+/* ===== 图标系统: emoji→线性SVG(渲染层替换, Lucide风) ===== */
+(function(){
+  var P={
+    book:'M4 19.5A2.5 2.5 0 0 1 6.5 17H20M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z',
+    pen:'M12 20h9M16.5 3.5a2.1 2.1 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5z',
+    check:'M22 11.1V12a10 10 0 1 1-5.9-9.1M22 4L12 14l-3-3',
+    star:'M12 2l3.1 6.3 6.9 1-5 4.9 1.2 6.8L12 17.8l-6.2 3.2L7 14.1 2 9.3l6.9-1L12 2z',
+    users:'M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2M9 11a4 4 0 1 0 0-8 4 4 0 0 0 0 8M23 21v-2a4 4 0 0 0-3-3.9M16 3.1a4 4 0 0 1 0 7.8',
+    target:'M12 22a10 10 0 1 0 0-20 10 10 0 0 0 0 20zM12 18a6 6 0 1 0 0-12 6 6 0 0 0 0 12zM12 14a2 2 0 1 0 0-4 2 2 0 0 0 0 4z',
+    chart:'M18 20V10M12 20V4M6 20v-6',
+    cpu:'M9 2v3M15 2v3M9 19v3M15 19v3M2 9h3M2 15h3M19 9h3M19 15h3M7 5h10a2 2 0 0 1 2 2v10a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V7a2 2 0 0 1 2-2zM12 8v8M8 12h8',
+    brain:'M9 3a3 3 0 0 0-3 3v1a3 3 0 0 0-1 5.8A3 3 0 0 0 8 17a3 3 0 0 0 4 2.8V4.5A2.5 2.5 0 0 0 9 3zM15 3a3 3 0 0 1 3 3v1a3 3 0 0 1 1 5.8A3 3 0 0 1 16 17a3 3 0 0 1-4 2.8',
+    search:'M11 19a8 8 0 1 0 0-16 8 8 0 0 0 0 16zM21 21l-4.3-4.3',
+    flame:'M8.5 14.5A2.5 2.5 0 0 0 11 17a2.5 2.5 0 0 0 2.5-2.5c0-1.5-1-2.5-2.5-4-1.5 1.5-2.5 2.5-2.5 4zM12 22c4.4 0 7-2.8 7-7 0-3-2-5.5-4-7.5-.5 2-1.5 3-3 4C10.5 10 9 8.5 9 6c-2.5 2-4 5-4 9 0 4.2 2.6 7 7 7z',
+    trend:'M23 6l-9.5 9.5-5-5L1 18M17 6h6v6',
+    bulb:'M9 18h6M10 22h4M12 2a7 7 0 0 0-4 12.7c.6.5 1 1.4 1 2.3h6c0-.9.4-1.8 1-2.3A7 7 0 0 0 12 2z',
+    msg:'M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z',
+    refresh:'M23 4v6h-6M1 20v-6h6M3.5 9a9 9 0 0 1 14.9-3.4L23 10M1 14l4.6 4.4A9 9 0 0 0 20.5 15',
+    note:'M2 6h16l4 6-4 6H2l4-6-4-6zM6 12h4M8 9v6',
+    pin:'M12 17v5M9 3h6l1 7 2 2H6l2-2 1-7z',
+    cap:'M22 10L12 5 2 10l10 5 10-5zM6 12v5c0 1.7 2.7 3 6 3s6-1.3 6-3v-5',
+    news:'M4 22h16a2 2 0 0 0 2-2V4a2 2 0 0 0-2-2H8a2 2 0 0 0-2 2v16a2 2 0 0 1-4 0V9h4M8 6h8M8 10h8M8 14h5',
+    spark:'M12 3l1.9 5.8L20 10l-6.1 1.2L12 17l-1.9-5.8L4 10l6.1-1.2L12 3zM19 15l.9 2.6L22.5 18l-2.6.9L19 21.5l-.9-2.6L15.5 18l2.6-.9L19 15z',
+    db:'M12 8c4.4 0 8-1.3 8-3s-3.6-3-8-3-8 1.3-8 3 3.6 3 8 3zM20 12c0 1.7-3.6 3-8 3s-8-1.3-8-3M4 5v14c0 1.7 3.6 3 8 3s8-1.3 8-3V5',
+    lib:'M16 6l4 14M12 6v14M8 8v12M4 4v16',
+    link:'M10 13a5 5 0 0 0 7.5.5l3-3a5 5 0 0 0-7-7l-1.7 1.7M14 11a5 5 0 0 0-7.5-.5l-3 3a5 5 0 0 0 7 7l1.7-1.7',
+    tool:'M14.7 6.3a1 1 0 0 0 0 1.4l1.6 1.6a1 1 0 0 0 1.4 0l3.8-3.8a6 6 0 0 1-7.9 7.9l-6.9 6.9a2.1 2.1 0 0 1-3-3l6.9-6.9a6 6 0 0 1 7.9-7.9l-3.8 3.8z',
+    list:'M8 6h13M8 12h13M8 18h13M3 6h.01M3 12h.01M3 18h.01'
+  };
+  var C={book:'#93c5fd',lib:'#7dd3fc',cap:'#93c5fd',news:'#7dd3fc',note:'#a5b4fc',pen:'#a5b4fc',list:'#c7d2fe',pin:'#c7d2fe',link:'#a5b4fc',tool:'#94a3b8',check:'#34d399',spark:'#34d399',star:'#fbbf24',flame:'#fb923c',target:'#fb7185',chart:'#5eead4',trend:'#67e8f9',db:'#67e8f9',cpu:'#c4b5fd',brain:'#d8b4fe',search:'#94a3b8',msg:'#7dd3fc',refresh:'#94a3b8',bulb:'#fcd34d',users:'#93c5fd'};
+var EMO={'📖':'book','📝':'pen','✅':'check','⭐':'star','★':'star','👨‍🏫':'users','🎯':'target','📊':'chart','🤖':'cpu','🧠':'brain','🔍':'search','🔥':'flame','📈':'trend','💡':'bulb','💬':'msg','🔄':'refresh','📔':'note','📐':'tool','📌':'pin','🎓':'cap','📰':'news','🎉':'spark','💾':'db','📚':'lib','🔗':'link','🧰':'tool','📋':'list'};
+  function svg(n){var d=P[n];if(!d)return'';return '<svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><path d="'+d+'"/></svg>'}
+  var re=new RegExp(Object.keys(EMO).map(function(k){return k.replace(/‍/g,'\u200d').replace(/[.*+?^${}()|[\]\\]/g,'\\$&')}).join('|'),'g');
+  function walk(node){
+    if(node.nodeType===3){
+      var t=node.nodeValue; if(!t||t.length>400) return;
+      if(!re.test(t)) {re.lastIndex=0;return} re.lastIndex=0;
+      var frag=document.createDocumentFragment(),last=0,m;
+      re.lastIndex=0;
+      while((m=re.exec(t))){
+        if(m.index>last)frag.appendChild(document.createTextNode(t.slice(last,m.index)));
+        var name=EMO[m[0]]; 
+        if(name){var sp=document.createElement('span');sp.className='icw';sp.innerHTML=svg(name);;if(C[name])sp.style.color=C[name];frag.appendChild(sp)}
+        else frag.appendChild(document.createTextNode(m[0]));
+        last=m.index+m[0].length;
+      }
+      if(last<t.length)frag.appendChild(document.createTextNode(t.slice(last)));
+      node.parentNode&&node.parentNode.replaceChild(frag,node);
+      return;
+    }
+    if(node.nodeType!==1||node.classList.contains('icw'))return;
+    var kids=[].slice.call(node.childNodes);
+    kids.forEach(walk);
+  }
+  var pend=false;
+  new MutationObserver(function(ms){
+    if(pend)return; pend=true;
+    requestAnimationFrame(function(){pend=false;
+      ms.forEach(function(m){
+        [].slice.call(m.addedNodes).forEach(function(n){
+          if(n.nodeType===1&&(n.classList.contains('icw')||n.querySelector&&n.querySelector('.icw')))return;
+          walk(n.nodeType===3?n:n);
+        });
+      });
+    });
+  }).observe(document.body,{childList:true,subtree:true});
+  walk(document.body); /* 初始全量替换(观察器安装前的既有DOM) */
 })();
 (function() {
   var files = ["per_question.json","module_corpus.json","answer-bank.json","hot-topics.json","material-library.json","cases.json","wiki.json"].concat(['knowledge_ext.json']);
