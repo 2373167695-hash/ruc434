@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<!-- v2.1 · 2026-09-21 08:19 · modular -->
+<!-- v2.1 · 2026-09-22 01:45 · modular -->
 <html lang="zh-CN">
 <head>
 <meta charset="UTF-8">
@@ -4689,8 +4689,9 @@ var macroCount = MACRO_DATA && MACRO_DATA.dashboard ? MACRO_DATA.dashboard.indic
 document.getElementById("sidebarInfo").textContent = "2011-2026 · " + DATA.length + "题 · " + macroCount + "项指标";
 
 var DS_URL = "https://api.xiaomimimo.com/v1/chat/completions";
-/* 模型热切换: 默认兜底, 启动时拉 Worker /config 覆盖——换模型只需在Cloudflare改环境变量 */
-var AI_MODEL = "mimo-v2.5-pro", AI_ASR = "mimo-v2.5-asr", AI_TTS = "mimo-v2.5-tts";
+/* 模型热切换: 默认兜底, 启动时拉 Worker /config 覆盖——换模型只需在Cloudflare改环境变量
+   注: ASR/TTS 官方目前仅提供 v2.5 系列(无 v2.6), 勿跟随语言模型一起升级 */
+var AI_MODEL = "mimo-v2.6-pro", AI_ASR = "mimo-v2.5-asr", AI_TTS = "mimo-v2.5-tts";
 /* 直连调用解析器: 让速刷AI出题/深度讲解等直连 fetch 跟随"全局默认模型"选择 */
 function directDS(){
   var pid = 'mimo';
