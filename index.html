@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<!-- v2.1 · 2026-09-22 01:45 · modular -->
+<!-- v2.1 · 2026-09-22 06:57 · modular -->
 <html lang="zh-CN">
 <head>
 <meta charset="UTF-8">
@@ -28,9 +28,11 @@ window.ensureLib = (function() {
       ]
     },
     katex: {
-      css: 'https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/katex.min.css',
+      /* 本地化优先(随产物分发 assets/katex/, 摆脱国内CDN不稳导致公式裸奔$..$), CDN兜底 */
+      css: ['assets/katex/katex.min.css', 'https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/katex.min.css', 'https://unpkg.com/katex@0.16.9/dist/katex.min.css'],
       test: function(){ return typeof window.katex !== 'undefined'; },
       urls: [
+        'assets/katex/katex.min.js',
         'https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/katex.min.js',
         'https://unpkg.com/katex@0.16.9/dist/katex.min.js'
       ]
@@ -52,9 +54,14 @@ window.ensureLib = (function() {
   function load(name, st) {
     var lib = LIBS[name];
     if (lib.css && !document.querySelector('link[data-libcss="' + name + '"]')) {
-      var l = document.createElement('link');
-      l.rel = 'stylesheet'; l.href = lib.css; l.setAttribute('data-libcss', name);
-      document.head.appendChild(l);
+      var cssUrls = Array.isArray(lib.css) ? lib.css : [lib.css], ci = 0;
+      (function tryCss() {
+        if (ci >= cssUrls.length) return;
+        var l = document.createElement('link');
+        l.rel = 'stylesheet'; l.href = cssUrls[ci++]; l.setAttribute('data-libcss', name);
+        l.onerror = function() { l.remove(); tryCss(); };
+        document.head.appendChild(l);
+      })();
     }
     var i = 0;
     (function tryNext() {
@@ -6121,17 +6128,46 @@ function toggleChDir(pi_ci) {
   if (el) el.style.display = el.style.display === 'none' ? 'block' : 'none';
 }
 
+/* ===== LaTeX渲染 v2: 单遍正则扫描(不回扫已生成HTML); katex未就绪→.texw占位, 就绪后hydrateTex补渲染 ===== */
+function _texRender1(formula, display) {
+  var f = formula.trim();
+  if (typeof katex !== 'undefined') {
+    try { return display ? '<div style="text-align:center;margin:8px 0">' + katex.renderToString(f, {throwOnError: false, displayMode: true}) + '</div>' : katex.renderToString(f, {throwOnError: false, displayMode: false}); }
+    catch(e) {}
+  }
+  if (window.ensureLib) window.ensureLib('katex', function(ok) { if (ok) hydrateTex(); });
+  return '<span class="texw" data-d="' + (display ? 1 : 0) + '" data-tex="' + escapeHtml(f) + '" style="color:var(--ts);font-family:monospace;font-size:13px;' + (display ? 'display:block;text-align:center;margin:8px 0;' : '') + '">' + escapeHtml(f) + '</span>';
+}
+function hydrateTex() {
+  if (typeof katex === 'undefined') return;
+  var els = document.querySelectorAll('span.texw');
+  for (var i = 0; i < els.length; i++) {
+    var el = els[i], f = el.getAttribute('data-tex') || '', d = el.getAttribute('data-d') === '1', html;
+    try { html = d ? '<div style="text-align:center;margin:8px 0">' + katex.renderToString(f, {throwOnError: false, displayMode: true}) + '</div>' : katex.renderToString(f, {throwOnError: false, displayMode: false}); }
+    catch(e) { continue; }
+    el.outerHTML = html;
+  }
+}
+function _renderLatexSeg(text) {
+  var out = [], last = 0, m;
+  var re = /\$\$([\s\S]*?)\$\$|\\\[([\s\S]*?)\\\]|\\\(([\s\S]*?)\\\)|\$([^$\n]+?)\$/g;
+  while ((m = re.exec(text)) !== null) {
+    var formula = m[1] !== undefined ? m[1] : m[2] !== undefined ? m[2] : m[3] !== undefined ? m[3] : m[4];
+    var display = (m[1] !== undefined || m[2] !== undefined);
+    if (!display && (/^[\s\d.,]+$/.test(formula) || /[\u4e00-\u9fff]/.test(formula))) continue;  /* 货币数字对"$5 … $10"/夹中文的伪公式不当公式 */
+    out.push(text.substring(last, m.index), _texRender1(formula, display));
+    last = m.index + m[0].length;
+  }
+  out.push(text.substring(last));
+  return out.join('');
+}
 function renderLatex(text) {
-  if (typeof katex === 'undefined') return text;
-  text = text.replace(/\$\$([\s\S]*?)\$\$/g, function(_, formula) {
-    try { return '<div style="text-align:center;margin:8px 0">' + katex.renderToString(formula.trim(), {throwOnError: false, displayMode: true}) + '</div>'; }
-    catch(e) { return '$$' + formula + '$$'; }
-  });
-  text = text.replace(/\$([^\$]+?)\$/g, function(_, formula) {
-    try { return katex.renderToString(formula.trim(), {throwOnError: false, displayMode: false}); }
-    catch(e) { return '$' + formula + '$'; }
-  });
-  return text;
+  /* code/pre内$是字面量: 按code段切分, 奇数段原样保留 */
+  var parts = String(text).split(/(<pre[\s\S]*?<\/pre>|<code[\s\S]*?<\/code>)/gi);
+  for (var i = 0; i < parts.length; i++) {
+    if (i % 2 === 0 && parts[i]) parts[i] = _renderLatexSeg(parts[i]);
+  }
+  return parts.join('');
 }
 function aiLoading(msg){var d=document.createElement('div');d.className='ai-loading-msg';d.innerHTML='<span class="ai-sand">⏳</span><span>'+(msg||'AI正在思考')+'</span><span class="ai-thinking" style="padding:0;background:transparent"><span class="ai-dot"></span><span class="ai-dot"></span><span class="ai-dot"></span></span>';return d;}
 function renderMarkdown(text) {
