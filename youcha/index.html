@@ -1,0 +1,712 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width,initial-scale=1"/>
+<title>油茶链 · 管理平台（桌面版 v2.1）</title>
+<style>
+:root{
+  --g900:#0B3D2E;--g800:#0E4A38;--g700:#115E43;--g600:#14785A;--g500:#1B8A66;--g100:#E7F2EC;
+  --gold:#C9A063;--gold-d:#8C6D2F;--ink:#1A2B24;--sub:#5E6E66;--line:#E3EAE6;--bg:#F2F5F3;--card:#FFF;
+  --red:#C0563F;--amber:#D89B2B;
+}
+*{box-sizing:border-box;margin:0;padding:0}
+body{font-family:"PingFang SC","Hiragino Sans GB","Microsoft YaHei",system-ui,sans-serif;background:var(--bg);color:var(--ink);min-height:100vh}
+button{font-family:inherit}
+
+/* ══════════ 布局骨架 ══════════ */
+.layout{display:flex;min-height:100vh}
+.sidebar{width:224px;background:linear-gradient(180deg,var(--g900),#082B20);color:#fff;display:flex;flex-direction:column;position:sticky;top:0;height:100vh;flex:none}
+.brand{display:flex;align-items:center;gap:10px;padding:20px 18px 16px;border-bottom:1px solid rgba(255,255,255,.08)}
+.brand .logo{width:36px;height:36px;border-radius:10px;background:linear-gradient(135deg,#E8CFA0,#C9A063);display:flex;align-items:center;justify-content:center;color:#5A3E12;font-weight:800;flex:none}
+.brand b{font-size:17px;display:block}
+.brand span{font-size:10.5px;color:#9DBFAF}
+.nav{flex:1;padding:12px 10px;overflow-y:auto}
+.nav-lb{font-size:10.5px;color:#6E8A7E;letter-spacing:1px;padding:10px 10px 6px}
+.nav-i{display:flex;align-items:center;gap:10px;padding:10px 12px;border-radius:10px;color:#C9DAD1;font-size:13.5px;cursor:pointer;margin-bottom:2px;user-select:none}
+.nav-i svg{width:19px;height:19px;fill:none;stroke:currentColor;stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round;flex:none}
+.nav-i:hover{background:rgba(255,255,255,.08);color:#fff}
+.nav-i.on{background:var(--g600);color:#fff;font-weight:600}
+.nav-i .bdg{margin-left:auto;background:#E4573D;color:#fff;font-size:10px;border-radius:999px;padding:1px 7px}
+.side-foot{padding:14px;border-top:1px solid rgba(255,255,255,.08);display:flex;gap:10px;align-items:center}
+.side-foot .av{width:34px;height:34px;border-radius:50%;background:var(--g600);display:flex;align-items:center;justify-content:center;font-weight:700;flex:none}
+.side-foot b{font-size:12.5px;display:block}
+.side-foot span{font-size:10.5px;color:#9DBFAF}
+
+.main{flex:1;display:flex;flex-direction:column;min-width:0}
+.topbar{height:58px;background:#fff;border-bottom:1px solid var(--line);display:flex;align-items:center;gap:14px;padding:0 22px;position:sticky;top:0;z-index:30}
+.crumb{font-size:14px;font-weight:600}
+.crumb span{color:var(--sub);font-weight:400;font-size:12.5px;margin-left:8px}
+.spacer{flex:1}
+.env{font-size:11px;color:var(--gold-d);background:#F7EDDC;border-radius:999px;padding:3px 10px}
+.icon-btn{width:36px;height:36px;border-radius:50%;border:1px solid var(--line);background:#fff;display:flex;align-items:center;justify-content:center;cursor:pointer;position:relative}
+.icon-btn svg{width:18px;height:18px;stroke:var(--g700);fill:none;stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round}
+.icon-btn i{position:absolute;top:6px;right:7px;width:7px;height:7px;border-radius:50%;background:#E4573D;border:1.5px solid #fff}
+.userchip{display:flex;align-items:center;gap:8px;font-size:12.5px}
+.userchip .av{width:30px;height:30px;border-radius:50%;background:var(--g600);color:#fff;display:flex;align-items:center;justify-content:center;font-weight:700}
+
+.content{flex:1;padding:20px 22px 40px;max-width:1240px;width:100%;margin:0 auto}
+.page{display:none;animation:fade .3s ease}
+.page.active{display:block}
+@keyframes fade{from{opacity:0;transform:translateY(6px)}to{opacity:1;transform:none}}
+
+/* ══════════ 通用组件 ══════════ */
+.grid{display:grid;grid-template-columns:repeat(12,1fr);gap:16px}
+.card{background:var(--card);border-radius:16px;padding:18px;box-shadow:0 1px 2px rgba(10,40,30,.05),0 8px 24px rgba(10,40,30,.05);border:1px solid #EDF2EF}
+.card-h{display:flex;justify-content:space-between;align-items:baseline;margin-bottom:12px}
+.card-h b{font-size:15.5px}
+.card-h .muted{font-size:12px}
+.muted{color:var(--sub);font-size:12.5px;line-height:1.7}
+.link{color:var(--g600);font-size:12.5px;cursor:pointer;white-space:nowrap}
+.link:hover{text-decoration:underline}
+.btn{display:inline-flex;align-items:center;justify-content:center;gap:6px;background:var(--g600);color:#fff;border:none;border-radius:10px;padding:10px 18px;font-size:13.5px;cursor:pointer;transition:.15s}
+.btn:hover{background:var(--g700)}
+.btn.ghost{background:var(--g100);color:var(--g700)}
+.btn.ghost:hover{background:#D9EBE2}
+.btn.gold{background:linear-gradient(135deg,#D3AC6E,#B8863C)}
+.btn.gold:hover{filter:brightness(1.06)}
+.btn.block{width:100%}
+.chip{display:inline-flex;align-items:center;gap:4px;background:var(--g100);color:var(--g700);font-size:11.5px;padding:3px 10px;border-radius:999px}
+.chip.gold{background:#F7EDDC;color:var(--gold-d)}
+.chip.blue{background:#E3EEF9;color:#2B6CB0}
+.tag{font-size:11px;border-radius:999px;padding:3px 10px}
+.t-green{background:var(--g100);color:var(--g700)}
+.t-gold{background:#F7EDDC;color:var(--gold-d)}
+.t-red{background:#FBEAE6;color:var(--red)}
+.dot{width:9px;height:9px;border-radius:3px;display:inline-block;margin-right:6px;vertical-align:-1px}
+.delta-ok{font-size:11.5px;color:var(--g600);background:var(--g100);border-radius:999px;padding:3px 10px}
+.kpi{display:flex;flex-direction:column;gap:2px}
+.kpi b{font-size:26px;color:var(--g700);font-weight:800}
+.kpi b i{font-style:normal;font-size:14px;margin-left:2px}
+.kpi .lb{font-size:12px;color:var(--sub)}
+.bar{height:8px;border-radius:8px;background:#E4EDE8;overflow:hidden;margin:10px 0 6px}
+.bar i{display:block;height:100%;border-radius:8px;background:linear-gradient(90deg,var(--g500),var(--g700))}
+
+/* ══════════ 首页 ══════════ */
+.hero{grid-column:span 8;background:linear-gradient(150deg,#11563E,#0B3D2E 60%,#0A3327);color:#fff;border-radius:16px;padding:22px;position:relative;overflow:hidden}
+.hero::after{content:"";position:absolute;right:-60px;top:-60px;width:220px;height:220px;border-radius:50%;background:radial-gradient(closest-side,rgba(201,160,99,.3),transparent)}
+.hero-tag{font-size:11px;letter-spacing:2px;color:#E8CFA0;border:1px solid rgba(232,207,160,.4);border-radius:999px;padding:3px 12px}
+.hero h2{font-size:21px;line-height:1.5;margin:12px 0 10px;max-width:88%}
+.hero-meta{display:flex;gap:6px;flex-wrap:wrap;margin-bottom:14px}
+.hero-meta .chip{background:rgba(255,255,255,.12);color:#EAF4EF}
+.hero-plot{background:rgba(255,255,255,.08);border:1px solid rgba(255,255,255,.14);border-radius:14px;padding:14px 16px;display:flex;align-items:center;justify-content:space-between;gap:12px;max-width:560px}
+.hero-plot b{font-size:15px;display:block}
+.hero-plot span{font-size:12px;color:#B9D2C6}
+.vig{text-align:center;background:rgba(255,255,255,.1);border-radius:12px;padding:8px 16px}
+.vig b{font-size:26px;color:#FFD9A0}
+.vig span{display:block;font-size:10.5px;color:#B9D2C6}
+.hero-cta{display:flex;gap:10px;margin-top:14px}
+.side-col{grid-column:span 4;display:flex;flex-direction:column;gap:16px}
+.alert{display:flex;align-items:flex-start;gap:12px;background:#FDF6E7;border:1px solid #F0DFB6;border-radius:14px;padding:14px}
+.alert .ai{width:34px;height:34px;border-radius:10px;background:#F5E3BC;display:flex;align-items:center;justify-content:center;font-size:17px;flex:none}
+.alert b{font-size:13px;display:block;color:#7A5B16}
+.alert span{font-size:12px;color:#9A7A2E;display:block;line-height:1.6;margin-top:2px}
+.task{display:flex;align-items:center;gap:10px;background:#F6FAF8;border-radius:10px;padding:10px 12px;margin-top:8px;font-size:13px}
+.task .st{width:20px;height:20px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:11px;flex:none}
+.task.ok .st{background:var(--g600);color:#fff}
+.task.todo .st{background:#E4EDE8;color:var(--sub)}
+.task b{color:var(--g700);margin-left:auto;font-size:12px;white-space:nowrap}
+.kpis{grid-column:span 12;display:grid;grid-template-columns:repeat(4,1fr);gap:16px}
+.kpi-card{background:#fff;border-radius:16px;padding:16px 18px;border:1px solid #EDF2EF;box-shadow:0 1px 2px rgba(10,40,30,.05);position:relative;overflow:hidden}
+.kpi-card::before{content:"";position:absolute;left:0;top:0;bottom:0;width:4px;background:var(--g500)}
+.kpi-card.c2::before{background:var(--g700)}.kpi-card.c3::before{background:var(--gold)}.kpi-card.c4::before{background:#7C8A82}
+.span8{grid-column:span 8}.span4{grid-column:span 4}.span6{grid-column:span 6}.span12{grid-column:span 12}
+.qgrid{display:grid;grid-template-columns:repeat(6,1fr);gap:10px}
+.qi{background:#F6FAF8;border:1px solid #EDF2EF;border-radius:12px;padding:14px 6px;text-align:center;cursor:pointer;font-size:12.5px;color:var(--g700);transition:.15s}
+.qi span{display:block;font-size:22px;margin-bottom:6px}
+.qi:hover{background:var(--g100);transform:translateY(-2px)}
+
+/* ══════════ 图表 ══════════ */
+.chart{width:100%;height:auto;display:block}
+.wf{display:flex;height:36px;border-radius:8px;overflow:hidden;background:#F0F4F2;margin:12px 0 6px}
+.seg{display:flex;align-items:center;justify-content:center;color:#fff;font-size:11px;white-space:nowrap;overflow:hidden;transition:width .3s}
+.s-base{background:var(--g700)}.s-term{background:var(--g500)}.s-risk{background:var(--amber)}.s-carbon{background:var(--gold)}.s-perf{background:#7C8A82}
+.wf-ticks{display:flex;justify-content:space-between;font-size:10px;color:var(--sub);padding:0 2px}
+.legend{display:flex;flex-wrap:wrap;gap:6px 16px;font-size:12px;color:var(--sub);margin-top:12px}
+.rate-hero{display:flex;align-items:baseline;gap:12px;flex-wrap:wrap}
+.rate-hero b{font-size:34px;color:var(--g700);font-weight:800}
+.rate-hero b i{font-style:normal;font-size:16px}
+.rate-hero .lb{font-size:12.5px;color:var(--sub)}
+
+/* ══════════ 时间轴 / 押品 ══════════ */
+.tl-i{display:flex;gap:12px;padding-bottom:18px;position:relative}
+.tl-i::before{content:"";position:absolute;left:5.5px;top:18px;bottom:-2px;width:2px;background:var(--line)}
+.tl-i:last-child{padding-bottom:4px}.tl-i:last-child::before{display:none}
+.tl-i i{width:13px;height:13px;border-radius:50%;background:#CBD8D1;flex:none;margin-top:4px;position:relative;z-index:1}
+.tl-i.done i{background:var(--g600)}.tl-i.doing i{background:var(--gold)}
+.tl-i b{font-size:13.5px;display:block}
+.tl-i.done b{color:var(--g700)}
+.tl-i span{font-size:12px;color:var(--sub)}
+.col-row{border:1px solid var(--line);border-radius:12px;padding:14px;margin-top:10px;display:flex;gap:14px;align-items:flex-start}
+.col-ico{width:36px;height:36px;border-radius:10px;background:var(--g100);display:flex;align-items:center;justify-content:center;font-size:17px;flex:none}
+.col-t{display:flex;align-items:center;gap:8px;flex-wrap:wrap}
+.col-t b{font-size:14px}
+.col-m{font-size:13px;margin-top:5px}
+.col-m b{color:var(--g700)}
+.col-s{font-size:11.5px;color:var(--sub);margin-top:5px;line-height:1.6}
+.formula{background:var(--g100);border-radius:12px;padding:14px;font-size:13px;color:var(--g900);line-height:1.8}
+.formula code{font-family:inherit;font-weight:700;color:var(--g700)}
+
+/* ══════════ 碳票 ══════════ */
+.ticket{background:linear-gradient(140deg,#134A36,#0B3D2E 55%,#173E30);color:#fff;border-radius:16px;padding:22px;position:relative;overflow:hidden}
+.ticket::before{content:"";position:absolute;left:0;top:0;bottom:0;width:6px;background:linear-gradient(#C9A063,#8C6D2F)}
+.ticket .tno{font-size:11px;color:#B9D2C6;letter-spacing:1px}
+.ticket b.big{font-size:30px;color:#FFD9A0}
+.ticket .mm{background:rgba(255,255,255,.1);border-radius:10px;padding:10px;text-align:center;flex:1}
+.ticket .mm b{font-size:18px;color:#FFD9A0}
+.ticket .mm span{display:block;font-size:10.5px;color:#B9D2C6}
+.cbar{display:flex;height:18px;border-radius:8px;overflow:hidden;margin-top:10px}
+.alloc{display:flex;align-items:center;gap:10px;font-size:12.5px;margin-top:8px}
+.alloc .ab{flex:1;height:8px;border-radius:8px;background:#E4EDE8;overflow:hidden}
+.alloc .ab i{display:block;height:100%;background:var(--g600)}
+
+/* ══════════ 弹层 / 抽屉 ══════════ */
+.mask{position:fixed;inset:0;background:rgba(6,20,15,.5);backdrop-filter:blur(3px);display:none;align-items:center;justify-content:center;z-index:100;padding:20px}
+.mask.show{display:flex}
+.modal{background:#fff;border-radius:18px;padding:24px;width:min(560px,94vw);max-height:88vh;overflow-y:auto;animation:up .25s ease}
+@keyframes up{from{transform:translateY(20px);opacity:.4}to{transform:none;opacity:1}}
+.modal-h{display:flex;align-items:baseline;justify-content:space-between;margin-bottom:8px}
+.modal-h b{font-size:18px}
+.lg{display:flex;justify-content:space-between;align-items:center;font-size:13px;padding:9px 0;border-bottom:1px dashed var(--line)}
+.lg.total{border-bottom:none;font-weight:700}
+.divider{height:1px;background:var(--line);margin:12px 0}
+.lab-t{font-size:15px;display:block;margin:14px 0 4px}
+label{display:flex;justify-content:space-between;font-size:13px;margin:14px 0 6px}
+input[type=range]{width:100%;accent-color:var(--g600)}
+.row-sw{display:flex;justify-content:space-between;align-items:center;font-size:13px;margin-top:16px}
+.sw{width:46px;height:26px;border-radius:999px;background:#CBD8D1;position:relative;cursor:pointer;transition:.2s;flex:none}
+.sw::after{content:"";position:absolute;top:3px;left:3px;width:20px;height:20px;border-radius:50%;background:#fff;transition:.2s;box-shadow:0 1px 3px rgba(0,0,0,.25)}
+.sw.on{background:var(--g600)}.sw.on::after{left:23px}
+.lab-result{display:flex;align-items:baseline;justify-content:space-between;background:var(--g100);border-radius:12px;padding:14px;margin-top:16px;flex-wrap:wrap;gap:8px}
+.lab-result b{font-size:28px;color:var(--g700)}
+.drawer-mask{position:fixed;inset:0;background:rgba(6,20,15,.4);display:none;z-index:90}
+.drawer-mask.show{display:block}
+.drawer{position:fixed;top:0;right:0;bottom:0;width:min(420px,92vw);background:#fff;z-index:95;transform:translateX(105%);transition:transform .3s;display:flex;flex-direction:column;box-shadow:-12px 0 40px rgba(0,0,0,.15)}
+.drawer.show{transform:none}
+.dr-h{padding:18px 20px;display:flex;align-items:center;justify-content:space-between;border-bottom:1px solid var(--line)}
+.msg{display:flex;gap:12px;padding:14px 20px;border-bottom:1px solid #F0F4F2}
+.msg .mi{width:38px;height:38px;border-radius:10px;display:flex;align-items:center;justify-content:center;font-size:17px;flex:none}
+.msg b{font-size:13px;display:block}
+.msg span{font-size:12px;color:var(--sub);line-height:1.6;display:block;margin-top:3px}
+.msg time{font-size:11px;color:#A9B8B0;margin-left:auto;flex:none}
+
+#toast{position:fixed;left:50%;bottom:36px;transform:translateX(-50%) translateY(10px);background:rgba(12,30,24,.92);color:#fff;font-size:13px;padding:10px 18px;border-radius:999px;opacity:0;pointer-events:none;transition:.25s;z-index:200;max-width:80vw;text-align:center}
+#toast.show{opacity:1;transform:translateX(-50%)}
+
+/* ══════════ 响应式 ══════════ */
+@media (max-width:1080px){
+  .hero{grid-column:span 12}.side-col{grid-column:span 12}
+  .span8,.span4{grid-column:span 12}.span6{grid-column:span 12}
+  .kpis{grid-template-columns:repeat(2,1fr)}
+  .qgrid{grid-template-columns:repeat(3,1fr)}
+}
+@media (max-width:760px){
+  .sidebar{position:fixed;left:0;top:0;bottom:0;z-index:80;transform:translateX(-100%);transition:.3s}
+  .sidebar.open{transform:none}
+  .kpis{grid-template-columns:1fr}
+  .content{padding:14px}
+  .menu-btn{display:flex!important}
+}
+.menu-btn{display:none;width:36px;height:36px;border-radius:10px;border:1px solid var(--line);background:#fff;align-items:center;justify-content:center;cursor:pointer}
+.menu-btn svg{width:18px;height:18px;stroke:var(--g700);stroke-width:2;fill:none;stroke-linecap:round}
+.big .content,.big .modal{zoom:1.1}
+</style>
+</head>
+<body>
+
+<div class="layout">
+  <!-- ══════════ 侧栏 ══════════ -->
+  <aside class="sidebar" id="sidebar">
+    <div class="brand">
+      <div class="logo">工</div>
+      <div><b>油茶链</b><span>中国工商银行 · 江西分行</span></div>
+    </div>
+    <nav class="nav">
+      <div class="nav-lb">业务工作台</div>
+      <div class="nav-i on" data-go="home" onclick="go('home')"><svg viewBox="0 0 24 24"><path d="M3 11.5 12 4l9 7.5"/><path d="M5.5 10.5V20h13v-9.5"/></svg>首页总览</div>
+      <div class="nav-i" data-go="valuation" onclick="go('valuation')"><svg viewBox="0 0 24 24"><path d="M4 20V5"/><path d="M4 20h16"/><polyline points="6.5 15 10.5 10 13.5 13 19.5 6"/></svg>估值与长势看板</div>
+      <div class="nav-i" data-go="assets" onclick="go('assets')"><svg viewBox="0 0 24 24"><rect x="3" y="6" width="18" height="13" rx="3"/><path d="M3 10h18"/><circle cx="16.5" cy="14.5" r="1.3"/></svg>我的数字资产</div>
+      <div class="nav-i" data-go="loan" onclick="go('loan')"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="8"/><path d="M12 8v8M9.5 10h5M9.5 14h5"/></svg>贷款与定价</div>
+      <div class="nav-i" data-go="carbon" onclick="go('carbon')"><svg viewBox="0 0 24 24"><rect x="3" y="5" width="18" height="14" rx="2"/><path d="M7 9h6M7 13h4"/></svg>碳票管理</div>
+      <div class="nav-i" data-go="quality" onclick="go('quality')"><svg viewBox="0 0 24 24"><path d="M9 3h6v5l4 10a2 2 0 0 1-1.9 2.7H6.9A2 2 0 0 1 5 18l4-10Z"/></svg>品质核验公示</div>
+      <div class="nav-lb">设置</div>
+      <div class="nav-i" data-go="profile" onclick="go('profile')"><svg viewBox="0 0 24 24"><circle cx="12" cy="8.5" r="3.5"/><path d="M5 20c1.2-3.4 3.9-5 7-5s5.8 1.6 7 5"/></svg>我的与无障碍</div>
+    </nav>
+    <div class="side-foot">
+      <div class="av">吴</div>
+      <div><b>吴福平 · 信贷管理岗</b><span>演示环境 · 数据为模型生成</span></div>
+    </div>
+  </aside>
+
+  <!-- ══════════ 主区 ══════════ -->
+  <div class="main">
+    <header class="topbar">
+      <div class="menu-btn" onclick="document.getElementById('sidebar').classList.toggle('open')"><svg viewBox="0 0 24 24"><path d="M4 7h16M4 12h16M4 17h16"/></svg></div>
+      <div class="crumb" id="crumb">首页总览<span>青山有信 · 长周期经济林资产动态估值与信贷定价</span></div>
+      <div class="spacer"></div>
+      <span class="env">演示环境 · 数据为模型生成</span>
+      <div class="icon-btn" onclick="openDrawer()"><svg viewBox="0 0 24 24"><path d="M6 16v-5a6 6 0 1 1 12 0v5l1.5 2.5H4.5Z"/><path d="M10.5 21a2 2 0 0 0 3 0"/></svg><i></i></div>
+      <div class="userchip"><div class="av">吴</div>吴福平</div>
+    </header>
+
+    <div class="content">
+
+      <!-- ═════ 首页 ═════ -->
+      <section class="page active" id="page-home">
+        <div class="grid">
+          <div class="hero">
+            <span class="hero-tag">青山有信</span>
+            <h2>让每一片油茶林，都成为可抵押的信用资产</h2>
+            <div class="hero-meta">
+              <span class="chip">✓ 已确权</span><span class="chip">卫星核验 09/28</span><span class="chip">中征登记公示</span><span class="chip">季度重估</span>
+            </div>
+            <div class="hero-plot">
+              <div><b>信丰 · 万星1号地块</b><span>128.6 亩 · 6 年树龄 · 良种油茶 · 长势指数 87 ▲4.2</span></div>
+              <div class="vig"><b>87</b><span>长势指数</span></div>
+            </div>
+            <div class="hero-cta">
+              <button class="btn ghost" style="background:rgba(255,255,255,.14);color:#fff" onclick="go('valuation')">进入估值看板</button>
+              <button class="btn gold" onclick="go('loan')">去锁定收益权</button>
+            </div>
+          </div>
+
+          <div class="side-col">
+            <div class="alert" style="cursor:pointer" onclick="go('valuation')">
+              <div class="ai">🌧️</div>
+              <div><b>采摘季提醒 · 10月15日前后</b><span>预计鲜果产量 41.2 吨，10月中旬有连续降雨，建议提前采收；已预置采收期短期周转支持</span></div>
+            </div>
+            <div class="card">
+              <div class="card-h"><b>利率激励任务</b><span class="muted">行为直接写进利率</span></div>
+              <div class="task ok"><span class="st">✓</span>按期还款记录良好<b>已享 −0.05pp</b></div>
+              <div class="task ok"><span class="st">✓</span>政策性种植险覆盖 80%<b>风险溢价↓72%</b></div>
+              <div class="task todo"><span class="st">○</span>投保提升至 90%<b>再省 0.02pp</b></div>
+              <div class="task todo"><span class="st">○</span>新增核证碳汇 100 吨<b>再省 0.03pp</b></div>
+            </div>
+          </div>
+
+          <div class="kpis">
+            <div class="kpi-card">
+              <div class="kpi"><span class="lb">可授信额度</span><b>86.4<i>万</i></b></div>
+              <span class="delta-ok" style="margin-top:6px">较上季 +12.6万</span>
+              <div class="bar"><i style="width:45%"></i></div>
+              <div class="muted">已批授信 30.0万 · 已放款 13.5万</div>
+            </div>
+            <div class="kpi-card c2">
+              <div class="kpi"><span class="lb">收益权计入额度</span><b>52.8<i>万</i></b></div>
+              <div class="muted" style="margin-top:8px">估值 96.0万 × 质押率 55%<br>中征登记编号 2026-JX-0713-0288</div>
+            </div>
+            <div class="kpi-card c3">
+              <div class="kpi"><span class="lb">碳汇资产</span><b>412<i>吨</i></b></div>
+              <div class="muted" style="margin-top:8px">赣林碳票已核证 · 可质押 ¥3.3万<br>参考碳价 ¥80/吨</div>
+            </div>
+            <div class="kpi-card c4">
+              <div class="kpi"><span class="lb">当前执行利率</span><b>3.45<i>%</i></b></div>
+              <span class="delta-ok" style="margin-top:6px">较县均新造地块 −1.15pp</span>
+              <div class="muted" style="margin-top:8px">保险 + 碳汇 + 履约合计优惠 0.17pp</div>
+            </div>
+          </div>
+
+          <div class="card span8">
+            <div class="card-h"><b>执行利率拆解 —— 我的利率为什么是 3.45%？</b><span class="link" onclick="openModal('m-rate')">打开利率实验室 ›</span></div>
+            <div class="wf">
+              <div class="seg s-base" style="width:77.5%">基准 3.10</div>
+              <div class="seg s-term" style="width:11.25%">+0.45</div>
+              <div class="seg s-risk" style="width:1.75%"></div>
+              <div class="seg s-carbon" style="width:3%">−0.12</div>
+              <div class="seg s-perf" style="width:1.25%"></div>
+            </div>
+            <div class="wf-ticks"><span>0</span><span>1%</span><span>2%</span><span>3%</span><span>4%</span></div>
+            <div class="legend">
+              <span><i class="dot" style="background:var(--g700)"></i>基准 3.10</span>
+              <span><i class="dot" style="background:var(--g500)"></i>期限溢价 +0.45</span>
+              <span><i class="dot" style="background:var(--amber)"></i>风险溢价 +0.07（0.35×(1−80%)）</span>
+              <span><i class="dot" style="background:var(--gold)"></i>碳汇抵扣 −0.12</span>
+              <span><i class="dot" style="background:#7C8A82"></i>履约优惠 −0.05</span>
+            </div>
+            <div class="muted" style="margin-top:10px">执行利率 = 基准 + 期限溢价 f₁ + 自然风险溢价 f₂×(1−保险覆盖) − 碳汇抵扣 f₃ − 履约优惠 f₄。坡度、投保、碳汇、还款记录都进价格——这就是"一林一价"相对"一县一价"的定价精度。</div>
+          </div>
+
+          <div class="card span4">
+            <div class="card-h"><b>快捷服务</b></div>
+            <div class="qgrid" style="grid-template-columns:repeat(3,1fr)">
+              <div class="qi" onclick="go('loan')"><span>💰</span>我要贷款</div>
+              <div class="qi" onclick="openModal('m-rate')"><span>🧮</span>利率实验室</div>
+              <div class="qi" onclick="go('carbon')"><span>🎫</span>我的碳票</div>
+              <div class="qi" onclick="go('quality')"><span>🔬</span>品质核验</div>
+              <div class="qi" onclick="toast('数字人民币补贴直达（演示）：新造 1000元/亩、低改 400元/亩，全程可追溯')"><span>🧧</span>补贴直达</div>
+              <div class="qi" onclick="toast('已为您接通村级金融辅导员（演示）')"><span>📞</span>金融辅导员</div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- ═════ 估值看板 ═════ -->
+      <section class="page" id="page-valuation">
+        <div class="grid">
+          <div class="card span6">
+            <div class="card-h"><b>信丰 · 万星1号地块 · 多期影像比对</b><span class="link" onclick="toast('地块切换（演示）：信丰共 3 块在管地块')">切换地块 ›</span></div>
+            <div class="muted" style="margin-bottom:12px">128.6 亩 · 良种油茶 · 6 年树龄 ｜ "天—空—地"三维交叉验证</div>
+            <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px">
+              <div style="background:linear-gradient(135deg,#DCEDE3,#C4DFD0);border-radius:12px;padding:14px">
+                <div class="muted">2026/09/01</div><b style="font-size:19px;color:var(--g700)">NDVI 0.72</b>
+                <div style="height:52px;margin-top:8px;border-radius:8px;background:repeating-linear-gradient(45deg,#9CC3AC 0 6px,#8FBA9F 6px 12px);opacity:.7"></div>
+              </div>
+              <div style="background:linear-gradient(135deg,#BFE0CC,#9CCDB2);border-radius:12px;padding:14px;position:relative">
+                <span class="tag t-green" style="position:absolute;top:10px;right:10px">较上期 ↑</span>
+                <div class="muted">2026/10/01</div><b style="font-size:19px;color:var(--g700)">NDVI 0.81</b>
+                <div style="height:52px;margin-top:8px;border-radius:8px;background:repeating-linear-gradient(45deg,#6FAE87 0 6px,#63A37C 6px 12px)"></div>
+              </div>
+            </div>
+            <div style="margin-top:12px"><span class="chip">卫星遥感 09/28</span> <span class="chip">无人机核查</span> <span class="chip">地面样方标定</span></div>
+          </div>
+
+          <div class="card span6">
+            <div class="card-h"><b>长势曲线（NDVI）</b><span style="font-size:11.5px;color:var(--sub)"><i class="dot" style="background:var(--g600)"></i>本年度　<i class="dot" style="background:#9DB4AA"></i>去年同期</span></div>
+            <svg class="chart" viewBox="0 0 480 170">
+              <defs><linearGradient id="gndvi" x1="0" y1="0" x2="0" y2="1">
+                <stop offset="0" stop-color="#1B8A66" stop-opacity=".28"/><stop offset="1" stop-color="#1B8A66" stop-opacity="0"/>
+              </linearGradient></defs>
+              <g stroke="#E3EAE6"><line x1="26" y1="34" x2="462" y2="34"/><line x1="26" y1="80" x2="462" y2="80"/><line x1="26" y1="126" x2="462" y2="126"/></g>
+              <path d="M30,105 L116,86 L202,70 L288,60 L374,49 L460,26 L460,140 L30,140 Z" fill="url(#gndvi)"/>
+              <polyline points="30,116 116,98 202,89 288,80 374,68 460,50" fill="none" stroke="#9DB4AA" stroke-width="2" stroke-dasharray="4 4"/>
+              <polyline points="30,105 116,86 202,70 288,60 374,49 460,26" fill="none" stroke="#14785A" stroke-width="2.5"/>
+              <g fill="#14785A"><circle cx="30" cy="105" r="3.5"/><circle cx="116" cy="86" r="3.5"/><circle cx="202" cy="70" r="3.5"/><circle cx="288" cy="60" r="3.5"/><circle cx="374" cy="49" r="3.5"/><circle cx="460" cy="26" r="4.5" stroke="#fff" stroke-width="2"/></g>
+              <g font-size="11" fill="#5E6E66" text-anchor="middle"><text x="30" y="158">6月</text><text x="116" y="158">7月</text><text x="202" y="158">8月</text><text x="288" y="158">9月</text><text x="374" y="158">10月</text><text x="460" y="158">今日</text></g>
+              <text x="462" y="18" font-size="11" fill="#14785A" text-anchor="end" font-weight="700">0.81</text>
+            </svg>
+          </div>
+
+          <div class="card span8">
+            <div class="card-h"><b>本季评估（2026-Q4 · 已写入地块档案）</b></div>
+            <div class="kpis" style="gap:12px">
+              <div class="kpi-card"><div class="kpi"><span class="lb">冠层覆盖度</span><b>78%</b></div><div class="muted" style="margin-top:6px">较上期 +6</div></div>
+              <div class="kpi-card c2"><div class="kpi"><span class="lb">叶面积指数</span><b>4.2</b></div><div class="muted" style="margin-top:6px">优良区间</div></div>
+              <div class="kpi-card c3"><div class="kpi"><span class="lb">预估单产</span><b>320<i>kg/亩</i></b></div><div class="muted" style="margin-top:6px">鲜果</div></div>
+              <div class="kpi-card c4"><div class="kpi"><span class="lb">预估总产</span><b>41.2<i>吨</i></b></div><div class="muted" style="margin-top:6px">可授信 ¥86.4 万</div></div>
+            </div>
+          </div>
+
+          <div class="card span4" style="border:1px solid #F0DFB6">
+            <div class="card-h"><b style="color:#7A5B16">⚠ 气象与农事提示</b></div>
+            <div class="muted">10 月中旬有连续降雨过程，建议 10/15 前完成采收；采收后销售回款进入监管账户按约清偿。</div>
+            <button class="btn gold block" style="margin-top:12px" onclick="toast('采收期短期周转申请已提交（演示），额度最高 5 万元、期限 6 个月')">申请短期周转</button>
+          </div>
+        </div>
+      </section>
+
+      <!-- ═════ 数字资产 ═════ -->
+      <section class="page" id="page-assets">
+        <div class="grid">
+          <div class="card span8">
+            <div class="card-h"><b>综合授信额度（复合增信模型测算）</b><span class="delta-ok">较上季 +12.6万 · 下次重估 2026-11-01</span></div>
+            <div class="kpi" style="margin-bottom:8px"><b>86.4<i>万元</i></b></div>
+            <div class="cbar">
+              <div style="width:61%;background:var(--g700);color:#fff;font-size:11px;display:flex;align-items:center;justify-content:center">收益权 52.8</div>
+              <div style="width:35%;background:var(--g500);color:#fff;font-size:11px;display:flex;align-items:center;justify-content:center">生物 30.3</div>
+              <div style="width:4%;background:var(--gold)"></div>
+            </div>
+            <div class="muted" style="margin-top:6px">单位：万元 ｜ 三类原本不可质押的资产，经登记确权后组合增信。授信不再"一次定终身"。</div>
+
+            <div class="col-row">
+              <div class="col-ico">📄</div>
+              <div style="flex:1">
+                <div class="col-t"><b>① 未来收益权质押</b><span class="tag t-green">已登记公示</span></div>
+                <div class="col-m">估值 ¥96.0万 × 质押率 55% → <b>计入 52.8万</b></div>
+                <div class="col-s">中征动产融资统一登记公示系统 · 编号 2026-JX-0713-0288 ｜ 订单农业锁定最低收购价、回款账户监管</div>
+              </div>
+            </div>
+            <div class="col-row">
+              <div class="col-ico">🌳</div>
+              <div style="flex:1">
+                <div class="col-t"><b>② 生物资产动态估值</b><span class="tag t-blue">动态</span></div>
+                <div class="col-m">估值 ¥75.8万 × 质押率 40% → <b>计入 30.3万</b></div>
+                <div class="col-s">遥感长势指数 87 · 预估总产 41.2 吨 · 评估日 2026/10/01 ｜ 政策性种植险、收入险、担保协同</div>
+              </div>
+            </div>
+            <div class="col-row">
+              <div class="col-ico">🎫</div>
+              <div style="flex:1">
+                <div class="col-t"><b>③ 碳汇资产质押</b><span class="tag t-gold">已核证</span></div>
+                <div class="col-m">赣林碳票 412 吨 × ¥80/吨 × 质押率 100% → <b>计入 3.3万</b></div>
+                <div class="col-s">省级碳汇平台登记 + 中征平台公示 ｜ 第三方核证、碳价指数保险</div>
+              </div>
+            </div>
+          </div>
+
+          <div class="side-col" style="grid-column:span 4">
+            <div class="card">
+              <div class="card-h"><b>额度测算口径</b></div>
+              <div class="formula">授信额度 = Σ（<code>押品估值 × 分类质押率</code>）× <code>风险调整系数</code><br>
+              本次综合口径已含 0.95 风险调整 ｜ 数据源：动态估值引擎 + 中征登记公示系统</div>
+            </div>
+            <div class="card">
+              <div class="card-h"><b>季度重估轨迹</b><span class="muted">每季度重估 · 可追溯</span></div>
+              <svg class="chart" viewBox="0 0 300 140">
+                <defs><linearGradient id="gval" x1="0" y1="0" x2="0" y2="1">
+                  <stop offset="0" stop-color="#C9A063" stop-opacity=".3"/><stop offset="1" stop-color="#C9A063" stop-opacity="0"/>
+                </linearGradient></defs>
+                <g stroke="#E3EAE6"><line x1="20" y1="30" x2="288" y2="30"/><line x1="20" y1="66" x2="288" y2="66"/><line x1="20" y1="102" x2="288" y2="102"/></g>
+                <path d="M24,98 L73,89 L122,76 L171,63 L220,50 L269,28 L269,112 L24,112 Z" fill="url(#gval)"/>
+                <polyline points="24,98 73,89 122,76 171,63 220,50 269,28" fill="none" stroke="#B8863C" stroke-width="2.5"/>
+                <g fill="#B8863C"><circle cx="24" cy="98" r="3"/><circle cx="73" cy="89" r="3"/><circle cx="122" cy="76" r="3"/><circle cx="171" cy="63" r="3"/><circle cx="220" cy="50" r="3"/><circle cx="269" cy="28" r="4" stroke="#fff" stroke-width="1.5"/></g>
+                <g font-size="9.5" fill="#5E6E66" text-anchor="middle"><text x="24" y="126">25Q3</text><text x="73" y="126">25Q4</text><text x="122" y="126">26Q1</text><text x="171" y="126">26Q2</text><text x="220" y="126">26Q3</text><text x="269" y="126">26Q4</text></g>
+              </svg>
+              <div class="muted">银行拿到的不再是一张过期的评估表，而是一条可追溯的价值轨迹。</div>
+            </div>
+            <button class="btn block" onclick="go('loan')">申请提款 / 查看在贷</button>
+          </div>
+        </div>
+      </section>
+
+      <!-- ═════ 贷款与定价 ═════ -->
+      <section class="page" id="page-loan">
+        <div class="grid">
+          <div class="card span8">
+            <div class="card-h"><b>油茶收益权质押贷 · 万星1号地块提升项目</b><span class="tag t-green">已批授信 · 绿色专项</span></div>
+            <div class="kpis" style="gap:12px">
+              <div class="kpi-card"><div class="kpi"><span class="lb">已批授信</span><b>30.0<i>万</i></b></div><div class="muted" style="margin-top:6px">已放款 13.5万（按节点）</div></div>
+              <div class="kpi-card c2"><div class="kpi"><span class="lb">贷款期限</span><b>8<i>年</i></b></div><div class="muted" style="margin-top:6px">匹配盛产周期</div></div>
+              <div class="kpi-card c3"><div class="kpi"><span class="lb">执行利率</span><b>3.45<i>%</i></b></div><div class="muted" style="margin-top:6px">较县均 −1.15pp</div></div>
+              <div class="kpi-card c4"><div class="kpi"><span class="lb">放款方式</span><b style="font-size:20px">按节点</b></div><div class="muted" style="margin-top:6px">遥感复核自动触发</div></div>
+            </div>
+            <div class="card-h" style="margin-top:18px"><b>执行利率拆解</b><span class="link" onclick="openModal('m-rate')">打开利率实验室 ›</span></div>
+            <div class="wf">
+              <div class="seg s-base" style="width:77.5%">基准 3.10</div>
+              <div class="seg s-term" style="width:11.25%">+0.45</div>
+              <div class="seg s-risk" style="width:1.75%"></div>
+              <div class="seg s-carbon" style="width:3%">−0.12</div>
+              <div class="seg s-perf" style="width:1.25%"></div>
+            </div>
+            <div class="wf-ticks"><span>0</span><span>1%</span><span>2%</span><span>3%</span><span>4%</span></div>
+            <div class="legend">
+              <span><i class="dot" style="background:var(--g700)"></i>基准 3.10</span>
+              <span><i class="dot" style="background:var(--g500)"></i>期限 +0.45</span>
+              <span><i class="dot" style="background:var(--amber)"></i>风险 +0.07</span>
+              <span><i class="dot" style="background:var(--gold)"></i>碳汇 −0.12</span>
+              <span><i class="dot" style="background:#7C8A82"></i>履约 −0.05</span>
+            </div>
+          </div>
+
+          <div class="card span4">
+            <div class="card-h"><b>放款进度</b><span class="muted">13.5 / 30.0 万</span></div>
+            <div class="tl-i done"><i></i><div><b>林地清理与整地 · 6.0万</b><span>2025-03-12 放款 · 卫星影像核验通过</span></div></div>
+            <div class="tl-i done"><i></i><div><b>苗木定植 · 7.5万</b><span>2025-04-26 放款 · 成活率 94%（无人机核查）</span></div></div>
+            <div class="tl-i doing"><i></i><div><b>水肥一体化设施 · 9.0万</b><span>施工中 · 遥感复核通过即自动放款</span></div></div>
+            <div class="tl-i"><i></i><div><b>抚育管护（第2—3年）· 7.5万</b><span>待触发 · 按年度管护验收分批</span></div></div>
+            <div class="muted" style="margin-top:10px">资金与关键步骤一一对应，配合数字人民币定向支付，从源头化解"短贷长用"与挪用风险。</div>
+          </div>
+
+          <div class="card span8">
+            <div class="card-h"><b>还款安排</b></div>
+            <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px">
+              <div style="background:#F6FAF8;border-radius:12px;padding:14px"><b style="font-size:13.5px;color:var(--g700)">第1—3年 · 只付息不还本</b><div class="muted" style="margin-top:5px">匹配油茶"三年初收"的生长规律</div></div>
+              <div style="background:#F6FAF8;border-radius:12px;padding:14px"><b style="font-size:13.5px;color:var(--g700)">第4—8年 · 等额本息</b><div class="muted" style="margin-top:5px">销售回款监管账户自动扣划</div></div>
+            </div>
+            <div style="margin-top:12px"><span class="chip">政策性种植险</span> <span class="chip">收入险</span> <span class="chip">价格指数险</span></div>
+            <div class="muted" style="margin-top:10px"><b style="color:var(--g700)">闭环机制：</b>本期履约数据回流定价模型，成为下一期利率的输入——每一次按期还款，都在为下一次融资降低利率。</div>
+          </div>
+        </div>
+      </section>
+
+      <!-- ═════ 碳票管理 ═════ -->
+      <section class="page" id="page-carbon">
+        <div class="grid">
+          <div class="ticket span6">
+            <div class="tno">江西省林业碳票 · 油茶林 ｜ 证书号 JX-OTC-2026-0412</div>
+            <div style="display:flex;align-items:baseline;gap:12px;margin-top:10px">
+              <b class="big">412 吨 CO₂e</b><span style="font-size:12px;color:#B9D2C6">核证减排量</span>
+            </div>
+            <div class="muted" style="color:#B9D2C6;margin-top:3px">权利主体：信丰·万星1号地块（128.6亩）｜ 签发 2026-09-30</div>
+            <div style="display:flex;gap:10px;margin-top:14px">
+              <div class="mm"><b>3.30万</b><span>资产价值（¥80/吨）</span></div>
+              <div class="mm"><b>100%</b><span>可质押比例</span></div>
+            </div>
+          </div>
+
+          <div class="card span6">
+            <div class="card-h"><b>减排量构成与监测</b></div>
+            <div class="cbar">
+              <div style="width:89.3%;background:var(--g600);color:#fff;font-size:10.5px;display:flex;align-items:center;justify-content:center">林木生物质碳储量 368 吨</div>
+              <div style="width:10.7%;background:var(--gold);color:#fff;font-size:9.5px;display:flex;align-items:center;justify-content:center">44</div>
+            </div>
+            <div class="muted" style="margin-top:8px">土壤有机碳增量 44 吨 ｜ 核算标准：<b>江西油茶林碳汇核算方法学</b>（参照湘林碳票，最小图斑 400㎡、覆盖度≥40%）</div>
+            <div style="margin-top:10px"><span class="chip">卫星遥感</span> <span class="chip">无人机</span> <span class="chip">地面调查</span> <span class="chip">第三方独立核证</span></div>
+            <div class="divider"></div>
+            <div class="card-h"><b>碳汇抵扣机制</b><span class="tag t-gold">核心机制</span></div>
+            <div class="muted">不再等待碳票交易变现——核证碳汇收益折现后<b style="color:var(--g700)">直接从融资成本中扣除</b>。本笔贷款已含 <b style="color:var(--g700)">−0.12pp</b>，生态价值当场变成利率优惠。</div>
+          </div>
+
+          <div class="card span8">
+            <div class="card-h"><b>碳票收益分配</b></div>
+            <div class="alloc"><span style="width:110px">经营主体 70%</span><div class="ab"><i style="width:70%"></i></div></div>
+            <div class="alloc"><span style="width:110px">委托开发方 20%</span><div class="ab"><i style="width:20%;background:var(--gold)"></i></div></div>
+            <div class="alloc"><span style="width:110px">平台服务 10%</span><div class="ab"><i style="width:10%;background:#7C8A82"></i></div></div>
+            <div style="display:flex;gap:10px;margin-top:16px">
+              <button class="btn" onclick="go('loan')">质押融资</button>
+              <button class="btn ghost" onclick="toast('挂牌交易（演示）：省级碳汇平台撮合，当前参考碳价 ¥80/吨')">挂牌交易</button>
+              <button class="btn ghost" onclick="toast('收益分配申请（演示）：按 70/20/10 比例划付')">收益分配</button>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- ═════ 品质核验 ═════ -->
+      <section class="page" id="page-quality">
+        <div class="grid">
+          <div class="card span6">
+            <div style="display:flex;gap:16px;align-items:center">
+              <div style="width:64px;height:84px;border-radius:10px;background:linear-gradient(160deg,#D8B87C,#B8863C);display:flex;align-items:center;justify-content:center;font-size:30px;flex:none">🫒</div>
+              <div>
+                <b style="font-size:17px">润心 · 江西山茶油</b>
+                <div class="muted">压榨一级 ｜ 净含量 500ml ｜ 批次 20261018-0713</div>
+                <span class="tag t-gold" style="display:inline-block;margin-top:8px">品质等级 A · 建议零售价上浮 28%</span>
+              </div>
+            </div>
+            <div class="divider"></div>
+            <div class="card-h"><b>检测项目与结果公示</b><span class="tag t-green">6 项全部合格</span></div>
+            <div class="lg"><span>油酸含量</span><b style="color:var(--g700)">81.2%（标准 ≥75%）</b></div>
+            <div class="lg"><span>脂肪酸组成</span><b style="color:var(--g700)">符合纯茶油特征谱</b></div>
+            <div class="lg"><span>过氧化值</span><b style="color:var(--g700)">0.12（标准 ≤0.25）</b></div>
+            <div class="lg"><span>黄曲霉素 B1</span><b style="color:var(--g700)">未检出</b></div>
+            <div class="lg"><span>加工方式</span><b style="color:var(--g700)">低温压榨（非浸出）</b></div>
+            <div class="lg"><span>原料地块</span><b style="color:var(--g700)">信丰·万星1号（6年树龄）</b></div>
+          </div>
+
+          <div class="side-col" style="grid-column:span 6">
+            <div class="card">
+              <div class="card-h"><b>检测背书</b></div>
+              <div class="muted">检测机构：江西省林业科学院检测中心 ｜ 依据《江西山茶油》团体标准 ｜ 报告编号 JXLK-2026-10018<br>
+              检测报告公示让优质产品摆脱掺假产品的价格纠缠，缓解"柠檬市场"逆向选择——标有了、监管在抓，好产品终于能被消费者识别。</div>
+              <div style="margin-top:10px"><span class="chip">团体标准</span> <span class="chip">第三方核验</span> <span class="chip">无添加香精/维生素E</span> <span class="chip">按质分级定价</span></div>
+            </div>
+            <div class="card">
+              <div class="card-h"><b>全生命周期碳足迹</b><span class="tag t-green">碳中和产品</span></div>
+              <div class="muted">本批次碳足迹 <b style="color:var(--g700)">2.4 kg CO₂e</b>，已由产自同一片油茶林的碳汇全额抵消——品质溢价与生态价值在同一瓶油上闭环。</div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- ═════ 我的 ═════ -->
+      <section class="page" id="page-profile">
+        <div class="grid">
+          <div class="card span6">
+            <div style="display:flex;gap:14px;align-items:center">
+              <div style="width:52px;height:52px;border-radius:50%;background:var(--g600);color:#fff;display:flex;align-items:center;justify-content:center;font-size:20px;font-weight:700">吴</div>
+              <div style="flex:1"><b style="font-size:16px">吴福平</b><div class="muted">信丰万星油茶专业合作社 · 信贷管理岗（演示）</div></div>
+              <span class="tag t-green">白名单客户</span>
+            </div>
+            <div class="divider"></div>
+            <div class="card-h"><b>地块管理</b><span class="link" onclick="toast('新增地块绑定（演示）：拍摄权属证明 + 卫星自动圈定边界')">＋ 新增地块</span></div>
+            <div class="task ok"><span class="st">✓</span>信丰·万星1号（当前）<b>128.6亩 · 在管</b></div>
+            <div class="task todo"><span class="st">○</span>信丰·万星2号（在建）<b>42亩 · 待确权</b></div>
+          </div>
+
+          <div class="card span6">
+            <div class="card-h"><b>无障碍与辅助</b><span class="muted">用"能看懂的话"讲清额度怎么算、钱怎么还</span></div>
+            <div class="row-sw"><span>大字模式（长辈友好）</span><div class="sw" id="swBig" onclick="toggleBig()"></div></div>
+            <div class="row-sw"><span>语音播报资产摘要</span><div class="sw" id="swVoice" onclick="toggleVoice()"></div></div>
+            <div class="row-sw"><span>消息通知</span><div class="sw on" onclick="this.classList.toggle('on')"></div></div>
+            <div class="muted" style="margin-top:10px">可联系村级金融辅导员协助操作；本页数据由系统自动生成，评估结果不影响征信记录。</div>
+          </div>
+        </div>
+      </section>
+
+    </div>
+  </div>
+</div>
+
+<!-- ══════════ 消息抽屉 ══════════ -->
+<div class="drawer-mask" id="drawerMask" onclick="closeDrawer()"></div>
+<div class="drawer" id="drawer">
+  <div class="dr-h"><b>消息中心</b><span class="link" onclick="closeDrawer()">收起 ›</span></div>
+  <div style="overflow-y:auto;flex:1">
+    <div class="msg"><div class="mi" style="background:#FDF6E7">🌧️</div><div><b>气象提醒 · 建议提前采收</b><span>10月中旬连续降雨，预计产量 41.2 吨，已预置短期周转支持</span></div><time>10/12</time></div>
+    <div class="msg"><div class="mi" style="background:#E7F2EC">📈</div><div><b>估值变动 · 上调 +12.6万</b><span>2026-Q4 季度重估完成，综合授信额度更新为 86.4 万</span></div><time>10/01</time></div>
+    <div class="msg"><div class="mi" style="background:#F7EDDC">🎫</div><div><b>碳票签发 · 可质押</b><span>赣林碳票 412 吨 CO₂e 已签发（JX-OTC-2026-0412）</span></div><time>09/30</time></div>
+    <div class="msg"><div class="mi" style="background:#E3EEF9">🛰️</div><div><b>放款提醒 · 遥感复核中</b><span>水肥设施建设完成后，遥感复核通过即自动放款 9.0 万</span></div><time>09/28</time></div>
+    <div class="msg"><div class="mi" style="background:#E7F2EC">🏷️</div><div><b>价格指数 · 茶油批发价 ↑2.3%</b><span>价格指数保险已在保，波动风险可对冲</span></div><time>09/26</time></div>
+  </div>
+</div>
+
+<!-- ══════════ 利率实验室 ══════════ -->
+<div class="mask" id="m-rate" onclick="if(event.target===this)closeModal('m-rate')">
+  <div class="modal">
+    <div class="modal-h"><b>为什么是 3.45%？</b><span class="muted">定价模型 · 可解释</span></div>
+    <div class="lg"><span><i class="dot" style="background:var(--g700)"></i>绿色专项基准利率</span><b>3.10%</b></div>
+    <div class="lg"><span><i class="dot" style="background:var(--g500)"></i>期限溢价 f₁（8年期 · 前低后高）</span><b>+0.45%</b></div>
+    <div class="lg"><span><i class="dot" style="background:var(--amber)"></i>自然风险溢价 f₂ · 0.35%×(1−保险80%)</span><b>+0.07%</b></div>
+    <div class="lg"><span><i class="dot" style="background:var(--gold)"></i>碳汇收益抵扣 f₃（412吨×¥80 折算）</span><b>−0.12%</b></div>
+    <div class="lg"><span><i class="dot" style="background:#7C8A82"></i>履约优惠 f₄（按期还款 · 长势达标）</span><b>−0.05%</b></div>
+    <div class="lg total"><span>执行利率</span><b style="color:var(--g700);font-size:18px">3.45%</b></div>
+    <div class="divider"></div>
+    <b class="lab-t">利率实验室：换个条件试试</b>
+    <p class="muted">保险覆盖越高、碳汇越多、履约越好，利率越低——你的每一个行为，都直接写进价格。</p>
+    <label>保险覆盖率 <span id="vIns">80%</span></label>
+    <input type="range" id="rIns" min="0" max="100" step="5" value="80">
+    <label>核证碳汇量 <span id="vTons">412 吨</span></label>
+    <input type="range" id="rTons" min="0" max="600" step="10" value="412">
+    <div class="row-sw"><span>保持按期还款</span><div class="sw on" id="sPerf" onclick="togglePerf()"></div></div>
+    <div class="lab-result">
+      <div><span class="muted">模拟执行利率</span><br><b id="simRate">3.45%</b></div>
+      <span class="delta-ok" id="simDelta">与当前利率一致</span>
+    </div>
+    <div class="wf" id="simBar"></div>
+    <div class="legend" id="simRows"></div>
+    <div style="display:flex;gap:10px;margin-top:16px">
+      <button class="btn ghost" style="flex:1" onclick="closeModal('m-rate')">关闭</button>
+      <button class="btn" style="flex:1" onclick="toast('已生成《利率构成说明书》（演示），可下载打印给农户')">下载说明书</button>
+    </div>
+  </div>
+</div>
+
+<div id="toast"></div>
+
+<script>
+const $=s=>document.querySelector(s),$$=s=>document.querySelectorAll(s);
+const TITLES={home:['首页总览','青山有信 · 长周期经济林资产动态估值与信贷定价'],valuation:['估值与长势看板','动态估值引擎 · 季度重估'],assets:['我的数字资产','复合增信模型测算'],loan:['贷款与定价','风险调整定价模型 · 一林一价'],carbon:['碳票管理','赣林碳票 · 已核证'],quality:['品质核验公示','《江西山茶油》团体标准'],profile:['我的与无障碍','设置']};
+function go(id){$$('.page').forEach(p=>p.classList.remove('active'));$('#page-'+id).classList.add('active');
+  $$('.nav-i').forEach(t=>t.classList.toggle('on',t.dataset.go===id));
+  $('#crumb').innerHTML=TITLES[id][0]+'<span>'+TITLES[id][1]+'</span>';
+  $('#sidebar').classList.remove('open');window.scrollTo({top:0,behavior:'smooth'});}
+function toast(m){const t=$('#toast');t.textContent=m;t.classList.add('show');clearTimeout(t._h);t._h=setTimeout(()=>t.classList.remove('show'),2600);}
+function openModal(id){$('#'+id).classList.add('show');}
+function closeModal(id){$('#'+id).classList.remove('show');}
+function openDrawer(){$('#drawer').classList.add('show');$('#drawerMask').classList.add('show');}
+function closeDrawer(){$('#drawer').classList.remove('show');$('#drawerMask').classList.remove('show');}
+/* 利率实验室 */
+const SIM={ins:80,tons:412,onTime:true};
+function calcRate(){const base=3.10,term=0.45,risk=0.35*(1-SIM.ins/100),
+  carb=Math.min(0.20,SIM.tons*0.0003),perf=SIM.onTime?0.05:0;
+  return{base,term,risk,carb,perf,r:base+term+risk-carb-perf};}
+function renderSim(){const c=calcRate();
+  $('#simRate').textContent=c.r.toFixed(2)+'%';
+  const d=c.r-3.45,sd=$('#simDelta');
+  sd.textContent=Math.abs(d)<0.005?'与当前利率一致':(d<0?`较当前再省 ${Math.abs(d).toFixed(2)}pp`:`较当前上升 ${d.toFixed(2)}pp`);
+  sd.style.background=d<0?'var(--g100)':'#FBEAE6';sd.style.color=d<0?'var(--g600)':'var(--red)';
+  const bar=$('#simBar');bar.innerHTML='';
+  [['基准',c.base,'s-base'],['期限',c.term,'s-term'],['风险',c.risk,'s-risk'],['碳汇',c.carb,'s-carbon'],['履约',c.perf,'s-perf']]
+   .forEach(([lb,v,cls])=>{const el=document.createElement('div');el.className='seg '+cls;
+     el.style.width=(v/4*100)+'%';el.title=lb;bar.appendChild(el);});
+  $('#simRows').innerHTML=`<span><i class="dot" style="background:var(--g700)"></i>基准 ${c.base.toFixed(2)}</span>
+   <span><i class="dot" style="background:var(--g500)"></i>期限 +${c.term.toFixed(2)}</span>
+   <span><i class="dot" style="background:var(--amber)"></i>风险 +${c.risk.toFixed(2)}</span>
+   <span><i class="dot" style="background:var(--gold)"></i>碳汇 −${c.carb.toFixed(2)}</span>
+   <span><i class="dot" style="background:#7C8A82"></i>履约 −${c.perf.toFixed(2)}</span>`;}
+$('#rIns').addEventListener('input',e=>{SIM.ins=+e.target.value;$('#vIns').textContent=e.target.value+'%';renderSim();});
+$('#rTons').addEventListener('input',e=>{SIM.tons=+e.target.value;$('#vTons').textContent=e.target.value+' 吨';renderSim();});
+function togglePerf(){SIM.onTime=!SIM.onTime;$('#sPerf').classList.toggle('on',SIM.onTime);renderSim();}
+/* 无障碍 */
+function toggleBig(){document.body.classList.toggle('big');$('#swBig').classList.toggle('on');
+  toast(document.body.classList.contains('big')?'大字模式已开启':'大字模式已关闭');}
+function toggleVoice(){const on=$('#swVoice').classList.toggle('on');
+  if(on){speakSummary();}else if('speechSynthesis' in window){speechSynthesis.cancel();}}
+function speakSummary(){
+  if(!('speechSynthesis' in window)){toast('当前浏览器不支持语音播报');return;}
+  try{const u=new SpeechSynthesisUtterance('您好。信丰万星一号地块当前可授信额度86.4万元，较上季增加12.6万元。执行利率3.45%，保险覆盖与碳汇抵扣为您节省约0.17个百分点。提醒您，10月中旬有连续降雨，建议10月15日前完成采收。');
+  u.lang='zh-CN';u.rate=0.95;speechSynthesis.cancel();speechSynthesis.speak(u);}
+  catch(e){toast('语音播报暂不可用');}}
+renderSim();
+</script>
+</body>
+</html>
