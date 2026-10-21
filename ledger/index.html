@@ -268,6 +268,26 @@ details.set[open] summary::before{content:"− "}
 .simtools .grow{flex:1}
 .sync{font-size:10.5px;color:var(--ink3);letter-spacing:.02em}
 
+/* ── 计提预留开关 ── */
+.srow{display:flex;align-items:center;gap:12px;padding:10px 0;border-bottom:1px solid var(--line2)}
+.srow .st{flex:1;font-size:12px;color:var(--ink2);line-height:1.5}
+.tg{font:inherit;font-size:11px;font-weight:600;letter-spacing:.06em;padding:6px 13px;border-radius:2px;
+  border:1px solid var(--ink);background:var(--ink);color:var(--paper);cursor:pointer;transition:.14s;white-space:nowrap}
+.tg.off{background:transparent;color:var(--ink3);border-color:var(--line)}
+
+/* ── 计提预算池 ── */
+.pool{padding-top:2px}
+.pool-row{padding:10px 0;border-bottom:1px solid var(--line2)}
+.pool-row:last-child{border-bottom:0}
+.pool-row .ph{display:flex;justify-content:space-between;align-items:baseline;margin-bottom:6px}
+.pool-row .pn{font-size:12.5px;color:#242320;font-weight:500}
+.pool-row .pv{font-size:11.5px;color:var(--ink2);font-weight:600;font-variant-numeric:tabular-nums}
+.pool-row .pv.over{color:var(--red)}
+.pool-row .pv u{text-decoration:none;font-size:10px;color:var(--ink3);font-weight:400;margin-left:7px}
+.pool-row .pg{display:block;height:2px;background:#e8e4da;position:relative;overflow:hidden}
+.pool-row .pg i{display:block;height:2px;background:var(--green);transition:width .4s ease}
+.pool-row .pg i.over{background:var(--red)}
+
 .toast{
   position:fixed;left:50%;bottom:26px;transform:translate(-50%,14px);
   background:#1c1b18;color:#f7f6f2;font-size:12px;font-weight:500;
@@ -355,6 +375,13 @@ details.set[open] summary::before{content:"− "}
     <div class="bars" id="duo"></div>
     <div class="mini" id="duoNote" style="margin-top:10px"></div>
 
+    <div class="sec"><span>计提预算池</span><i></i><span id="poolSum" style="letter-spacing:.04em"></span></div>
+    <div class="pool" id="pool"></div>
+    <details class="set" style="margin-top:12px">
+      <summary>改计提额度</summary>
+      <div class="setgrid" id="poolSet"></div>
+    </details>
+
     <div class="sec"><span>日历</span><i></i></div>
     <div class="calhd">
       <div class="m" id="calMonth">—</div>
@@ -398,6 +425,12 @@ details.set[open] summary::before{content:"− "}
         <div class="full"><button class="btn" id="evOk" style="flex:1">加上</button></div>
       </div>
     </details>
+
+    <div class="sec"><span>未花计提</span><i></i><span id="reserveAmt" style="letter-spacing:.04em"></span></div>
+    <div class="srow">
+      <span class="st">这笔钱迟早要花，从可用余额里先扣掉</span>
+      <button class="tg" id="btnReserve">计入</button>
+    </div>
 
     <div class="sec"><span>余额推演</span><i></i></div>
     <div class="chartbox">
@@ -472,10 +505,22 @@ const STORE_KEY = 'cashbook_v3';
 const OLD_KEYS = ['cashbook_v2', 'cashbook_v1', 'cashflow_calendar_v2'];
 
 /* ══════════ 状态 ══════════ */
+/* 三层分开：
+   ① 现金  cashStart − 已记支出 + 已记收入     → 手上真实有多少
+   ② 计提  budget{} 每类预留额度, 看消耗进度   → 计划要花多少
+   ③ 推演  现金 + 未来开销 + 未花计提          → 将来会怎样 */
 let S = {
   people: ['我', 'TA'],
-  startNet: 33212.64,
-  startGone: 5377,
+  cashStart: 33212.64,          /* 库存现金合计（源表 C16），真金白银 */
+  budget: {                     /* 计提额度（源表 N3 拆分），还没花 */
+    food: 0,
+    fun: 29,
+    shop: 1499,
+    fixed: 349,
+    cloth: 2000,
+    other: 1500
+  },
+  budgetOn: 1,                  /* 推演时是否把未花计提算作"已预留" */
   budgetDaily: 130,
   lastCat: 'food',
   lastWho: 'me',
@@ -483,8 +528,6 @@ let S = {
   deleted: [],          /* 删除墓碑：多设备合并时挡住"复活" */
   sim: {
     horizon: '2027-01-15',
-    useActual: true,
-    start: 27835.64,
     daily: Object.assign({}, BASE_DAILY),
     events: BASE_EVENTS.map(e => Object.assign({id:'b'+e.d+e.k}, e))
   },
@@ -553,6 +596,7 @@ function askConfirm(o){
 }
 
 /* ══════════ 数据 ══════════ */
+const DEFAULT_BUDGET = {food:0, fun:29, shop:1499, fixed:349, cloth:2000, other:1500};
 function normalize(o){
   if (!o) return null;
   if (Array.isArray(o.entries)) {
@@ -562,6 +606,13 @@ function normalize(o){
     if (!o.sim.daily) o.sim.daily = Object.assign({}, BASE_DAILY);
     if (!Array.isArray(o.sim.events)) o.sim.events = BASE_EVENTS.map(e => Object.assign({id:'b'+e.d+e.k}, e));
     if (!o.sim.horizon) o.sim.horizon = '2027-01-15';
+    /* 旧版把计提当现金扣了（startNet − startGone）→ 还原成现金 + 计提额度 */
+    if (typeof o.cashStart !== 'number') {
+      o.cashStart = typeof o.startNet === 'number' ? o.startNet : 33212.64;
+    }
+    if (!o.budget || typeof o.budget !== 'object') o.budget = Object.assign({}, DEFAULT_BUDGET);
+    if (typeof o.budgetOn !== 'number') o.budgetOn = 1;
+    delete o.startNet; delete o.startGone;
     return o;
   }
   if (Array.isArray(o.rows)) {
@@ -574,15 +625,15 @@ function normalize(o){
         if (v > 0) mig.push({id:uid(), d:r.d, k:c.k, amt:v, note:'迁移', who:'me'});
       }
     }
-    return { startNet: +o.startNet || 33212.64, startGone: +o.startGone || 5377,
-             budgetDaily: +o.budgetDaily || 130, entries: mig,
+    return { cashStart: +o.startNet || 33212.64, budget: Object.assign({}, DEFAULT_BUDGET),
+             budgetOn: 1, budgetDaily: +o.budgetDaily || 130, entries: mig,
              people: ['我','TA'], sim: defaultSim() };
   }
   return null;
 }
 function defaultSim(){
   return {
-    horizon: '2027-01-15', useActual: true, start: 27835.64,
+    horizon: '2027-01-15',
     daily: Object.assign({}, BASE_DAILY),
     events: BASE_EVENTS.map(e => Object.assign({id:'b'+e.d+e.k}, e))
   };
@@ -613,7 +664,26 @@ function incomeOn(d){
 }
 function totalSpend(){ return r2(S.entries.reduce((a,e) => a + (CAT[e.k] && CAT[e.k].inc ? 0 : e.amt), 0)); }
 function totalIncome(){ return r2(S.entries.reduce((a,e) => a + (CAT[e.k] && CAT[e.k].inc ? e.amt : 0), 0)); }
-function balance(){ return r2((+S.startNet||0) - (+S.startGone||0) - totalSpend() + totalIncome()); }
+/* 手上真实有多少钱：只有已记的收支会动它，计提不扣 */
+function cashNow(){ return r2((+S.cashStart || 0) - totalSpend() + totalIncome()); }
+/* 某一类累计已花（不限月份，预算按整期算） */
+function spentCat(k){
+  return r2(S.entries.reduce((a,e) => a + (!(CAT[e.k] && CAT[e.k].inc) && e.k === k ? e.amt : 0), 0));
+}
+/* 计提总盘：预算 / 已花 / 剩余 */
+function budgetPool(){
+  const rows = [];
+  let totB = 0, totS = 0;
+  for (const c of CATS) {
+    if (c.inc) continue;
+    const b = +((S.budget || {})[c.k]) || 0;
+    const s = spentCat(c.k);
+    if (b <= 0 && s <= 0) continue;
+    rows.push({ k: c.k, n: c.n, b, s, left: r2(b - s) });
+    totB += b; totS += s;
+  }
+  return { rows, totalBudget: r2(totB), totalSpent: r2(totS), left: r2(totB - totS) };
+}
 function ymOf(d){ return d.slice(0,7); }
 function monthCat(ym, k){
   return r2(S.entries.reduce((a,e) => a + (e.d.slice(0,7) === ym && e.k === k ? e.amt : 0), 0));
@@ -636,16 +706,20 @@ function whoName(w){
 }
 
 /* ══════════ 推演引擎 ══════════ */
-function simStart(){
-  return S.sim.useActual ? balance() : r2(+S.sim.start || 0);
+function simStart(){ return cashNow(); }
+/* 还没花掉的计提额度：推演时当作"已经预留、不能自由支配" */
+function reserveNow(){
+  if (!S.budgetOn) return 0;
+  return Math.max(0, budgetPool().left);
 }
-/** cfg: {start, horizon, daily:{}, events:[]} */
+/** cfg: {start, reserve, horizon, daily:{}, events:[]} */
 function project(cfg){
   const today = todayStr();
   const evByDay = {};
   for (const e of cfg.events) (evByDay[e.d] = evByDay[e.d] || []).push(e);
   const perDay = KNOBS.reduce((a,k) => a + (+cfg.daily[k.k] || 0), 0);
-  let bal = r2(cfg.start);
+  const reserve = r2(cfg.reserve || 0);
+  let bal = r2(cfg.start - reserve);
   const pts = [{d: today, bal}];
   let minBal = bal, minD = today, zeroD = null;
   let out = 0, inc = 0, n = 0;
@@ -665,14 +739,15 @@ function project(cfg){
     if (bal < minBal) { minBal = bal; minD = ds; }
     if (!zeroD && bal <= 0) zeroD = ds;
   }
-  return { pts, start: r2(cfg.start), endBal: bal, minBal, minD, zeroD,
+  return { pts, start: r2(cfg.start), reserve, endBal: bal, minBal, minD, zeroD,
            totalOut: r2(out), totalInc: r2(inc), days: pts.length - 1, perDay };
 }
 function currentCfg(){
-  return { start: simStart(), horizon: S.sim.horizon, daily: S.sim.daily, events: S.sim.events };
+  return { start: simStart(), reserve: reserveNow(), horizon: S.sim.horizon,
+           daily: S.sim.daily, events: S.sim.events };
 }
 function baselineCfg(){
-  return { start: simStart(), horizon: S.sim.horizon, daily: BASE_DAILY,
+  return { start: simStart(), reserve: reserveNow(), horizon: S.sim.horizon, daily: BASE_DAILY,
            events: BASE_EVENTS.map(e => Object.assign({}, e)) };
 }
 
@@ -812,23 +887,53 @@ function renderCal(){
 }
 
 function renderAcct(){
-  const sp = totalSpend(), inc = totalIncome(), b = balance();
+  const sp = totalSpend(), inc = totalIncome(), c = cashNow();
   $('#acct').innerHTML =
-    '<div class="row"><span>库存现金合计</span><b>' + fmt(S.startNet, 2) + '</b></div>' +
-    '<div class="row"><span>减：已发生摊销</span><b>−' + fmt(S.startGone, 2) + '</b></div>' +
+    '<div class="row"><span>库存现金合计</span><b>' + fmt(S.cashStart, 2) + '</b></div>' +
     '<div class="row"><span>减：已记支出</span><b>−' + fmt(sp, 2) + '</b></div>' +
     '<div class="row"><span>加：已记收入</span><b>+' + fmt(inc, 2) + '</b></div>' +
-    '<div class="row tot"><span>当前余额</span><b>' + fmt(b, 2) + '</b></div>' +
+    '<div class="row tot"><span>手上现金</span><b>' + fmt(c, 2) + '</b></div>' +
+    '<div class="mini" style="margin-top:8px">计提的 ' + fmt(budgetPool().totalBudget, 0) +
+      ' 还没花出去，不动这笔钱</div>' +
     '<details class="set"><summary>设置</summary><div class="setgrid">' +
-      '<div><label>库存现金合计</label><input id="sNet" inputmode="decimal" value="' + S.startNet + '"></div>' +
-      '<div><label>已发生摊销</label><input id="sGone" inputmode="decimal" value="' + S.startGone + '"></div>' +
+      '<div><label>库存现金合计</label><input id="sCash" inputmode="decimal" value="' + S.cashStart + '"></div>' +
       '<div><label>日预算</label><input id="sBud" inputmode="decimal" value="' + S.budgetDaily + '"></div>' +
-      '<div><label>&nbsp;</label></div>' +
       '<div><label>第一个人</label><input id="p0" maxlength="6" value="' + esc(S.people[0]) + '"></div>' +
       '<div><label>第二个人</label><input id="p1" maxlength="6" value="' + esc(S.people[1]) + '"></div>' +
       '<div style="grid-column:1/-1"><label>账本口令（两个人填同一个就共用一本账）</label>' +
         '<input id="sKey" placeholder="至少 6 位，例如 xiaoyu-2026" value="' + esc(syncKey) + '"></div>' +
     '</div></details>';
+}
+
+/* 计提预算池：每类还剩多少可以花 */
+function renderBudget(){
+  const p = budgetPool();
+  const box = $('#pool');
+  if (!box) return;
+  $('#poolSum').textContent = p.totalBudget ? ('剩 ' + fmt(p.left, 0)) : '';
+  if (!p.rows.length) {
+    box.innerHTML = '<div class="empty" style="text-align:left;padding:4px 0">还没有设置计提额度</div>';
+    return;
+  }
+  box.innerHTML = p.rows.map(x => {
+    const pct = x.b > 0 ? Math.min(100, x.s / x.b * 100) : 100;
+    const over = x.left < 0;
+    return '<div class="pool-row">' +
+      '<div class="ph"><span class="pn">' + esc(x.n) + '</span>' +
+      '<span class="pv' + (over ? ' over' : '') + '">' +
+        (over ? '超 ' + fmt(-x.left, 0) : '剩 ' + fmt(x.left, 0)) +
+        '<u>' + fmt(x.s, 0) + ' / ' + fmt(x.b, 0) + '</u></span></div>' +
+      '<span class="pg"><i class="' + (over ? 'over' : '') + '" style="width:' + pct.toFixed(1) + '%"></i></span>' +
+      '</div>';
+  }).join('');
+}
+function renderPoolSet(){
+  const box = $('#poolSet');
+  if (!box) return;
+  box.innerHTML = CATS.filter(c => !c.inc).map(c =>
+    '<div><label>' + c.n + ' 预算</label>' +
+    '<input id="bg_' + c.k + '" inputmode="decimal" value="' + (+((S.budget||{})[c.k]) || 0) + '"></div>'
+  ).join('');
 }
 
 /* ══════════ 渲染：推演 ══════════ */
@@ -968,9 +1073,18 @@ function renderSim(){
   const base = project(baselineCfg());
   $('#simHorizonLab').textContent = md(S.sim.horizon);
   const endTxt = fmt(cur.endBal, 0);
-  $('#simEnd').innerHTML = endTxt + '<small>期末余额</small>';
+  $('#simEnd').innerHTML = endTxt + '<small>期末可用</small>';
   $('#simEnd').style.color = cur.endBal < 0 ? '#a8452e' : (cur.endBal < 5000 ? '#a8452e' : '#1c1b18');
-  $('#simSub').textContent = '起点 ' + fmt(cur.start, 0) + ' · 推 ' + cur.days + ' 天 · 日均 ' + fmt(cur.perDay, 0);
+  $('#simSub').textContent = '现金 ' + fmt(cur.start, 0) +
+    (cur.reserve > 0 ? ' − 预留 ' + fmt(cur.reserve, 0) : '') +
+    ' · 推 ' + cur.days + ' 天 · 日均 ' + fmt(cur.perDay, 0);
+  const pool = budgetPool();
+  $('#reserveAmt').textContent = pool.left > 0 ? fmt(pool.left, 0) : '';
+  const br = $('#btnReserve');
+  if (br) {
+    br.textContent = S.budgetOn ? '计入' : '不计入';
+    br.classList.toggle('off', !S.budgetOn);
+  }
   renderKnobs(); renderEvents();
   renderChart(cur, base);
   renderKpis(cur, base);
@@ -979,7 +1093,8 @@ function renderSim(){
 
 /* ══════════ 总渲染 ══════════ */
 function renderBook(){
-  renderHero(); renderCats(); renderDay(); renderBars(); renderDuo(); renderCal(); renderAcct();
+  renderHero(); renderCats(); renderDay(); renderBars(); renderDuo();
+  renderBudget(); renderPoolSet(); renderCal(); renderAcct();
 }
 function renderAll(){
   renderBook();
@@ -1080,8 +1195,7 @@ function bind(){
   /* 账户设置 */
   $('#acct').addEventListener('change', e => {
     const id = e.target.id;
-    if (id === 'sNet')  { S.startNet  = r2(numOf(e.target.value)); save(); renderAll(); return; }
-    if (id === 'sGone') { S.startGone = r2(numOf(e.target.value)); save(); renderAll(); return; }
+    if (id === 'sCash') { S.cashStart = r2(numOf(e.target.value)); save(); renderAll(); return; }
     if (id === 'sBud')  { S.budgetDaily = r2(numOf(e.target.value)); save(); renderAll(); return; }
     if (id === 'p0' || id === 'p1') {
       const v = String(e.target.value || '').trim().slice(0, 6);
@@ -1097,6 +1211,16 @@ function bind(){
       if (syncKey) { pullSync(); toast('正在连账本'); }
       else { syncDot('仅本地'); toast('已改为只存本地'); }
     }
+  });
+
+  /* 计提额度 */
+  $('#poolSet').addEventListener('change', e => {
+    const id = e.target.id || '';
+    if (id.indexOf('bg_') !== 0) return;
+    const k = id.slice(3);
+    S.budget = S.budget || {};
+    S.budget[k] = r2(numOf(e.target.value));
+    save(); renderBudget(); renderSim();
   });
 
   /* 导出 / 导入 */
@@ -1137,7 +1261,9 @@ function bind(){
     const endTxt = fmt(cur.endBal, 0);
     $('#simEnd').innerHTML = endTxt + '<small>期末余额</small>';
     $('#simEnd').style.color = cur.endBal < 0 ? '#a8452e' : (cur.endBal < 5000 ? '#a8452e' : '#1c1b18');
-    $('#simSub').textContent = '起点 ' + fmt(cur.start, 0) + ' · 推 ' + cur.days + ' 天 · 日均 ' + fmt(cur.perDay, 0);
+    $('#simSub').textContent = '现金 ' + fmt(cur.start, 0) +
+      (cur.reserve > 0 ? ' − 预留 ' + fmt(cur.reserve, 0) : '') +
+      ' · 推 ' + cur.days + ' 天 · 日均 ' + fmt(cur.perDay, 0);
     renderChart(cur, base); renderKpis(cur, base); renderVerdict(cur, base);
     /* 只更新数值标签，不重建滑杆，避免拖动中断 */
     const kh = s.parentElement.querySelector('.kv');
@@ -1168,6 +1294,12 @@ function bind(){
   });
 
   /* 回到原计划 */
+  /* 计提是否计入推演 */
+  $('#btnReserve').addEventListener('click', () => {
+    S.budgetOn = S.budgetOn ? 0 : 1;
+    save(); renderSim();
+  });
+
   $('#btnBaseline').addEventListener('click', async () => {
     const ok = await askConfirm({
       title: '回到原计划',
@@ -1200,8 +1332,9 @@ function snapshot(){
   return {
     updatedAt: S.updatedAt || 0,
     people: S.people,
-    startNet: S.startNet,
-    startGone: S.startGone,
+    cashStart: S.cashStart,
+    budget: S.budget,
+    budgetOn: S.budgetOn,
     budgetDaily: S.budgetDaily,
     entries: S.entries,
     deleted: S.deleted || [],
@@ -1223,8 +1356,9 @@ function mergeRemote(r){
   S.deleted = Array.from(tomb);
   if ((r.updatedAt || 0) > (S.updatedAt || 0)) {
     if (r.people) S.people = r.people;
-    if (typeof r.startNet === 'number') S.startNet = r.startNet;
-    if (typeof r.startGone === 'number') S.startGone = r.startGone;
+    if (typeof r.cashStart === 'number') S.cashStart = r.cashStart;
+    if (r.budget && typeof r.budget === 'object') S.budget = r.budget;
+    if (typeof r.budgetOn === 'number') S.budgetOn = r.budgetOn;
     if (typeof r.budgetDaily === 'number') S.budgetDaily = r.budgetDaily;
     if (r.sim) S.sim = r.sim;
     changed = true;
