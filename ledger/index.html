@@ -127,7 +127,7 @@ body{
 /* ── 横条图 ── */
 .bars{padding-top:2px}
 .bar{display:flex;align-items:center;gap:11px;padding:9px 0}
-.bar .n{font-size:11.5px;color:var(--ink2);width:38px;flex:0 0 auto}
+.bar .n{font-size:11.5px;color:var(--ink2);width:46px;flex:0 0 auto;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 .bar .g{flex:1;height:2px;background:#e8e4da;position:relative;min-width:0}
 .bar .g i{position:absolute;left:0;top:0;height:2px;background:var(--green);transition:width .4s ease}
 .bar .v{font-size:11.5px;color:#242320;width:48px;text-align:right;font-weight:500;flex:0 0 auto}
@@ -518,6 +518,8 @@ const BASE_EVENTS = [
 
 const STORE_KEY = 'cashbook_v3';
 const OLD_KEYS = ['cashbook_v2', 'cashbook_v1', 'cashflow_calendar_v2'];
+const DEFAULT_PEOPLE = ['水煮蛋', '茶叶蛋'];
+let nameRenamed = false;   /* 老默认名升级过就标记，启动时推一次云端 */
 
 /* ══════════ 状态 ══════════ */
 /* 三层分开：
@@ -525,7 +527,7 @@ const OLD_KEYS = ['cashbook_v2', 'cashbook_v1', 'cashflow_calendar_v2'];
    ② 计提  budget{} 每类预留额度, 看消耗进度   → 计划要花多少
    ③ 推演  现金 + 未来开销 + 未花计提          → 将来会怎样 */
 let S = {
-  people: ['我', 'TA'],
+  people: DEFAULT_PEOPLE.slice(),
   cashStart: 33212.64,          /* 库存现金合计（源表 C16），真金白银 */
   budget: {                     /* 计提额度（源表 N3 拆分），还没花 */
     food: 0,
@@ -616,7 +618,10 @@ function normalize(o){
   if (!o) return null;
   if (Array.isArray(o.entries)) {
     o.entries.forEach(e => { if (e.who !== 'ta' && e.who !== 'split') e.who = 'me'; });
-    if (!Array.isArray(o.people) || o.people.length !== 2) o.people = ['我','TA'];
+    if (!Array.isArray(o.people) || o.people.length !== 2) o.people = DEFAULT_PEOPLE.slice();
+    /* 老的默认名「我 / TA」自动升级；用户自己改过的名字不动 */
+    if (o.people[0] === '我') { o.people[0] = DEFAULT_PEOPLE[0]; nameRenamed = true; }
+    if (o.people[1] === 'TA') { o.people[1] = DEFAULT_PEOPLE[1]; nameRenamed = true; }
     if (!o.sim || typeof o.sim !== 'object') o.sim = defaultSim();
     if (!o.sim.daily) o.sim.daily = Object.assign({}, BASE_DAILY);
     if (!Array.isArray(o.sim.events)) o.sim.events = BASE_EVENTS.map(e => Object.assign({id:'b'+e.d+e.k}, e));
@@ -642,7 +647,7 @@ function normalize(o){
     }
     return { cashStart: +o.startNet || 33212.64, budget: Object.assign({}, DEFAULT_BUDGET),
              budgetOn: 1, budgetDaily: +o.budgetDaily || 130, entries: mig,
-             people: ['我','TA'], sim: defaultSim() };
+             people: DEFAULT_PEOPLE.slice(), sim: defaultSim() };
   }
   return null;
 }
@@ -1247,7 +1252,9 @@ function bind(){
     if (id === 'sBud')  { S.budgetDaily = r2(numOf(e.target.value)); save(); renderAll(); return; }
     if (id === 'p0' || id === 'p1') {
       const v = String(e.target.value || '').trim().slice(0, 6);
-      S.people = id === 'p0' ? [v || '我', S.people[1]] : [S.people[0], v || 'TA'];
+      S.people = id === 'p0'
+        ? [v || DEFAULT_PEOPLE[0], S.people[1]]
+        : [S.people[0], v || DEFAULT_PEOPLE[1]];
       save(); renderAll();
     }
     if (id === 'sKey') {
@@ -1494,6 +1501,8 @@ load();
 bind();
 renderAll();
 pullSync();
+/* 默认名升级过，把新名字推到云端，免得另一台设备同步回来又变回「我/TA」 */
+if (nameRenamed) setTimeout(() => { S.updatedAt = Date.now(); save(); }, 900);
 setTimeout(() => { const a = $('#amt'); if (a && !a.value) a.focus(); }, 220);
 </script>
 </body>
