@@ -8,24 +8,67 @@
 :root{
   --paper:#f7f6f2;
   --paper2:#fffefb;
-  --ink:#1c1b18;
-  --ink2:#6f6d65;
-  --ink3:#a8a69d;
-  --ink4:#c9c6bb;
-  --line:#e5e1d7;
-  --line2:#ece8de;
-  --green:#2c5f45;
+  --ink:#26201a;
+  --ink2:#63574b;
+  --ink3:#8b8073;
+  --ink4:#cfc5b6;
+  --line:#e6dfd2;
+  --line2:#efe9dc;
+  --green:#4a6b45;
   --red:#a8452e;
   --blue:#3a5f8a;
+  --wood:#8f5a3c;
+  --wood2:#b08059;
 }
 *{box-sizing:border-box;margin:0;padding:0}
-html{-webkit-text-size-adjust:100%}
+html{-webkit-text-size-adjust:100%;background:#efe9df}
 body{
   font-family:-apple-system,BlinkMacSystemFont,"SF Pro Text","PingFang SC","Microsoft YaHei",sans-serif;
-  background:var(--paper);color:var(--ink);-webkit-font-smoothing:antialiased;
-  font-variant-numeric:tabular-nums;
+  background:transparent;color:var(--ink);-webkit-font-smoothing:antialiased;
+  font-variant-numeric:tabular-nums;min-height:100vh;
 }
-.wrap{max-width:560px;margin:0 auto;padding:26px 22px 70px}
+/* 顶部封面：照片完整露出 */
+.cover{
+  position:relative;
+  height:min(52vh,420px);min-height:330px;
+  max-width:560px;margin:0 auto;
+  background:url("photo.jpg") center 26% / cover no-repeat;
+  background-color:#3c2c1e;
+}
+.cover::after{
+  content:"";position:absolute;inset:0;
+  background:linear-gradient(180deg,
+    rgba(26,19,12,.52) 0%,
+    rgba(26,19,12,.10) 30%,
+    rgba(60,42,26,.16) 72%,
+    rgba(70,50,30,.34) 100%);
+}
+.cover-meta{
+  position:absolute;left:0;right:0;top:20px;z-index:2;
+  max-width:560px;margin:0 auto;padding:0 24px;
+  display:flex;align-items:baseline;justify-content:space-between;gap:14px;
+}
+.cover-t{font-size:27px;font-weight:700;letter-spacing:-.5px;color:#fff;
+  text-shadow:0 1px 14px rgba(0,0,0,.45)}
+.cover-d{font-size:10.5px;letter-spacing:.16em;text-transform:uppercase;font-weight:600;
+  color:rgba(255,255,255,.92);text-shadow:0 1px 10px rgba(0,0,0,.5)}
+
+/* 纸面浮在照片上 */
+
+.wrap{
+  max-width:560px;margin:-38px auto 0;padding:26px 22px 46px;position:relative;
+  background:#faf8f3;
+  border:1px solid rgba(230,223,210,.9);
+  border-bottom:0;
+  border-radius:26px 26px 0 0;
+  box-shadow:0 -26px 56px -30px rgba(40,26,14,.55),
+             0 2px 0 rgba(255,255,255,.85) inset;
+}
+@media(max-width:640px){
+  .cover{height:min(46vh,380px);min-height:300px;max-width:none}
+  .cover-meta{top:16px;padding:0 20px}
+  .wrap{margin:-30px 8px 0;padding:22px 16px 44px;border-radius:22px 22px 0 0}
+}
 
 /* ── 顶栏 ── */
 .top{display:flex;justify-content:space-between;align-items:baseline}
@@ -57,8 +100,8 @@ body{
 .hero{padding:26px 0 0}
 .hero .num{font-size:62px;font-weight:200;letter-spacing:-3.4px;line-height:1.02;margin-top:6px;color:#14130f}
 .hero .num small{font-size:26px;font-weight:300;letter-spacing:-1px;color:var(--ink3)}
-.track{height:2px;background:#e2ded3;margin-top:20px;position:relative}
-.track i{position:absolute;left:0;top:0;height:2px;background:var(--green);transition:width .4s ease}
+.track{height:2px;background:#e0d8c8;margin-top:20px;position:relative}
+.track i{position:absolute;left:0;top:0;height:2px;background:var(--wood);transition:width .4s ease}
 .track.over i{background:var(--red)}
 .budfoot{display:flex;justify-content:space-between;font-size:10.5px;color:#9a978d;margin-top:9px}
 .budfoot b{font-weight:600}
@@ -78,7 +121,7 @@ body{
 }
 .cats span:hover{color:var(--ink2)}
 .cats span.on{color:var(--ink);border-bottom-color:var(--ink);font-weight:600}
-.cats.pick span.on{color:var(--green);border-bottom-color:var(--green)}
+.cats.pick span.on{color:var(--wood);border-bottom-color:var(--wood)}
 .noteline{display:flex;gap:10px;margin-top:20px;align-items:center}
 .noteline input{
   flex:1;min-width:0;font:inherit;font-size:12.5px;color:var(--ink);
@@ -128,8 +171,8 @@ body{
 .bars{padding-top:2px}
 .bar{display:flex;align-items:center;gap:11px;padding:9px 0}
 .bar .n{font-size:11.5px;color:var(--ink2);width:46px;flex:0 0 auto;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
-.bar .g{flex:1;height:2px;background:#e8e4da;position:relative;min-width:0}
-.bar .g i{position:absolute;left:0;top:0;height:2px;background:var(--green);transition:width .4s ease}
+.bar .g{flex:1;height:2px;background:#e6ddcc;position:relative;min-width:0}
+.bar .g i{position:absolute;left:0;top:0;height:2px;background:var(--wood);transition:width .4s ease}
 .bar .v{font-size:11.5px;color:#242320;width:48px;text-align:right;font-weight:500;flex:0 0 auto}
 .bar .p{font-size:10.5px;color:var(--ink3);width:32px;text-align:right;flex:0 0 auto}
 
@@ -152,11 +195,11 @@ body{
 }
 .cd .cn{font-size:11px;font-weight:500}
 .cd .cv{font-size:9px;font-weight:600;color:#8d6a3f;letter-spacing:-.2px}
-.cd.has{background:#f1eee5}
+.cd.has{background:#f2ebdd}
 .cd.over{background:#f7ebe6}
 .cd.over .cv{color:var(--red)}
 .cd.today{border-color:var(--ink)}
-.cd.sel{background:#e8e2d3;border-color:#b9b09a}
+.cd.sel{background:#e9dcc6;border-color:#b39a76}
 .cd.fut{opacity:.35}
 .cd.blank{visibility:hidden;pointer-events:none}
 .cd.plan{position:relative}
@@ -211,13 +254,13 @@ details.set[open] summary::before{content:"− "}
   -webkit-appearance:none;appearance:none;width:100%;height:18px;background:transparent;
   cursor:pointer;margin-top:4px;display:block;
 }
-.slider::-webkit-slider-runnable-track{height:2px;background:#e2ded3;border-radius:2px}
+.slider::-webkit-slider-runnable-track{height:2px;background:#e0d8c8;border-radius:2px}
 .slider::-webkit-slider-thumb{
   -webkit-appearance:none;width:12px;height:12px;border-radius:50%;background:var(--ink);
   margin-top:-5px;box-shadow:0 1px 3px rgba(0,0,0,.22);border:0;
 }
-.slider:active::-webkit-slider-thumb{background:var(--green)}
-.slider::-moz-range-track{height:2px;background:#e2ded3}
+.slider:active::-webkit-slider-thumb{background:var(--wood)}
+.slider::-moz-range-track{height:2px;background:#e0d8c8}
 .slider::-moz-range-thumb{width:12px;height:12px;border-radius:50%;background:var(--ink);border:0}
 
 .evrow{display:flex;align-items:baseline;gap:10px;padding:11px 0;border-bottom:1px solid var(--line2);font-size:12.5px}
@@ -301,7 +344,7 @@ details.set[open] summary::before{content:"− "}
 .typing::after{content:"…";animation:blink 1.1s steps(2) infinite}
 @keyframes blink{50%{opacity:.25}}
 .aiempty{padding:22px 0;color:var(--ink3);font-size:12px;line-height:1.9}
-.setup{border:1px solid var(--line);background:#fffefb;padding:15px;margin-top:16px;border-radius:2px}
+.setup{border:1px solid rgba(255,255,255,.8);background:rgba(255,253,248,.72);padding:15px;margin-top:16px;border-radius:2px}
 .setup .st{font-size:12px;color:#242320;font-weight:600;margin-bottom:6px}
 .setup .sd{font-size:11.5px;color:var(--ink2);line-height:1.75;margin-bottom:11px}
 .setup .si{display:flex;gap:8px}
@@ -332,8 +375,8 @@ details.set[open] summary::before{content:"− "}
 .pool-row .pv{font-size:11.5px;color:var(--ink2);font-weight:600;font-variant-numeric:tabular-nums}
 .pool-row .pv.over{color:var(--red)}
 .pool-row .pv u{text-decoration:none;font-size:10px;color:var(--ink3);font-weight:400;margin-left:7px}
-.pool-row .pg{display:block;height:2px;background:#e8e4da;position:relative;overflow:hidden}
-.pool-row .pg i{display:block;height:2px;background:var(--green);transition:width .4s ease}
+.pool-row .pg{display:block;height:2px;background:#e6ddcc;position:relative;overflow:hidden}
+.pool-row .pg i{display:block;height:2px;background:var(--wood);transition:width .4s ease}
 .pool-row .pg i.over{background:var(--red)}
 .pool-act{margin-top:14px}
 .pool-act .btn{width:100%;text-align:center;padding:10px;font-size:11.5px;letter-spacing:.08em}
@@ -394,12 +437,14 @@ details.set[open] summary::before{content:"− "}
 </style>
 </head>
 <body>
-<div class="wrap">
-
-  <div class="top">
-    <div class="brand">账簿</div>
-    <div class="meta" id="hMeta">—</div>
+<div class="cover">
+  <div class="cover-meta">
+    <div class="cover-t">账簿</div>
+    <div class="cover-d" id="hMeta">—</div>
   </div>
+</div>
+
+<div class="wrap">
 
   <div class="tabs">
     <button class="on" data-tab="book">记账</button>
@@ -501,7 +546,7 @@ details.set[open] summary::before{content:"− "}
       <svg class="chart" id="chart" preserveAspectRatio="none" viewBox="0 0 340 158"></svg>
       <div class="axis" id="axis"></div>
       <div class="legend2">
-        <span><i style="border-color:#1c1b18"></i>当前方案</span>
+        <span><i style="border-color:#6d4a33"></i>当前方案</span>
         <span><i class="dash" style="border-color:#b9b09a"></i>按原计划</span>
       </div>
     </div>
@@ -1124,16 +1169,16 @@ function renderChart(cur, base){
   let mi = 0;
   cur.pts.forEach((p, i) => { if (p.bal < cur.pts[mi].bal) mi = i; });
   const dot = '<circle cx="' + X(mi).toFixed(1) + '" cy="' + Y(cur.pts[mi].bal).toFixed(1) +
-    '" r="2.8" fill="#fff" stroke="#1c1b18" stroke-width="1.4"/>';
+    '" r="2.8" fill="#fff" stroke="#6d4a33" stroke-width="1.4"/>';
 
   $('#chart').innerHTML =
     '<defs><linearGradient id="ga" x1="0" y1="0" x2="0" y2="1">' +
-      '<stop offset="0%" stop-color="rgba(44,95,69,.16)"/>' +
-      '<stop offset="100%" stop-color="rgba(44,95,69,0)"/></linearGradient></defs>' +
+      '<stop offset="0%" stop-color="rgba(143,90,60,.18)"/>' +
+      '<stop offset="100%" stop-color="rgba(143,90,60,0)"/></linearGradient></defs>' +
     zeroLine +
     '<path d="' + area + '" fill="url(#ga)"/>' +
     line(base.pts, '#b9b09a', 1, '4 3') +
-    line(cur.pts, '#1c1b18', 1.8) +
+    line(cur.pts, '#6d4a33', 1.8) +
     dot;
 
   $('#axis').innerHTML = '<span>' + md(cur.pts[0].d) + '</span><span>' + md(cur.pts[cur.pts.length-1].d) + '</span>';
@@ -1200,7 +1245,7 @@ function renderSim(){
   $('#simHorizonLab').textContent = md(S.sim.horizon);
   const endTxt = fmt(cur.endBal, 0);
   $('#simEnd').innerHTML = endTxt + '<small>期末可用</small>';
-  $('#simEnd').style.color = cur.endBal < 0 ? '#a8452e' : (cur.endBal < 5000 ? '#a8452e' : '#1c1b18');
+  $('#simEnd').style.color = cur.endBal < 0 ? '#a8452e' : (cur.endBal < 5000 ? '#a8452e' : '#26201a');
   $('#simSub').textContent = '现金 ' + fmt(cur.start, 0) +
     (cur.reserve > 0 ? ' − 预留 ' + fmt(cur.reserve, 0) : '') +
     ' · 推 ' + cur.days + ' 天 · 日均 ' + fmt(cur.perDay, 0);
@@ -1636,7 +1681,7 @@ function bind(){
     const cur = project(currentCfg()), base = project(baselineCfg());
     const endTxt = fmt(cur.endBal, 0);
     $('#simEnd').innerHTML = endTxt + '<small>期末余额</small>';
-    $('#simEnd').style.color = cur.endBal < 0 ? '#a8452e' : (cur.endBal < 5000 ? '#a8452e' : '#1c1b18');
+    $('#simEnd').style.color = cur.endBal < 0 ? '#a8452e' : (cur.endBal < 5000 ? '#a8452e' : '#26201a');
     $('#simSub').textContent = '现金 ' + fmt(cur.start, 0) +
       (cur.reserve > 0 ? ' − 预留 ' + fmt(cur.reserve, 0) : '') +
       ' · 推 ' + cur.days + ' 天 · 日均 ' + fmt(cur.perDay, 0);
