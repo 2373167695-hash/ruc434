@@ -3,6 +3,13 @@
 <head>
 <meta charset="utf-8">
 <meta content="width=device-width,initial-scale=1,viewport-fit=cover" name="viewport">
+<meta name="theme-color" content="#faf8f3">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-title" content="账簿">
+<meta name="apple-mobile-web-app-status-bar-style" content="default">
+<link rel="manifest" href="manifest.json">
+<link rel="icon" href="icon.svg" type="image/svg+xml">
+<link rel="apple-touch-icon" href="icon.svg">
 <title>账簿</title>
 <style>
 :root{
@@ -359,6 +366,51 @@ details.set[open] summary::before{content:"− "}
 }
 .setup .snote{font-size:10px;color:var(--ink3);margin-top:9px;line-height:1.7}
 
+
+/* ── 记到哪天 ── */
+.daypick{position:relative;display:inline-flex;align-items:center;gap:4px;cursor:pointer;
+  font-size:10px;letter-spacing:.04em;color:var(--ink3);font-weight:600;white-space:nowrap}
+.daypick:hover{color:var(--wood)}
+.daypick input{position:absolute;inset:0;opacity:0;width:100%;height:100%;cursor:pointer;border:0;padding:0}
+.daypick.past{color:var(--wood)}
+
+/* ── 编辑这笔 ── */
+.modal.ed{width:min(400px,92vw);padding:20px}
+.modal.ed h3{font-size:14px;font-weight:600;margin-bottom:14px}
+.ed-grid{display:grid;grid-template-columns:1fr 1fr;gap:12px 14px}
+.ed-grid label{display:block;font-size:10px;letter-spacing:.14em;text-transform:uppercase;
+  color:var(--ink3);font-weight:600;margin-bottom:4px}
+.ed-grid input{width:100%;font:inherit;font-size:13.5px;font-weight:500;color:var(--ink);
+  background:transparent;border:0;border-bottom:1px solid var(--line);padding:6px 0;outline:0}
+.ed-grid input:focus{border-bottom-color:var(--ink)}
+.ed-lab{font-size:10px;letter-spacing:.14em;text-transform:uppercase;color:var(--ink3);
+  font-weight:600;margin:16px 0 2px}
+.modal.ed .cats{margin-top:6px;gap:14px}
+.modal.ed .cats span{font-size:12px}
+.modal.ed .row2{margin-top:20px}
+
+/* ── 推演窗口 ── */
+.hzn{display:flex;gap:6px;margin-top:10px}
+.hzn button{font:inherit;font-size:11px;font-weight:600;padding:5px 11px;border-radius:2px;
+  border:1px solid var(--line);background:transparent;color:var(--ink3);cursor:pointer;transition:.14s}
+.hzn button:hover{border-color:#cfc5b6;color:var(--ink2)}
+.hzn button.on{background:var(--ink);border-color:var(--ink);color:#faf8f3}
+.hzn input{font:inherit;font-size:11px;font-weight:600;color:var(--ink);background:transparent;
+  border:1px solid var(--line);border-radius:2px;padding:4px 7px;outline:0;cursor:pointer}
+.hzn input:focus{border-color:var(--ink)}
+
+/* ── 首次引导 ── */
+.onboard{border:1px solid var(--line);background:#fffdf9;padding:20px;border-radius:3px;margin-top:20px}
+.onboard .ot{font-size:14px;font-weight:600;margin-bottom:6px}
+.onboard .od{font-size:12px;color:var(--ink2);line-height:1.8;margin-bottom:16px}
+.onboard .of{margin-bottom:13px}
+.onboard .of label{display:block;font-size:10px;letter-spacing:.14em;text-transform:uppercase;
+  color:var(--ink3);font-weight:600;margin-bottom:5px}
+.onboard .of input{width:100%;font:inherit;font-size:15px;font-weight:600;color:var(--ink);
+  background:transparent;border:0;border-bottom:1px solid var(--line);padding:7px 0;outline:0}
+.onboard .of input:focus{border-bottom-color:var(--ink)}
+.onboard .ob{width:100%;margin-top:6px}
+
 /* ── 计提预留开关 ── */
 .srow{display:flex;align-items:center;gap:12px;padding:10px 0;border-bottom:1px solid var(--line2)}
 .srow .st{flex:1;font-size:12px;color:var(--ink2);line-height:1.5}
@@ -539,7 +591,11 @@ details.set[open] summary::before{content:"− "}
       </div>
     </div>
 
-    <div class="sec"><span>记一笔</span><i></i></div>
+    <div id="onboard"></div>
+
+    <div class="sec"><span>记一笔</span><i></i>
+      <label class="daypick" id="dayPick"><input type="date" id="entryDate"><span id="entryDateTxt">今天</span></label>
+    </div>
     <div class="amtline">
       <span class="c">¥</span>
       <input autocomplete="off" enterkeyhint="done" id="amt" inputmode="decimal" placeholder="0" type="text">
@@ -600,6 +656,12 @@ details.set[open] summary::before{content:"− "}
       <div class="lab">推演到 <span id="simHorizonLab">—</span></div>
       <div class="big" id="simEnd">—<small>期末余额</small></div>
       <div class="sub" id="simSub">—</div>
+      <div class="hzn" id="hzn">
+        <button data-h="90">90 天</button>
+        <button data-h="180">180 天</button>
+        <button data-h="365">一年</button>
+        <input type="date" id="hznDate" title="指定截止日">
+      </div>
     </div>
 
     <div class="sec"><span>每天怎么花</span><i></i></div>
@@ -679,6 +741,24 @@ details.set[open] summary::before{content:"− "}
 
 </div>
 
+<div class="mask" id="emask"></div>
+<div class="modal ed" id="editor" role="dialog" aria-modal="true">
+  <h3>改这笔</h3>
+  <div class="ed-grid">
+    <div><label>金额</label><input id="edAmt" inputmode="decimal" type="text"></div>
+    <div><label>日期</label><input id="edDate" type="date"></div>
+    <div style="grid-column:1/-1"><label>备注</label><input id="edNote" maxlength="24" type="text" placeholder="可不填"></div>
+  </div>
+  <div class="ed-lab">类别</div>
+  <div class="cats" id="edCats"></div>
+  <div class="ed-lab">算谁的</div>
+  <div class="cats pick" id="edWho"></div>
+  <div class="row2">
+    <button class="btn ghost" id="edDel">删除</button>
+    <button class="btn" id="edSave">保存</button>
+  </div>
+</div>
+
 <div class="mask" id="mask"></div>
 <div class="modal" id="modal">
   <h3 id="mTitle">—</h3>
@@ -714,20 +794,11 @@ const KNOBS = [
   {k:'other', n:'其他',  max:200}
 ];
 /* 源表（预算控制表 E4:O90）的原始口径，作为对比基线 */
-const BASE_DAILY = {food:100, fun:30, shop:0, other:0};
-const BASE_EVENTS = [
-  {d:'2026-11-14', k:'fixed', amt:1050, note:'房租'},
-  {d:'2026-11-14', k:'in',    amt:2000, note:'固定收入'},
-  {d:'2026-12-10', k:'in',    amt:2000, note:'固定收入'},
-  {d:'2026-12-14', k:'fixed', amt:1050, note:'房租'},
-  {d:'2026-12-20', k:'fixed', amt:700,  note:'酒店'},
-  {d:'2026-12-31', k:'in',    amt:2000, note:'固定收入'},
-  {d:'2027-01-15', k:'fixed', amt:200,  note:'预留缓冲'}
-];
+/* 页面是公开的，不内置任何真实数字。基线由各设备首次打开时自己定。 */
+const EMPTY_DAILY = {food:0, fun:0, shop:0, other:0};
 
 const STORE_KEY = 'cashbook_v3';
 const OLD_KEYS = ['cashbook_v2', 'cashbook_v1', 'cashflow_calendar_v2'];
-const DEFAULT_PEOPLE = ['水煮蛋', '茶叶蛋'];
 let nameRenamed = false;   /* 老默认名升级过就标记，启动时推一次云端 */
 
 /* ══════════ 状态 ══════════ */
@@ -736,26 +807,22 @@ let nameRenamed = false;   /* 老默认名升级过就标记，启动时推一�
    ② 计提  budget{} 每类预留额度, 看消耗进度   → 计划要花多少
    ③ 推演  现金 + 未来开销 + 未花计提          → 将来会怎样 */
 let S = {
-  people: DEFAULT_PEOPLE.slice(),
-  cashStart: 33212.64,          /* 库存现金合计（源表 C16），真金白银 */
-  budget: {                     /* 计提额度（源表 N3 拆分），还没花 */
-    food: 0,
-    fun: 29,
-    shop: 1499,
-    fixed: 349,
-    cloth: 2000,
-    other: 1500
-  },
+  people: ['我', 'TA'],
+  cashStart: 0,                 /* 手上现金，首次打开由引导页录入 */
+  budget: {},                   /* 每类计提额度，自己设 */
   budgetOn: 1,                  /* 推演时是否把未花计提算作"已预留" */
-  budgetDaily: 130,
+  budgetDaily: 0,
   lastCat: 'food',
   lastWho: 'me',
   entries: [],
   deleted: [],          /* 删除墓碑：多设备合并时挡住"复活" */
   sim: {
-    horizon: '2027-01-15',
-    daily: Object.assign({}, BASE_DAILY),
-    events: BASE_EVENTS.map(e => Object.assign({id:'b'+e.d+e.k}, e))
+    horizonMode: '90',          /* 90 / 180 / 365 / custom —— 滚动窗口，永不过期 */
+    horizon: '',
+    daily: Object.assign({}, EMPTY_DAILY),
+    baseDaily: Object.assign({}, EMPTY_DAILY),
+    baseEvents: [],
+    events: []
   },
   updatedAt: 0
 };
@@ -806,6 +873,15 @@ function toast(msg, actTxt, act){
 }
 function hideToast(){ $('#toast').classList.remove('show'); }
 
+let modalResolve = null;
+function closeModal(){
+  $('#modal').classList.remove('open');
+  $('#mask').classList.remove('open');
+  $('#mYes').onclick = null;
+  $('#mNo').onclick = null;
+  const f = modalResolve; modalResolve = null;
+  if (f) f(false);          /* 点遮罩 / 按 Esc 也要把 Promise 收掉，不然永远挂着 */
+}
 function askConfirm(o){
   return new Promise(res => {
     $('#mTitle').textContent = o.title || '确认';
@@ -814,32 +890,44 @@ function askConfirm(o){
     $('#modal').classList.add('open'); $('#mask').classList.add('open');
     const done = v => {
       $('#modal').classList.remove('open'); $('#mask').classList.remove('open');
-      $('#mYes').onclick = null; $('#mNo').onclick = null; res(v);
+      $('#mYes').onclick = null; $('#mNo').onclick = null;
+      if (modalResolve === done) modalResolve = null;
+      res(v);
     };
+    modalResolve = done;
     $('#mYes').onclick = () => done(true);
     $('#mNo').onclick = () => done(false);
   });
 }
 
 /* ══════════ 数据 ══════════ */
-const DEFAULT_BUDGET = {food:0, fun:29, shop:1499, fixed:349, cloth:2000, other:1500};
 function normalize(o){
   if (!o) return null;
   if (Array.isArray(o.entries)) {
-    o.entries.forEach(e => { if (e.who !== 'ta' && e.who !== 'split') e.who = 'me'; });
-    if (!Array.isArray(o.people) || o.people.length !== 2) o.people = DEFAULT_PEOPLE.slice();
-    /* 老的默认名「我 / TA」自动升级；用户自己改过的名字不动 */
-    if (o.people[0] === '我') { o.people[0] = DEFAULT_PEOPLE[0]; nameRenamed = true; }
-    if (o.people[1] === 'TA') { o.people[1] = DEFAULT_PEOPLE[1]; nameRenamed = true; }
+    /* 条目逐条校验：id / 日期 / 类别 / 金额不合规就丢掉或补默认 */
+    o.entries = o.entries.map(cleanEntry).filter(Boolean);
+    o.deleted = Array.isArray(o.deleted)
+      ? o.deleted.filter(x => typeof x === 'string' && /^[A-Za-z0-9_-]{1,40}$/.test(x)).slice(-5000)
+      : [];
+    if (!Array.isArray(o.people) || o.people.length !== 2) o.people = ['我','TA'];
+    o.people = o.people.map(p => String(p || '').trim().slice(0, 8) || '我');
     if (!o.sim || typeof o.sim !== 'object') o.sim = defaultSim();
-    if (!o.sim.daily) o.sim.daily = Object.assign({}, BASE_DAILY);
-    if (!Array.isArray(o.sim.events)) o.sim.events = BASE_EVENTS.map(e => Object.assign({id:'b'+e.d+e.k}, e));
-    if (!o.sim.horizon) o.sim.horizon = '2027-01-15';
+    if (!o.sim.daily) o.sim.daily = Object.assign({}, EMPTY_DAILY);
+    if (!Array.isArray(o.sim.events)) o.sim.events = [];
+    o.sim.events = o.sim.events.filter(e => e && /^\d{4}-\d{2}-\d{2}$/.test(String(e.d || '')) && isFinite(+e.amt));
+    /* 老数据的固定截止日 → 换成滚动窗口；保留原值作自定义 */
+    if (!o.sim.horizonMode) {
+      o.sim.horizonMode = o.sim.horizon ? 'custom' : '90';
+    }
+    if (!o.sim.horizon) o.sim.horizon = '';
+    if (!o.sim.baseDaily) o.sim.baseDaily = Object.assign({}, o.sim.daily);
+    if (!Array.isArray(o.sim.baseEvents)) o.sim.baseEvents = o.sim.events.map(e => Object.assign({}, e));
+    delete o.sim.useActual;
     /* 旧版把计提当现金扣了（startNet − startGone）→ 还原成现金 + 计提额度 */
     if (typeof o.cashStart !== 'number') {
-      o.cashStart = typeof o.startNet === 'number' ? o.startNet : 33212.64;
+      o.cashStart = typeof o.startNet === 'number' ? o.startNet : 0;
     }
-    if (!o.budget || typeof o.budget !== 'object') o.budget = Object.assign({}, DEFAULT_BUDGET);
+    if (!o.budget || typeof o.budget !== 'object') o.budget = {};
     if (typeof o.budgetOn !== 'number') o.budgetOn = 1;
     delete o.startNet; delete o.startGone;
     return o;
@@ -854,18 +942,31 @@ function normalize(o){
         if (v > 0) mig.push({id:uid(), d:r.d, k:c.k, amt:v, note:'迁移', who:'me'});
       }
     }
-    return { cashStart: +o.startNet || 33212.64, budget: Object.assign({}, DEFAULT_BUDGET),
-             budgetOn: 1, budgetDaily: +o.budgetDaily || 130, entries: mig,
-             people: DEFAULT_PEOPLE.slice(), sim: defaultSim() };
+    return { cashStart: +o.startNet || 0, budget: {},
+             budgetOn: 1, budgetDaily: 0, entries: mig.map(cleanEntry).filter(Boolean),
+             people: ['我','TA'], sim: defaultSim() };
   }
   return null;
 }
 function defaultSim(){
   return {
-    horizon: '2027-01-15',
-    daily: Object.assign({}, BASE_DAILY),
-    events: BASE_EVENTS.map(e => Object.assign({id:'b'+e.d+e.k}, e))
+    horizonMode: '90', horizon: '',
+    daily: Object.assign({}, EMPTY_DAILY),
+    baseDaily: Object.assign({}, EMPTY_DAILY),
+    baseEvents: [], events: []
   };
+}
+/* 外来数据一律先过一遍，挡掉能拼进 HTML 的东西 */
+function cleanEntry(e){
+  if (!e || typeof e !== 'object') return null;
+  const amt = r2(e.amt);
+  if (!isFinite(amt) || amt <= 0) return null;
+  const d = String(e.d || '');
+  if (!/^\d{4}-\d{2}-\d{2}$/.test(d) || isNaN(parseD(d).getTime())) return null;
+  if (!CAT[e.k]) return null;
+  const id = /^[A-Za-z0-9_-]{1,40}$/.test(String(e.id || '')) ? String(e.id) : uid();
+  const who = (e.who === 'ta' || e.who === 'split') ? e.who : 'me';
+  return { id, d, k: e.k, amt, note: String(e.note || '').slice(0, 40), who };
 }
 function load(){
   for (const k of [STORE_KEY].concat(OLD_KEYS)) {
@@ -935,6 +1036,18 @@ function whoName(w){
 }
 
 /* ══════════ 推演引擎 ══════════ */
+function balColor(v){ return (v < 0 || v < 5000) ? '#a8452e' : '#26201a'; }
+function horizonDate(){
+  const m = S.sim.horizonMode || '90';
+  if (m === 'custom') {
+    const h = S.sim.horizon;
+    if (/^\d{4}-\d{2}-\d{2}$/.test(h || '')) return h;
+  }
+  const n = parseInt(m, 10) || 90;
+  const d = new Date();
+  d.setDate(d.getDate() + n);
+  return dstr(d);
+}
 function simStart(){ return cashNow(); }
 /* 还没花掉的计提额度：推演时当作"已经预留、不能自由支配" */
 function reserveNow(){
@@ -972,12 +1085,13 @@ function project(cfg){
            totalOut: r2(out), totalInc: r2(inc), days: pts.length - 1, perDay };
 }
 function currentCfg(){
-  return { start: simStart(), reserve: reserveNow(), horizon: S.sim.horizon,
+  return { start: simStart(), reserve: reserveNow(), horizon: horizonDate(),
            daily: S.sim.daily, events: S.sim.events };
 }
 function baselineCfg(){
-  return { start: simStart(), reserve: reserveNow(), horizon: S.sim.horizon, daily: BASE_DAILY,
-           events: BASE_EVENTS.map(e => Object.assign({}, e)) };
+  return { start: simStart(), reserve: reserveNow(), horizon: horizonDate(),
+           daily: S.sim.baseDaily || EMPTY_DAILY,
+           events: (S.sim.baseEvents || []).map(e => Object.assign({}, e)) };
 }
 
 /* ══════════ 渲染：记账 ══════════ */
@@ -1016,6 +1130,12 @@ function renderDay(){
   const list = entriesOn(d).slice().sort((a,b) => (b.id > a.id ? 1 : -1));
   const rel = d === t ? '今天' : (d === dstr(new Date(Date.now() - 864e5)) ? '昨天' : '');
   $('#dayLabel').textContent = (dt.getMonth()+1) + ' 月 ' + dt.getDate() + ' 日 · 周' + WD[dt.getDay()] + (rel ? ' · ' + rel : '');
+  if ($('#entryDate')) {
+    $('#entryDate').value = d;
+    const isToday = d === t;
+    $('#entryDateTxt').textContent = isToday ? '今天' : md(d) + ' · 补记';
+    $('#dayPick').classList.toggle('past', !isToday);
+  }
   const sp = spendOn(d), inc = incomeOn(d);
   $('#daySum').textContent = (sp ? '支出 ' + fmt(sp, sp % 1 ? 2 : 0) : '') +
     (inc ? (sp ? '　' : '') + '收入 ' + fmt(inc, 0) : '') + (!sp && !inc ? '还没记' : '');
@@ -1094,18 +1214,30 @@ function renderCal(){
   const lead = new Date(y, m-1, 1).getDay();
   const t = todayStr();
   let h = '';
+  /* 预建两张表，别在日期循环里反复扫全部条目 */
+  const byDay = {}, doneKeys = new Set();
+  for (const e of S.entries) {
+    byDay[e.d] = byDay[e.d] || [];
+    byDay[e.d].push(e);
+    doneKeys.add(e.d + '|' + e.k + '|' + e.amt);
+  }
+  const planDay = {};
+  for (const ev of S.sim.events) {
+    if (!doneKeys.has(ev.d + '|' + ev.k + '|' + ev.amt)) planDay[ev.d] = true;
+  }
   for (let i = 0; i < lead; i++) h += '<button class="cd blank"></button>';
   for (let d = 1; d <= days; d++) {
     const ds = calYM + '-' + String(d).padStart(2,'0');
-    const sp = spendOn(ds), inc = incomeOn(ds);
+    const list = byDay[ds] || [];
+    let sp = 0, inc = 0;
+    for (const e of list) { if (CAT[e.k] && CAT[e.k].inc) inc += e.amt; else sp += e.amt; }
     const cls = ['cd'];
     if (sp > 0 || inc > 0) cls.push('has');
     if (sp > 0 && +S.budgetDaily > 0 && sp > +S.budgetDaily) cls.push('over');
     if (ds === t) cls.push('today');
     if (ds === selDate) cls.push('sel');
     if (ds > t) cls.push('fut');
-    const done = new Set(S.entries.map(e => e.d + '|' + e.k + '|' + e.amt));
-    if (S.sim.events.some(ev => ev.d === ds && !done.has(ev.d + '|' + ev.k + '|' + ev.amt))) cls.push('plan');
+    if (planDay[ds]) cls.push('plan');
     h += '<button class="' + cls.join(' ') + '" data-d="' + ds + '">' +
       '<span class="cn">' + d + '</span>' +
       (sp > 0 ? '<span class="cv">' + (sp >= 1000 ? (Math.round(sp/100)/10) + 'k' : Math.round(sp)) + '</span>' : '') +
@@ -1130,7 +1262,10 @@ function renderAcct(){
       '<div><label>第一个人</label><input id="p0" maxlength="6" value="' + esc(S.people[0]) + '"></div>' +
       '<div><label>第二个人</label><input id="p1" maxlength="6" value="' + esc(S.people[1]) + '"></div>' +
       '<div style="grid-column:1/-1"><label>账本口令（两个人填同一个就共用一本账）</label>' +
-        '<input id="sKey" placeholder="至少 6 位，例如 xiaoyu-2026" value="' + esc(syncKey) + '"></div>' +
+        '<div style="display:flex;gap:8px;align-items:baseline">' +
+          '<input id="sKey" placeholder="至少 12 位，建议点右边生成" value="' + esc(syncKey) + '" style="flex:1">' +
+          '<button class="btn ghost" id="sKeyGen" type="button" style="padding:5px 10px;font-size:10.5px">生成</button>' +
+        '</div></div>' +
     '</div></details>';
 }
 
@@ -1203,7 +1338,7 @@ function renderKnobs(){
   const d = S.sim.daily;
   $('#knobs').innerHTML = KNOBS.map(k => {
     const v = +d[k.k] || 0;
-    const base = BASE_DAILY[k.k] || 0;
+    const base = (S.sim.baseDaily || EMPTY_DAILY)[k.k] || 0;
     const delta = v - base;
     let cls = '', tip = '';
     if (delta > 0) { cls = 'diff up'; tip = ' +' + delta; }
@@ -1296,7 +1431,7 @@ function renderKpis(cur, base){
 
 function renderVerdict(cur, base){
   const diff = r2(cur.endBal - base.endBal);
-  const d = S.sim.daily, b = BASE_DAILY;
+  const d = S.sim.daily, b = (S.sim.baseDaily || EMPTY_DAILY);
   /* 找改动最大的一项 */
   let pick = null, maxAbs = 0;
   for (const k of KNOBS) {
@@ -1333,13 +1468,16 @@ function renderVerdict(cur, base){
 function renderSim(){
   const cur = project(currentCfg());
   const base = project(baselineCfg());
-  $('#simHorizonLab').textContent = md(S.sim.horizon);
+  $('#simHorizonLab').textContent = md(horizonDate());
   const endTxt = fmt(cur.endBal, 0);
   $('#simEnd').innerHTML = endTxt + '<small>期末可用</small>';
-  $('#simEnd').style.color = cur.endBal < 0 ? '#a8452e' : (cur.endBal < 5000 ? '#a8452e' : '#26201a');
+  $('#simEnd').style.color = balColor(cur.endBal);
   $('#simSub').textContent = '现金 ' + fmt(cur.start, 0) +
     (cur.reserve > 0 ? ' − 预留 ' + fmt(cur.reserve, 0) : '') +
     ' · 推 ' + cur.days + ' 天 · 日均 ' + fmt(cur.perDay, 0);
+  const hz = S.sim.horizonMode || '90';
+  $$('#hzn [data-h]').forEach(b => b.classList.toggle('on', b.dataset.h === hz));
+  if ($('#hznDate')) $('#hznDate').value = hz === 'custom' ? (S.sim.horizon || '') : '';
   const pool = budgetPool();
   $('#reserveAmt').textContent = pool.left > 0 ? fmt(pool.left, 0) : '';
   const br = $('#btnReserve');
@@ -1357,8 +1495,17 @@ function renderSim(){
 const AI_URL = 'https://api.deepseek.com/chat/completions';
 let aiKey = localStorage.getItem('cashbook_ds_key') || '';
 let aiModel = localStorage.getItem('cashbook_ds_model') || 'deepseek-flash';
-let aiMsgs = [];        /* {role:'user'|'assistant', content} */
+let aiMsgs = (() => {
+  try {
+    const raw = localStorage.getItem('cashbook_ai');
+    const a = raw ? JSON.parse(raw) : [];
+    return Array.isArray(a) ? a.filter(m => m && m.role && typeof m.content === 'string').slice(-20) : [];
+  } catch(e){ return []; }
+})();
 let aiBusy = false;
+function saveAiMsgs(){
+  try { localStorage.setItem('cashbook_ai', JSON.stringify(aiMsgs.slice(-20))); } catch(e){}
+}
 
 /* 把整本账压成一段结构化摘要，喂给模型 */
 function aiContext(){
@@ -1386,6 +1533,18 @@ function aiContext(){
          '，' + (cur.zeroD ? '会在 ' + cur.zeroD + ' 跌破 0' : '不会穿零') + '。');
   L.push('【两个人】' + S.people[0] + ' 承担 ' + fmt(b.me, 0) + '，' + S.people[1] + ' 承担 ' +
          fmt(b.ta, 0) + '；其中共同开销 ' + fmt(b.shared, 0) + '（各担一半）。');
+  /* 让分析师能回答“我这么调合不合理” */
+  const baseP = project(baselineCfg());
+  const diffEnd = r2(cur.endBal - baseP.endBal);
+  if (Math.abs(diffEnd) > 0.5) {
+    L.push('【和原计划比】原计划期末 ' + fmt(baseP.endBal, 0) + '，当前 ' + fmt(cur.endBal, 0) +
+           '，差 ' + (diffEnd > 0 ? '+' : '') + fmt(diffEnd, 0) + '。');
+    const bd = S.sim.baseDaily || {};
+    for (const k of KNOBS) {
+      const a1 = +S.sim.daily[k.k] || 0, a2 = +bd[k.k] || 0;
+      if (a1 !== a2) L.push('  · ' + k.n + '：' + a2 + ' → ' + a1 + ' 元/天');
+    }
+  }
   const recent = S.entries.slice().sort((x, y) => x.id > y.id ? 1 : -1).slice(-15);
   if (recent.length) {
     L.push('【最近记录的账】');
@@ -1490,9 +1649,12 @@ async function askAI(q){
   box.scrollIntoView({ block: 'end', behavior: 'smooth' });
 
   let out = '', think = '';
+  const ctrl = new AbortController();
+  const timer = setTimeout(() => ctrl.abort(), 45000);
   try {
     const res = await fetch(AI_URL, {
       method: 'POST',
+      signal: ctrl.signal,
       headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + aiKey },
       body: JSON.stringify({
         model: aiModel,
@@ -1539,11 +1701,18 @@ async function askAI(q){
     if (!out) out = '（这次只返回了思考过程，没给出结论。再问一次，或者把问题问得更具体一点。）';
     bd.innerHTML = mdHtml(out);
     aiMsgs.push({ role: 'assistant', content: out });
+    saveAiMsgs();
   } catch (e) {
-    bd.innerHTML = '<b>调不通</b><br>' + esc(String(e.message || e)) +
-      '<br><span style="color:#a8a69d">检查 API Key 是否有效、额度是否用完；也可能是网络或跨域被拦。</span>';
-    aiMsgs.push({ role: 'assistant', content: '调用失败：' + String(e.message || e) });
+    const timeout = e && e.name === 'AbortError';
+    const msg = timeout ? '等太久了（45 秒），先停了' : String(e.message || e);
+    bd.innerHTML = '<b>调不通</b><br>' + esc(msg) +
+      '<br><span style="color:#a8a69d">' +
+      (timeout ? '网络慢或者模型排队，再试一次。' : '检查 API Key 是否有效、额度是否用完；也可能是网络或跨域被拦。') +
+      '</span>';
+    aiMsgs.push({ role: 'assistant', content: '调用失败：' + msg });
+    saveAiMsgs();
   } finally {
+    clearTimeout(timer);
     aiBusy = false;
   }
 }
@@ -1551,12 +1720,11 @@ async function askAI(q){
 /* ══════════ 总渲染 ══════════ */
 function renderBook(){
   renderHero(); renderCats(); renderDay(); renderBars(); renderDuo();
-  renderBudget(); renderCal(); renderAcct();
+  renderBudget(); renderCal(); renderAcct(); renderOnboard();
 }
 function renderAll(){
   renderBook();
   renderSim();
-  renderAI();
 }
 
 /* ══════════ 账目操作 ══════════ */
@@ -1565,14 +1733,15 @@ function addEntry(){
   const amt = r2(numOf(inp.value));
   if (!(amt > 0)) { inp.focus(); toast('先填金额'); return; }
   const note = $('#note').value.trim();
-  const e = { id: uid(), d: todayStr(), k: S.lastCat, amt, note, who: S.lastWho || 'me' };
+  const d = $('#entryDate').value || selDate || todayStr();
+  const e = { id: uid(), d, k: S.lastCat, amt, note, who: S.lastWho || 'me' };
   S.entries.push(e);
   selDate = e.d; calYM = ymOf(e.d);
   inp.value = ''; $('#note').value = '';
   save(); renderAll(); inp.focus();
   const c = CAT[e.k];
   toast((c.inc ? '记了收入 ' : '记了 ') + fmt(amt, amt % 1 ? 2 : 0) + ' · ' + c.n +
-    (e.who === 'split' ? ' · 平分' : ''), '撤销', () => {
+    (e.who === 'split' ? ' · 平分' : '') + ' · ' + md(e.d), '撤销', () => {
       S.entries = S.entries.filter(x => x.id !== e.id); save(); renderAll(); toast('已撤销');
     });
 }
@@ -1588,6 +1757,65 @@ function delEntry(id){
     S.deleted = (S.deleted || []).filter(x => x !== id);
     save(); renderAll();
   });
+}
+
+/* ══════════ 首次引导 ══════════ */
+function renderOnboard(){
+  const box = $('#onboard');
+  if (!box) return;
+  const empty = !(+S.cashStart) && !S.entries.length && !budgetPool().totalBudget;
+  if (!empty) { box.innerHTML = ''; return; }
+  box.innerHTML =
+    '<div class="onboard">' +
+      '<div class="ot">先把底子填上</div>' +
+      '<div class="od">填完就能开始记账。这些数字之后在「账户 → 设置」里都能改。</div>' +
+      '<div class="of"><label>手上现金 · 所有账户加起来</label>' +
+        '<input id="obCash" inputmode="decimal" type="text" placeholder="例如 20000"></div>' +
+      '<div class="of"><label>每天大概花多少</label>' +
+        '<input id="obDaily" inputmode="decimal" type="text" placeholder="例如 130"></div>' +
+      '<div class="of"><label>你们俩叫什么</label>' +
+        '<input id="obNames" type="text" placeholder="例如 小明、小红"></div>' +
+      '<button class="btn ob" id="obOk">开始记账</button>' +
+    '</div>';
+}
+
+/* ══════════ 改一笔 ══════════ */
+let editingId = null;
+function openEditor(id){
+  const e = S.entries.find(x => x.id === id);
+  if (!e) return;
+  editingId = id;
+  $('#edAmt').value = e.amt;
+  $('#edDate').value = e.d;
+  $('#edNote').value = e.note || '';
+  $('#edCats').innerHTML = CATS.map(c =>
+    '<span class="' + (c.k === e.k ? 'on' : '') + '" data-k="' + c.k + '">' + c.n + '</span>').join('');
+  $('#edWho').innerHTML = ['me','ta','split'].map(w =>
+    '<span class="' + (e.who === w ? 'on' : '') + '" data-w="' + w + '">' + esc(whoName(w)) + '</span>').join('');
+  $('#editor').classList.add('open');
+  $('#emask').classList.add('open');
+  setTimeout(() => { const a = $('#edAmt'); a.focus(); a.select(); }, 60);
+}
+function closeEditor(){
+  $('#editor').classList.remove('open');
+  $('#emask').classList.remove('open');
+  editingId = null;
+}
+function saveEditor(){
+  const e = S.entries.find(x => x.id === editingId);
+  if (!e) { closeEditor(); return; }
+  const amt = r2(numOf($('#edAmt').value));
+  if (!(amt > 0)) { toast('金额得大于 0'); $('#edAmt').focus(); return; }
+  const d = $('#edDate').value;
+  if (!/^\d{4}-\d{2}-\d{2}$/.test(d || '')) { toast('日期不对'); return; }
+  const kEl = $('#edCats .on'), wEl = $('#edWho .on');
+  e.amt = amt;
+  e.d = d;
+  e.note = $('#edNote').value.trim().slice(0, 24);
+  if (kEl && kEl.dataset.k) e.k = kEl.dataset.k;
+  if (wEl && wEl.dataset.w) e.who = wEl.dataset.w;
+  selDate = d; calYM = ymOf(d);
+  closeEditor(); save(); renderAll(); toast('改好了');
 }
 
 /* ══════════ 事件绑定 ══════════ */
@@ -1625,7 +1853,7 @@ function bind(){
     const id = e.target.id;
     if (id !== 'aiClear' && id !== 'aiKeyChg') return;
     e.preventDefault();
-    if (id === 'aiClear') { aiMsgs = []; renderChat(); toast('对话已清空'); return; }
+    if (id === 'aiClear') { aiMsgs = []; saveAiMsgs(); renderChat(); toast('对话已清空'); return; }
     aiKey = '';
     localStorage.removeItem('cashbook_ds_key');
     renderAI();
@@ -1650,6 +1878,8 @@ function bind(){
   $('#dayList').addEventListener('click', ev => {
     const del = ev.target.closest('[data-del]');
     if (del) { delEntry(del.dataset.del); return; }
+    const row = ev.target.closest('.ent');
+    if (row && row.dataset.id) { openEditor(row.dataset.id); return; }
     const pl = ev.target.closest('[data-plan]');
     if (pl) {
       const ev2 = S.sim.events.find(x => x.id === pl.dataset.plan);
@@ -1688,19 +1918,56 @@ function bind(){
     if (id === 'p0' || id === 'p1') {
       const v = String(e.target.value || '').trim().slice(0, 6);
       S.people = id === 'p0'
-        ? [v || DEFAULT_PEOPLE[0], S.people[1]]
-        : [S.people[0], v || DEFAULT_PEOPLE[1]];
+        ? [v || '我', S.people[1]]
+        : [S.people[0], v || 'TA'];
       save(); renderAll();
+    }
+    if (id === 'sKeyGen') {
+      const bytes = new Uint8Array(12);
+      crypto.getRandomValues(bytes);
+      const abc = 'abcdefghijkmnpqrstuvwxyz23456789';
+      let out = '';
+      for (const b of bytes) out += abc[b % abc.length];
+      $('#sKey').value = out.slice(0, 4) + '-' + out.slice(4, 8) + '-' + out.slice(8, 12);
+      toast('口令已生成，把它发给另一个人');
+      return;
     }
     if (id === 'sKey') {
       const v = String(e.target.value || '').trim();
-      if (v && v.length < 6) { toast('口令至少 6 位'); e.target.value = syncKey; return; }
+      if (v && v.length < 12) { toast('口令太短，至少 12 位'); e.target.value = syncKey; return; }
       syncKey = v;
       localStorage.setItem('cashbook_sync_key', syncKey);
       setVer(0);
       if (syncKey) { pullSync(); toast('正在连账本'); }
       else { syncDot('仅本地'); toast('已改为只存本地'); }
     }
+  });
+
+  /* 推演窗口 */
+  $('#hzn').addEventListener('click', e => {
+    const b = e.target.closest('[data-h]'); if (!b) return;
+    S.sim.horizonMode = b.dataset.h;
+    save(); renderSim();
+  });
+  $('#hznDate').addEventListener('change', e => {
+    const v = e.target.value;
+    if (!/^\d{4}-\d{2}-\d{2}$/.test(v || '')) return;
+    S.sim.horizonMode = 'custom'; S.sim.horizon = v;
+    save(); renderSim();
+  });
+
+  /* 首次引导 */
+  $('#onboard').addEventListener('click', e => {
+    if (e.target.id !== 'obOk') return;
+    const cash = r2(numOf($('#obCash').value));
+    const daily = r2(numOf($('#obDaily').value));
+    const names = String($('#obNames').value || '').split(/[、,，\s]+/).filter(Boolean).slice(0, 2);
+    if (names.length === 2) S.people = names;
+    S.cashStart = cash;
+    S.budgetDaily = daily;
+    S.sim.daily = { food: daily, fun: 0, shop: 0, other: 0 };
+    S.sim.baseDaily = Object.assign({}, S.sim.daily);
+    save(); renderAll(); toast('可以开始了');
   });
 
   /* 计提额度：编辑态实时改，输完自动存 */
@@ -1752,13 +2019,27 @@ function bind(){
       const f = inp.files[0]; if (!f) return;
       const rd = new FileReader();
       rd.onload = () => {
+        let incoming;
         try {
-          const o = normalize(JSON.parse(rd.result));
-          if (!o || !Array.isArray(o.entries)) throw 0;
-          S = Object.assign(S, o);
+          incoming = normalize(JSON.parse(rd.result));
+          if (!incoming || !Array.isArray(incoming.entries)) throw 0;
+        } catch(err){ toast('文件格式不对'); return; }
+        const tomb = new Set((S.deleted || []).concat(incoming.deleted || []));
+        const inc = incoming.entries.filter(e => !tomb.has(e.id));
+        const curN = S.entries.length;
+        askConfirm({
+          title: '导入账本',
+          desc: '文件里有 ' + inc.length + ' 条记录，会替换当前这 ' + curN + ' 条。' +
+                '之前删掉的记录不会被带回来。不能撤回，建议先导出一份备份。',
+          ok: '导入'
+        }).then(ok => {
+          if (!ok) return;
+          incoming.entries = inc;
+          incoming.deleted = Array.from(tomb);
+          S = Object.assign(S, incoming);
           selDate = todayStr(); calYM = ymOf(selDate);
-          save(); renderAll(); toast('导入成功');
-        } catch(err){ toast('文件格式不对'); }
+          save(); renderAll(); toast('已导入 ' + inc.length + ' 条');
+        });
       };
       rd.readAsText(f);
     };
@@ -1771,8 +2052,8 @@ function bind(){
     S.sim.daily[s.dataset.k] = +s.value || 0;
     const cur = project(currentCfg()), base = project(baselineCfg());
     const endTxt = fmt(cur.endBal, 0);
-    $('#simEnd').innerHTML = endTxt + '<small>期末余额</small>';
-    $('#simEnd').style.color = cur.endBal < 0 ? '#a8452e' : (cur.endBal < 5000 ? '#a8452e' : '#26201a');
+    $('#simEnd').innerHTML = endTxt + '<small>期末可用</small>';
+    $('#simEnd').style.color = balColor(cur.endBal);
     $('#simSub').textContent = '现金 ' + fmt(cur.start, 0) +
       (cur.reserve > 0 ? ' − 预留 ' + fmt(cur.reserve, 0) : '') +
       ' · 推 ' + cur.days + ' 天 · 日均 ' + fmt(cur.perDay, 0);
@@ -1780,7 +2061,7 @@ function bind(){
     /* 只更新数值标签，不重建滑杆，避免拖动中断 */
     const kh = s.parentElement.querySelector('.kv');
     const k = s.dataset.k;
-    const delta = (+s.value) - (BASE_DAILY[k] || 0);
+    const delta = (+s.value) - ((S.sim.baseDaily || EMPTY_DAILY)[k] || 0);
     kh.className = 'kv ' + (delta > 0 ? 'diff up' : (delta < 0 ? 'diff' : ''));
     kh.innerHTML = s.value + '<u>元/天</u>' +
       (delta ? '<u style="color:inherit">' + (delta > 0 ? ' +' : ' −') + Math.abs(delta) + '</u>' : '');
@@ -1815,20 +2096,43 @@ function bind(){
   $('#btnBaseline').addEventListener('click', async () => {
     const ok = await askConfirm({
       title: '回到原计划',
-      desc: '把每天开销和一次性事件都恢复成源表的口径。记账记录不受影响。',
+      desc: '把每天开销和一次性事件恢复到你自己定的那套基线。记账记录不受影响。',
       ok: '恢复'
     });
     if (!ok) return;
-    S.sim.daily = Object.assign({}, BASE_DAILY);
-    S.sim.events = BASE_EVENTS.map(e => Object.assign({id: uid()}, e));
+    S.sim.daily = Object.assign({}, S.sim.baseDaily || EMPTY_DAILY);
+    S.sim.events = (S.sim.baseEvents || []).map(e => Object.assign({}, e, { id: uid() }));
     save(); renderSim(); toast('已恢复原计划');
   });
 
-  $('#mask').addEventListener('click', () => {
-    $('#modal').classList.remove('open'); $('#mask').classList.remove('open');
+  $('#entryDate').addEventListener('change', e => {
+    const v = e.target.value;
+    if (!/^\d{4}-\d{2}-\d{2}$/.test(v || '')) return;
+    selDate = v; calYM = ymOf(v);
+    renderDay(); renderCal(); renderBars(); renderDuo();
   });
+  $('#edCats').addEventListener('click', e => {
+    const s2 = e.target.closest('[data-k]'); if (!s2) return;
+    [...$('#edCats').children].forEach(x => x.classList.toggle('on', x === s2));
+  });
+  $('#edWho').addEventListener('click', e => {
+    const s2 = e.target.closest('[data-w]'); if (!s2) return;
+    [...$('#edWho').children].forEach(x => x.classList.toggle('on', x === s2));
+  });
+  $('#edSave').addEventListener('click', saveEditor);
+  $('#edDel').addEventListener('click', () => {
+    if (!editingId) return;
+    const id = editingId;
+    closeEditor(); delEntry(id);
+  });
+  $('#emask').addEventListener('click', closeEditor);
+  $('#editor').addEventListener('keydown', e => {
+    if (e.key === 'Enter') { e.preventDefault(); saveEditor(); }
+  });
+
+  $('#mask').addEventListener('click', () => closeModal());
   document.addEventListener('keydown', e => {
-    if (e.key === 'Escape') { $('#modal').classList.remove('open'); $('#mask').classList.remove('open'); }
+    if (e.key === 'Escape') { closeModal(); closeEditor(); }
   });
 }
 
@@ -1886,9 +2190,9 @@ function pushSync(retry){
   if (syncing) return;
   syncing = true;
   syncDot('同步中');
-  fetch(API_BASE + '?key=' + encodeURIComponent(syncKey), {
+  fetch(API_BASE, {
     method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
+    headers: { 'Content-Type': 'application/json', 'X-Ledger-Key': syncKey },
     body: JSON.stringify({ baseVer: syncVer, data: snapshot() })
   }).then(r => {
     if (r.status === 409) {
@@ -1911,7 +2215,7 @@ function pushSync(retry){
 function pullSync(){
   if (!syncKey) { syncDot('仅本地'); return; }
   syncDot('同步中');
-  fetch(API_BASE + '?key=' + encodeURIComponent(syncKey) + '&t=' + Date.now())
+  fetch(API_BASE + '?t=' + Date.now(), { headers: { 'X-Ledger-Key': syncKey } })
     .then(r => r.json()).then(o => {
       if (!o) { syncDot('已同步'); return; }
       if (o.data) {
@@ -1935,10 +2239,34 @@ function pullSync(){
 load();
 bind();
 renderAll();
+renderAI();
 pullSync();
 /* 默认名升级过，把新名字推到云端，免得另一台设备同步回来又变回「我/TA」 */
 if (nameRenamed) setTimeout(() => { S.updatedAt = Date.now(); save(); }, 900);
-setTimeout(() => { const a = $('#amt'); if (a && !a.value) a.focus(); }, 220);
+/* 只在有鼠标的设备上自动聚焦；手机上会弹键盘挡住半屏，不干这事 */
+if (window.matchMedia && window.matchMedia('(hover:hover) and (pointer:fine)').matches) {
+  setTimeout(() => {
+    const a = $('#amt');
+    if (a && !a.value) a.focus({ preventScroll: true });
+  }, 220);
+}
+if ('serviceWorker' in navigator && location.protocol === 'https:') {
+  window.addEventListener('load', () => navigator.serviceWorker.register('sw.js').catch(() => {}));
+}
+
+/* 回到页面就拉一次，另一台设备记的账不用手动刷新 */
+document.addEventListener('visibilitychange', () => {
+  if (document.visibilityState === 'visible') pullSync();
+});
+/* 同一浏览器开了多个标签页，这个标签记完那个标签立刻知道 */
+try {
+  if ('BroadcastChannel' in window) {
+    const bc = new BroadcastChannel('cashbook');
+    bc.onmessage = ev => { if (ev.data === 'changed') pullSync(); };
+    const _save = save;
+    save = function(){ _save(); try { bc.postMessage('changed'); } catch(e){} };
+  }
+} catch(e){}
 </script>
 </body>
 </html>

@@ -1,0 +1,14 @@
+{
+  "name": "账簿 · 两个人的记账本",
+  "short_name": "账簿",
+  "description": "记账、预算池、现金流推演",
+  "start_url": "./",
+  "scope": "./",
+  "display": "standalone",
+  "orientation": "portrait",
+  "background_color": "#efe9df",
+  "theme_color": "#faf8f3",
+  "icons": [
+    { "src": "icon.svg", "sizes": "any", "type": "image/svg+xml", "purpose": "any" }
+  ]
+}
