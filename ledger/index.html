@@ -287,6 +287,24 @@ details.set[open] summary::before{content:"− "}
 .pool-row .pg{display:block;height:2px;background:#e8e4da;position:relative;overflow:hidden}
 .pool-row .pg i{display:block;height:2px;background:var(--green);transition:width .4s ease}
 .pool-row .pg i.over{background:var(--red)}
+.pool-act{margin-top:14px}
+.pool-act .btn{width:100%;text-align:center;padding:10px;font-size:11.5px;letter-spacing:.08em}
+.pool-hint{font-size:11px;color:var(--ink3);margin-bottom:11px;line-height:1.7;font-variant-numeric:tabular-nums}
+.pool-hint b{color:var(--ink);font-weight:600}
+
+/* 编辑态 */
+.pe-row{display:flex;align-items:center;gap:10px;padding:9px 0;border-bottom:1px solid var(--line2)}
+.pe-row:last-child{border-bottom:0}
+.pe-row .pe-n{font-size:12.5px;color:#242320;font-weight:500;width:52px;flex:0 0 auto}
+.pe-row .pe-i{flex:1;display:flex;align-items:baseline;gap:4px;border-bottom:1px solid var(--line);min-width:0}
+.pe-row .pe-i:focus-within{border-bottom-color:var(--ink)}
+.pe-row .pe-i i{font-style:normal;font-size:11px;color:var(--ink3);flex:0 0 auto}
+.pe-row .pe-i input{
+  flex:1;min-width:0;width:100%;background:transparent;border:0;outline:0;font:inherit;
+  font-size:14px;font-weight:600;color:var(--ink);padding:4px 0;font-variant-numeric:tabular-nums;
+}
+.pe-row .pe-s{font-size:10.5px;color:var(--ink3);width:62px;text-align:right;flex:0 0 auto;font-variant-numeric:tabular-nums}
+.pe-row .pe-s.over{color:var(--red)}
 
 .toast{
   position:fixed;left:50%;bottom:26px;transform:translate(-50%,14px);
@@ -377,10 +395,7 @@ details.set[open] summary::before{content:"− "}
 
     <div class="sec"><span>计提预算池</span><i></i><span id="poolSum" style="letter-spacing:.04em"></span></div>
     <div class="pool" id="pool"></div>
-    <details class="set" style="margin-top:12px">
-      <summary>改计提额度</summary>
-      <div class="setgrid" id="poolSet"></div>
-    </details>
+    <div class="pool-act" id="poolAct"></div>
 
     <div class="sec"><span>日历</span><i></i></div>
     <div class="calhd">
@@ -905,35 +920,68 @@ function renderAcct(){
     '</div></details>';
 }
 
-/* 计提预算池：每类还剩多少可以花 */
+/* 计提预算池：每类还剩多少可以花；额度可直接改 */
+let poolEdit = false;
+let poolSaveT = null;
+function budgetTotal(){
+  let t = 0;
+  for (const k in (S.budget || {})) t += +S.budget[k] || 0;
+  return r2(t);
+}
 function renderBudget(){
   const p = budgetPool();
-  const box = $('#pool');
-  if (!box) return;
-  $('#poolSum').textContent = p.totalBudget ? ('剩 ' + fmt(p.left, 0)) : '';
-  if (!p.rows.length) {
-    box.innerHTML = '<div class="empty" style="text-align:left;padding:4px 0">还没有设置计提额度</div>';
+  const box = $('#pool'), act = $('#poolAct');
+  if (!box || !act) return;
+
+  if (poolEdit) {
+    $('#poolSum').textContent = '合计 ' + fmt(budgetTotal(), 0);
+    box.innerHTML = CATS.filter(c => !c.inc).map(c => {
+      const b = +((S.budget || {})[c.k]) || 0;
+      const s = spentCat(c.k);
+      return '<div class="pe-row">' +
+        '<span class="pe-n">' + c.n + '</span>' +
+        '<span class="pe-i"><i>¥</i><input id="bg_' + c.k + '" inputmode="decimal" type="text" value="' + b + '"></span>' +
+        '<span class="pe-s' + (s > b ? ' over' : '') + '">已花 ' + fmt(s, 0) + '</span>' +
+        '</div>';
+    }).join('');
+    act.innerHTML = '<div class="pool-hint" id="poolHint"></div>' +
+      '<button class="btn" id="poolDone">完成</button>';
+    updPoolHint();
     return;
   }
-  box.innerHTML = p.rows.map(x => {
-    const pct = x.b > 0 ? Math.min(100, x.s / x.b * 100) : 100;
-    const over = x.left < 0;
-    return '<div class="pool-row">' +
-      '<div class="ph"><span class="pn">' + esc(x.n) + '</span>' +
-      '<span class="pv' + (over ? ' over' : '') + '">' +
-        (over ? '超 ' + fmt(-x.left, 0) : '剩 ' + fmt(x.left, 0)) +
-        '<u>' + fmt(x.s, 0) + ' / ' + fmt(x.b, 0) + '</u></span></div>' +
-      '<span class="pg"><i class="' + (over ? 'over' : '') + '" style="width:' + pct.toFixed(1) + '%"></i></span>' +
-      '</div>';
-  }).join('');
+
+  $('#poolSum').textContent = p.totalBudget ? ('剩 ' + fmt(p.left, 0)) : '';
+  if (!p.rows.length) {
+    box.innerHTML = '<div class="empty" style="text-align:left;padding:4px 0">还没有设置计提额度，点下面开始设</div>';
+  } else {
+    box.innerHTML = p.rows.map(x => {
+      const pct = x.b > 0 ? Math.min(100, x.s / x.b * 100) : (x.s > 0 ? 100 : 0);
+      const over = x.left < 0;
+      return '<div class="pool-row">' +
+        '<div class="ph"><span class="pn">' + esc(x.n) + '</span>' +
+        '<span class="pv' + (over ? ' over' : '') + '">' +
+          (over ? '超 ' + fmt(-x.left, 0) : '剩 ' + fmt(x.left, 0)) +
+          '<u>' + fmt(x.s, 0) + ' / ' + fmt(x.b, 0) + '</u></span></div>' +
+        '<span class="pg"><i class="' + (over ? 'over' : '') + '" style="width:' + pct.toFixed(1) + '%"></i></span>' +
+        '</div>';
+    }).join('');
+  }
+  act.innerHTML = '<button class="btn ghost" id="poolEditBtn">设置计提额度</button>';
 }
-function renderPoolSet(){
-  const box = $('#poolSet');
-  if (!box) return;
-  box.innerHTML = CATS.filter(c => !c.inc).map(c =>
-    '<div><label>' + c.n + ' 预算</label>' +
-    '<input id="bg_' + c.k + '" inputmode="decimal" value="' + (+((S.budget||{})[c.k]) || 0) + '"></div>'
-  ).join('');
+/* 编辑时实时算：合计变了，推演可用余额跟着变 */
+function updPoolHint(){
+  const el = $('#poolHint');
+  if (!el) return;
+  const total = budgetTotal();
+  const spent = budgetPool().totalSpent;
+  const left = Math.max(0, total - spent);
+  const usable = r2(cashNow() - (S.budgetOn ? left : 0));
+  el.innerHTML = '合计 <b>' + fmt(total, 0) + '</b>　已花 ' + fmt(spent, 0) +
+    '　推演可用 <b>' + fmt(usable, 0) + '</b>';
+}
+function saveBudgetSoon(){
+  clearTimeout(poolSaveT);
+  poolSaveT = setTimeout(() => { save(); }, 700);
 }
 
 /* ══════════ 渲染：推演 ══════════ */
@@ -1094,7 +1142,7 @@ function renderSim(){
 /* ══════════ 总渲染 ══════════ */
 function renderBook(){
   renderHero(); renderCats(); renderDay(); renderBars(); renderDuo();
-  renderBudget(); renderPoolSet(); renderCal(); renderAcct();
+  renderBudget(); renderCal(); renderAcct();
 }
 function renderAll(){
   renderBook();
@@ -1213,14 +1261,36 @@ function bind(){
     }
   });
 
-  /* 计提额度 */
-  $('#poolSet').addEventListener('change', e => {
+  /* 计提额度：编辑态实时改，输完自动存 */
+  $('#pool').addEventListener('input', e => {
     const id = e.target.id || '';
     if (id.indexOf('bg_') !== 0) return;
     const k = id.slice(3);
+    if (!poolEdit) return;
     S.budget = S.budget || {};
     S.budget[k] = r2(numOf(e.target.value));
-    save(); renderBudget(); renderSim();
+    $('#poolSum').textContent = '合计 ' + fmt(budgetTotal(), 0);
+    updPoolHint();
+    saveBudgetSoon();
+  });
+  $('#pool').addEventListener('keydown', e => {
+    if (e.key === 'Enter' && e.target.id && e.target.id.indexOf('bg_') === 0) {
+      e.preventDefault(); e.target.blur();
+    }
+  });
+  $('#poolAct').addEventListener('click', e => {
+    if (e.target.id === 'poolEditBtn') {
+      poolEdit = true; renderBudget();
+      const first = $('#pool input');
+      if (first) setTimeout(() => { first.focus(); first.select(); }, 30);
+      return;
+    }
+    if (e.target.id === 'poolDone') {
+      poolEdit = false;
+      save();
+      renderBudget(); renderSim();
+      toast('计提额度已更新');
+    }
   });
 
   /* 导出 / 导入 */
