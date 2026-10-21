@@ -1,0 +1,1296 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta content="width=device-width,initial-scale=1,viewport-fit=cover" name="viewport">
+<title>账簿</title>
+<style>
+:root{
+  --paper:#f7f6f2;
+  --paper2:#fffefb;
+  --ink:#1c1b18;
+  --ink2:#6f6d65;
+  --ink3:#a8a69d;
+  --ink4:#c9c6bb;
+  --line:#e5e1d7;
+  --line2:#ece8de;
+  --green:#2c5f45;
+  --red:#a8452e;
+  --blue:#3a5f8a;
+}
+*{box-sizing:border-box;margin:0;padding:0}
+html{-webkit-text-size-adjust:100%}
+body{
+  font-family:-apple-system,BlinkMacSystemFont,"SF Pro Text","PingFang SC","Microsoft YaHei",sans-serif;
+  background:var(--paper);color:var(--ink);-webkit-font-smoothing:antialiased;
+  font-variant-numeric:tabular-nums;
+}
+.wrap{max-width:560px;margin:0 auto;padding:26px 22px 70px}
+
+/* ── 顶栏 ── */
+.top{display:flex;justify-content:space-between;align-items:baseline}
+.brand{font-size:19px;font-weight:700;letter-spacing:-.3px}
+.top .meta{font-size:10.5px;color:var(--ink3);letter-spacing:.14em;text-transform:uppercase;font-weight:600}
+.tabs{display:flex;gap:26px;margin-top:16px;border-bottom:1px solid var(--line)}
+.tabs button{
+  background:transparent;border:0;border-bottom:1.5px solid transparent;font:inherit;
+  font-size:13px;font-weight:600;color:var(--ink3);padding:0 0 9px;cursor:pointer;
+  letter-spacing:.02em;transition:color .15s,border-color .15s;margin-bottom:-1px;
+}
+.tabs button:hover{color:var(--ink2)}
+.tabs button.on{color:var(--ink);border-bottom-color:var(--ink)}
+.view{display:none}
+.view.on{display:block;animation:fade .22s ease both}
+@keyframes fade{from{opacity:0}to{opacity:1}}
+
+/* ── 通用 ── */
+.lab{font-size:10px;letter-spacing:.22em;text-transform:uppercase;color:var(--ink3);font-weight:600}
+.hr{height:1px;background:var(--line)}
+.hr-ink{height:1px;background:var(--ink);opacity:.85}
+.sec{display:flex;align-items:center;gap:10px;margin:34px 0 15px}
+.sec span{font-size:10px;letter-spacing:.22em;text-transform:uppercase;color:var(--ink3);font-weight:600;white-space:nowrap}
+.sec i{flex:1;height:1px;background:var(--line)}
+.mini{font-size:10.5px;color:var(--ink3);letter-spacing:.02em}
+.row{display:flex;justify-content:space-between;align-items:baseline;padding:7px 0}
+
+/* ── 记账：今日 ── */
+.hero{padding:26px 0 0}
+.hero .num{font-size:62px;font-weight:200;letter-spacing:-3.4px;line-height:1.02;margin-top:6px;color:#14130f}
+.hero .num small{font-size:26px;font-weight:300;letter-spacing:-1px;color:var(--ink3)}
+.track{height:2px;background:#e2ded3;margin-top:20px;position:relative}
+.track i{position:absolute;left:0;top:0;height:2px;background:var(--green);transition:width .4s ease}
+.track.over i{background:var(--red)}
+.budfoot{display:flex;justify-content:space-between;font-size:10.5px;color:#9a978d;margin-top:9px}
+.budfoot b{font-weight:600}
+
+/* ── 记一笔 ── */
+.amtline{display:flex;align-items:baseline;gap:8px;border-bottom:2px solid var(--ink);padding-bottom:8px}
+.amtline .c{font-size:17px;color:var(--ink3);font-weight:300}
+.amtline input{
+  flex:1;min-width:0;background:transparent;border:0;outline:0;font:inherit;
+  font-size:34px;font-weight:250;letter-spacing:-1.6px;color:var(--ink);padding:0;
+}
+.amtline input::placeholder{color:#c8c5ba}
+.cats{display:flex;gap:18px;margin-top:14px;flex-wrap:wrap}
+.cats span{
+  font-size:12.5px;color:#9a978d;padding-bottom:5px;border-bottom:1.5px solid transparent;
+  font-weight:500;cursor:pointer;transition:.14s;user-select:none;
+}
+.cats span:hover{color:var(--ink2)}
+.cats span.on{color:var(--ink);border-bottom-color:var(--ink);font-weight:600}
+.cats.pick span.on{color:var(--green);border-bottom-color:var(--green)}
+.noteline{display:flex;gap:10px;margin-top:20px;align-items:center}
+.noteline input{
+  flex:1;min-width:0;font:inherit;font-size:12.5px;color:var(--ink);
+  background:transparent;border:0;border-bottom:1px solid var(--line);padding:7px 0;outline:0;
+}
+.noteline input::placeholder{color:#b8b5a9}
+.noteline input:focus{border-bottom-color:var(--ink)}
+.btn{
+  font:inherit;font-size:12px;font-weight:600;letter-spacing:.1em;
+  padding:11px 22px;border-radius:2px;border:1px solid var(--ink);
+  background:var(--ink);color:var(--paper);cursor:pointer;transition:.14s;white-space:nowrap;
+}
+.btn:hover{background:#000}
+.btn:active{transform:translateY(1px)}
+.btn.ghost{background:transparent;color:var(--ink2);border-color:var(--line)}
+.btn.ghost:hover{background:#efece4;color:var(--ink)}
+
+/* ── 明细 ── */
+.ent{display:flex;align-items:baseline;gap:10px;padding:15px 0;border-bottom:1px solid var(--line2)}
+.ent .t{font-size:13px;color:#242320;font-weight:500;flex:1;min-width:0}
+.ent .t u{text-decoration:none;color:var(--ink3);font-size:11.5px;margin-left:8px;font-weight:400}
+.ent .w{
+  font-size:9.5px;letter-spacing:.08em;color:var(--ink3);border:1px solid var(--line);
+  padding:2px 5px;border-radius:2px;text-transform:uppercase;flex:0 0 auto;
+}
+.ent .w.s{color:#8d6a3f;border-color:#e4d9c6}
+.ent .m{font-size:14px;font-weight:500;letter-spacing:-.2px;color:#242320;width:66px;text-align:right;flex:0 0 auto}
+.ent .m.inc{color:var(--green)}
+.ent .x{
+  border:0;background:transparent;color:#c8c5ba;font-size:15px;line-height:1;
+  cursor:pointer;padding:0 0 0 6px;flex:0 0 auto;
+}
+.ent .x:hover{color:var(--red)}
+.empty{padding:24px 0;text-align:center;color:var(--ink3);font-size:12px;line-height:1.8}
+.plan{
+  display:flex;align-items:center;gap:10px;padding:12px 0;border-bottom:1px solid var(--line2);
+}
+.plan .pt{flex:1;font-size:12px;color:#8d6a3f}
+.plan .pt b{font-weight:600}
+.plan button{
+  font:inherit;font-size:10.5px;font-weight:600;letter-spacing:.06em;color:#8d6a3f;
+  background:transparent;border:1px solid #e4d9c6;padding:4px 10px;border-radius:2px;cursor:pointer;
+}
+.plan button:hover{background:#f6efe1}
+
+/* ── 横条图 ── */
+.bars{padding-top:2px}
+.bar{display:flex;align-items:center;gap:11px;padding:9px 0}
+.bar .n{font-size:11.5px;color:var(--ink2);width:38px;flex:0 0 auto}
+.bar .g{flex:1;height:2px;background:#e8e4da;position:relative;min-width:0}
+.bar .g i{position:absolute;left:0;top:0;height:2px;background:var(--green);transition:width .4s ease}
+.bar .v{font-size:11.5px;color:#242320;width:48px;text-align:right;font-weight:500;flex:0 0 auto}
+.bar .p{font-size:10.5px;color:var(--ink3);width:32px;text-align:right;flex:0 0 auto}
+
+/* ── 日历 ── */
+.calhd{display:flex;justify-content:space-between;align-items:center;margin-bottom:12px}
+.calhd .m{font-size:13px;font-weight:600;letter-spacing:-.1px}
+.calhd .nav{display:flex;gap:2px}
+.calhd .nav button{
+  width:24px;height:24px;border:1px solid var(--line);background:transparent;color:var(--ink2);
+  font-size:12px;line-height:1;cursor:pointer;border-radius:2px;
+}
+.calhd .nav button:hover{background:#efece4;color:var(--ink)}
+.wk{display:grid;grid-template-columns:repeat(7,1fr);gap:2px;margin-bottom:4px}
+.wk span{text-align:center;font-size:9.5px;color:var(--ink3);font-weight:600;letter-spacing:.08em}
+.days{display:grid;grid-template-columns:repeat(7,1fr);gap:2px}
+.cd{
+  aspect-ratio:1/1.12;border:1px solid transparent;background:transparent;border-radius:2px;
+  display:flex;flex-direction:column;align-items:center;justify-content:center;gap:1px;
+  cursor:pointer;font:inherit;color:var(--ink2);padding:0;transition:.12s;
+}
+.cd .cn{font-size:11px;font-weight:500}
+.cd .cv{font-size:9px;font-weight:600;color:#8d6a3f;letter-spacing:-.2px}
+.cd.has{background:#f1eee5}
+.cd.over{background:#f7ebe6}
+.cd.over .cv{color:var(--red)}
+.cd.today{border-color:var(--ink)}
+.cd.sel{background:#e8e2d3;border-color:#b9b09a}
+.cd.fut{opacity:.35}
+.cd.blank{visibility:hidden;pointer-events:none}
+.cd.plan{position:relative}
+.cd.plan::after{
+  content:"";position:absolute;top:3px;right:4px;width:4px;height:4px;border-radius:50%;
+  background:#8d6a3f;
+}
+
+/* ── 账户 ── */
+.acct .row{font-size:12px;color:var(--ink2);padding:4px 0}
+.acct .row b{color:var(--ink);font-weight:500}
+.acct .row.tot{border-top:1px solid var(--line);margin-top:8px;padding-top:9px;font-size:13px}
+.acct .row.tot b{font-weight:600;font-size:14px}
+details.set{margin-top:12px}
+details.set summary{
+  font-size:11px;color:var(--ink3);cursor:pointer;list-style:none;user-select:none;letter-spacing:.02em;
+}
+details.set summary::-webkit-details-marker{display:none}
+details.set summary::before{content:"+ ";font-weight:600}
+details.set[open] summary::before{content:"− "}
+.setgrid{display:grid;grid-template-columns:1fr 1fr;gap:14px 16px;margin-top:14px}
+.setgrid label{display:block;font-size:10px;letter-spacing:.14em;text-transform:uppercase;color:var(--ink3);font-weight:600;margin-bottom:5px}
+.setgrid input{
+  width:100%;font:inherit;font-size:13px;font-weight:500;color:var(--ink);
+  background:transparent;border:0;border-bottom:1px solid var(--line);padding:6px 0;outline:0;
+}
+.setgrid input:focus{border-bottom-color:var(--ink)}
+.foot{display:flex;align-items:center;gap:20px;margin-top:18px;padding-top:14px;border-top:1px solid var(--line)}
+.foot button{
+  background:none;border:0;font:inherit;font-size:11px;color:var(--ink3);
+  cursor:pointer;padding:0;letter-spacing:.04em;
+}
+.foot button:hover{color:var(--ink)}
+.foot .grow{flex:1}
+.foot .sync{font-size:10.5px;color:var(--ink3);letter-spacing:.02em}
+
+/* ── 推演 ── */
+.simhead{padding:24px 0 0}
+.simhead .big{font-size:40px;font-weight:250;letter-spacing:-2.2px;line-height:1.06;margin-top:5px}
+.simhead .big small{font-size:15px;font-weight:400;letter-spacing:-.2px;color:var(--ink3);margin-left:6px}
+.simhead .sub{font-size:11px;color:var(--ink3);margin-top:8px;letter-spacing:.02em}
+
+.knobs{padding-top:4px}
+.knob{padding:13px 0;border-bottom:1px solid var(--line2)}
+.knob .kh{display:flex;justify-content:space-between;align-items:baseline;margin-bottom:2px}
+.knob .kn{font-size:12.5px;color:#242320;font-weight:500}
+.knob .kv{font-size:12.5px;font-weight:600;color:var(--ink)}
+.knob .kv u{text-decoration:none;font-size:10px;color:var(--ink3);font-weight:400;margin-left:2px}
+.knob .kv.diff{color:var(--green)}
+.knob .kv.diff.up{color:var(--red)}
+.slider{
+  -webkit-appearance:none;appearance:none;width:100%;height:18px;background:transparent;
+  cursor:pointer;margin-top:4px;display:block;
+}
+.slider::-webkit-slider-runnable-track{height:2px;background:#e2ded3;border-radius:2px}
+.slider::-webkit-slider-thumb{
+  -webkit-appearance:none;width:12px;height:12px;border-radius:50%;background:var(--ink);
+  margin-top:-5px;box-shadow:0 1px 3px rgba(0,0,0,.22);border:0;
+}
+.slider:active::-webkit-slider-thumb{background:var(--green)}
+.slider::-moz-range-track{height:2px;background:#e2ded3}
+.slider::-moz-range-thumb{width:12px;height:12px;border-radius:50%;background:var(--ink);border:0}
+
+.evrow{display:flex;align-items:baseline;gap:10px;padding:11px 0;border-bottom:1px solid var(--line2);font-size:12.5px}
+.evrow .d{font-size:10.5px;color:var(--ink3);width:42px;flex:0 0 auto;letter-spacing:.02em}
+.evrow .n{flex:1;color:#242320;font-weight:500;min-width:0}
+.evrow .a{font-weight:500;color:var(--red);flex:0 0 auto}
+.evrow .a.inc{color:var(--green)}
+.evrow .x{border:0;background:transparent;color:#c8c5ba;font-size:14px;cursor:pointer;padding:0 0 0 4px;flex:0 0 auto}
+.evrow .x:hover{color:var(--red)}
+.evadd{margin-top:10px}
+.evadd summary{font-size:11px;color:var(--ink3);cursor:pointer;list-style:none;letter-spacing:.02em}
+.evadd summary::-webkit-details-marker{display:none}
+.evadd summary::before{content:"+ ";font-weight:600}
+.evadd[open] summary::before{content:"− "}
+.evform{display:grid;grid-template-columns:1fr 1fr;gap:10px 12px;margin-top:12px}
+.evform input[type=text],.evform input[type=date]{
+  width:100%;font:inherit;font-size:12.5px;color:var(--ink);background:transparent;
+  border:0;border-bottom:1px solid var(--line);padding:6px 0;outline:0;
+}
+.evform input:focus{border-bottom-color:var(--ink)}
+.evform .full{grid-column:1/-1;display:flex;gap:10px;align-items:center}
+.evform .chk{display:flex;align-items:center;gap:6px;font-size:12px;color:var(--ink2);flex:1}
+.evform .chk input{width:auto}
+
+.chartbox{margin-top:6px}
+.chart{width:100%;height:158px;display:block;overflow:visible}
+.axis{display:flex;justify-content:space-between;font-size:10px;color:var(--ink3);margin-top:6px;letter-spacing:.02em}
+.legend2{display:flex;gap:18px;margin-top:10px;font-size:10.5px;color:var(--ink2)}
+.legend2 span{display:flex;align-items:center;gap:6px}
+.legend2 i{width:14px;height:0;border-top:1.5px solid;display:block}
+.legend2 i.dash{border-top-style:dashed;border-top-width:1px}
+
+.kpis{display:grid;grid-template-columns:1fr 1fr;gap:18px 20px;padding-top:4px}
+.kpi .k{font-size:10px;letter-spacing:.16em;text-transform:uppercase;color:var(--ink3);font-weight:600}
+.kpi .v{font-size:22px;font-weight:300;letter-spacing:-1px;margin-top:4px;line-height:1.15}
+.kpi .v.pos{color:var(--green)}
+.kpi .v.neg{color:var(--red)}
+.kpi .s{font-size:10.5px;color:var(--ink3);margin-top:3px}
+
+.verdict{
+  margin-top:26px;padding:18px 0 0;border-top:1px solid var(--ink);
+  font-size:13px;line-height:1.95;color:#33312c;
+}
+.verdict b{font-weight:600;color:var(--ink)}
+.verdict em{font-style:normal;color:var(--green);font-weight:600}
+.verdict i{font-style:normal;color:var(--red);font-weight:600}
+.simtools{display:flex;gap:10px;margin-top:24px;align-items:center}
+.simtools .grow{flex:1}
+.sync{font-size:10.5px;color:var(--ink3);letter-spacing:.02em}
+
+.toast{
+  position:fixed;left:50%;bottom:26px;transform:translate(-50%,14px);
+  background:#1c1b18;color:#f7f6f2;font-size:12px;font-weight:500;
+  padding:11px 16px;border-radius:3px;display:flex;align-items:center;gap:14px;
+  opacity:0;pointer-events:none;transition:.22s ease;z-index:60;max-width:88vw;
+  box-shadow:0 14px 34px -14px rgba(0,0,0,.45);
+}
+.toast.show{opacity:1;pointer-events:auto;transform:translate(-50%,0)}
+.toast button{border:0;background:transparent;color:#c4b98f;font:inherit;font-size:12px;font-weight:600;cursor:pointer;padding:0}
+
+.mask{position:fixed;inset:0;background:rgba(28,27,24,.36);opacity:0;pointer-events:none;transition:.2s;z-index:70}
+.mask.open{opacity:1;pointer-events:auto}
+.modal{
+  position:fixed;left:50%;top:50%;transform:translate(-50%,-48%) scale(.98);
+  width:min(340px,88vw);background:var(--paper2);border:1px solid var(--line);
+  padding:22px;z-index:71;opacity:0;pointer-events:none;transition:.2s ease;border-radius:3px;
+  box-shadow:0 30px 70px -30px rgba(0,0,0,.4);
+}
+.modal.open{opacity:1;pointer-events:auto;transform:translate(-50%,-50%) scale(1)}
+.modal h3{font-size:14px;font-weight:600;margin-bottom:8px}
+.modal p{font-size:12.5px;color:var(--ink2);line-height:1.75;margin-bottom:18px}
+.modal .row2{display:flex;gap:10px}
+.modal .row2 .btn{flex:1;text-align:center}
+
+@media(max-width:420px){
+  .wrap{padding:20px 16px 60px}
+  .hero .num{font-size:52px;letter-spacing:-2.6px}
+  .simhead .big{font-size:34px}
+  .kpis{gap:16px}
+  .kpi .v{font-size:20px}
+  .cats{gap:14px}
+}
+@media(max-width:380px){
+  .kpis{grid-template-columns:1fr}
+  .setgrid{grid-template-columns:1fr}
+  .evform{grid-template-columns:1fr}
+}
+</style>
+</head>
+<body>
+<div class="wrap">
+
+  <div class="top">
+    <div class="brand">账簿</div>
+    <div class="meta" id="hMeta">—</div>
+  </div>
+
+  <div class="tabs">
+    <button class="on" data-tab="book">记账</button>
+    <button data-tab="sim">推演</button>
+  </div>
+
+  <!-- ═══════════ 记账 ═══════════ -->
+  <section class="view on" id="viewBook">
+
+    <div class="hero">
+      <div class="lab">今日支出</div>
+      <div class="num" id="hToday">0<small>.00</small></div>
+      <div class="track" id="hTrack"><i style="width:0%"></i></div>
+      <div class="budfoot">
+        <span>日预算 <b id="hBud">130</b></span>
+        <span id="hLeft">—</span>
+      </div>
+    </div>
+
+    <div class="sec"><span>记一笔</span><i></i></div>
+    <div class="amtline">
+      <span class="c">¥</span>
+      <input autocomplete="off" enterkeyhint="done" id="amt" inputmode="decimal" placeholder="0" type="text">
+    </div>
+    <div class="cats" id="cats"></div>
+    <div class="cats pick" id="whoRow"></div>
+    <div class="noteline">
+      <input autocomplete="off" id="note" maxlength="24" placeholder="备注" type="text">
+      <button class="btn" id="btnAdd">记 下</button>
+    </div>
+
+    <div class="sec"><span id="dayLabel">今天</span><i></i><span id="daySum" style="letter-spacing:.04em"></span></div>
+    <div id="dayList"></div>
+
+    <div class="sec"><span>本月构成</span><i></i><span id="monSum" style="letter-spacing:.04em"></span></div>
+    <div class="bars" id="bars"></div>
+
+    <div class="sec"><span>各自承担</span><i></i><span id="duoSum" style="letter-spacing:.04em"></span></div>
+    <div class="bars" id="duo"></div>
+    <div class="mini" id="duoNote" style="margin-top:10px"></div>
+
+    <div class="sec"><span>日历</span><i></i></div>
+    <div class="calhd">
+      <div class="m" id="calMonth">—</div>
+      <div class="nav"><button id="calPrev">‹</button><button id="calNext">›</button></div>
+    </div>
+    <div class="wk"><span>日</span><span>一</span><span>二</span><span>三</span><span>四</span><span>五</span><span>六</span></div>
+    <div class="days" id="calDays"></div>
+
+    <div class="sec"><span>账户</span><i></i></div>
+    <div class="acct" id="acct"></div>
+    <div class="foot">
+      <button id="btnExport">导出数据</button>
+      <button id="btnImport">导入</button>
+      <span class="grow"></span>
+      <span class="sync" id="syncState">仅本地</span>
+    </div>
+
+  </section>
+
+  <!-- ═══════════ 推演 ═══════════ -->
+  <section class="view" id="viewSim">
+
+    <div class="simhead">
+      <div class="lab">推演到 <span id="simHorizonLab">—</span></div>
+      <div class="big" id="simEnd">—<small>期末余额</small></div>
+      <div class="sub" id="simSub">—</div>
+    </div>
+
+    <div class="sec"><span>每天怎么花</span><i></i></div>
+    <div class="knobs" id="knobs"></div>
+
+    <div class="sec"><span>一次性支出与收入</span><i></i></div>
+    <div id="evList"></div>
+    <details class="evadd" id="evAdd">
+      <summary>加一笔</summary>
+      <div class="evform">
+        <input id="evDate" type="date">
+        <input id="evName" placeholder="名称，如 房租" type="text">
+        <input id="evAmt" inputmode="decimal" placeholder="金额" type="text">
+        <label class="chk"><input id="evInc" type="checkbox"> 这是一笔收入</label>
+        <div class="full"><button class="btn" id="evOk" style="flex:1">加上</button></div>
+      </div>
+    </details>
+
+    <div class="sec"><span>余额推演</span><i></i></div>
+    <div class="chartbox">
+      <svg class="chart" id="chart" preserveAspectRatio="none" viewBox="0 0 340 158"></svg>
+      <div class="axis" id="axis"></div>
+      <div class="legend2">
+        <span><i style="border-color:#1c1b18"></i>当前方案</span>
+        <span><i class="dash" style="border-color:#b9b09a"></i>按原计划</span>
+      </div>
+    </div>
+
+    <div class="sec"><span>关键数字</span><i></i></div>
+    <div class="kpis" id="kpis"></div>
+
+    <div class="verdict" id="verdict">—</div>
+
+    <div class="simtools">
+      <button class="btn ghost" id="btnBaseline">回到原计划</button>
+    </div>
+
+  </section>
+
+</div>
+
+<div class="mask" id="mask"></div>
+<div class="modal" id="modal">
+  <h3 id="mTitle">—</h3>
+  <p id="mDesc">—</p>
+  <div class="row2">
+    <button class="btn ghost" id="mNo">取消</button>
+    <button class="btn" id="mYes">确定</button>
+  </div>
+</div>
+<div class="toast" id="toast"><span id="toastMsg"></span><button hidden id="toastAct"></button></div>
+
+<script>
+"use strict";
+
+/* ══════════ 常量 ══════════ */
+const CATS = [
+  {k:'food',  n:'吃饭'},
+  {k:'fun',   n:'玩乐'},
+  {k:'shop',  n:'购物'},
+  {k:'fixed', n:'固定'},
+  {k:'cloth', n:'衣服'},
+  {k:'other', n:'其他'},
+  {k:'in',    n:'收入', inc:true}
+];
+const CAT = {};
+CATS.forEach(c => CAT[c.k] = c);
+
+/* 推演可调的日常项 */
+const KNOBS = [
+  {k:'food',  n:'吃饭',  max:300},
+  {k:'fun',   n:'玩乐',  max:200},
+  {k:'shop',  n:'购物',  max:200},
+  {k:'other', n:'其他',  max:200}
+];
+/* 源表（预算控制表 E4:O90）的原始口径，作为对比基线 */
+const BASE_DAILY = {food:100, fun:30, shop:0, other:0};
+const BASE_EVENTS = [
+  {d:'2026-11-14', k:'fixed', amt:1050, note:'房租'},
+  {d:'2026-11-14', k:'in',    amt:2000, note:'固定收入'},
+  {d:'2026-12-10', k:'in',    amt:2000, note:'固定收入'},
+  {d:'2026-12-14', k:'fixed', amt:1050, note:'房租'},
+  {d:'2026-12-20', k:'fixed', amt:700,  note:'酒店'},
+  {d:'2026-12-31', k:'in',    amt:2000, note:'固定收入'},
+  {d:'2027-01-15', k:'fixed', amt:200,  note:'预留缓冲'}
+];
+
+const STORE_KEY = 'cashbook_v3';
+const OLD_KEYS = ['cashbook_v2', 'cashbook_v1', 'cashflow_calendar_v2'];
+
+/* ══════════ 状态 ══════════ */
+let S = {
+  people: ['我', 'TA'],
+  startNet: 33212.64,
+  startGone: 5377,
+  budgetDaily: 130,
+  lastCat: 'food',
+  lastWho: 'me',
+  entries: [],
+  deleted: [],          /* 删除墓碑：多设备合并时挡住"复活" */
+  sim: {
+    horizon: '2027-01-15',
+    useActual: true,
+    start: 27835.64,
+    daily: Object.assign({}, BASE_DAILY),
+    events: BASE_EVENTS.map(e => Object.assign({id:'b'+e.d+e.k}, e))
+  },
+  updatedAt: 0
+};
+let selDate = todayStr();
+let calYM = null;
+let tab = 'book';
+
+/* ══════════ 工具 ══════════ */
+const $ = s => document.querySelector(s);
+const $$ = s => Array.from(document.querySelectorAll(s));
+function esc(s){
+  return String(s == null ? '' : s).replace(/[&<>"']/g, m =>
+    ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[m]));
+}
+function parseD(s){ const a = s.split('-').map(Number); return new Date(a[0], a[1]-1, a[2]); }
+function dstr(dt){
+  return dt.getFullYear() + '-' + String(dt.getMonth()+1).padStart(2,'0') + '-' + String(dt.getDate()).padStart(2,'0');
+}
+function todayStr(){ return dstr(new Date()); }
+const WD = ['日','一','二','三','四','五','六'];
+function r2(n){ return Math.round((+n || 0) * 100) / 100; }
+function fmt(n, dec){
+  n = +n || 0;
+  const neg = n < 0, a = Math.abs(n);
+  const d = dec === undefined ? 2 : dec;
+  const s = d === 0 ? Math.round(a).toLocaleString('zh-CN')
+                    : a.toLocaleString('zh-CN', {minimumFractionDigits:d, maximumFractionDigits:d});
+  return (neg ? '-' : '') + s;
+}
+function numOf(v){
+  let s = '', t = String(v == null ? '' : v);
+  for (const ch of t) { if ((ch >= '0' && ch <= '9') || ch === '.' || ch === '-') s += ch; }
+  const n = parseFloat(s);
+  return isFinite(n) ? n : 0;
+}
+function uid(){ return Date.now().toString(36) + Math.random().toString(36).slice(2,7); }
+function md(d){ return d.slice(5).replace('-', '/'); }
+
+let toastT = null;
+function toast(msg, actTxt, act){
+  const t = $('#toast'), a = $('#toastAct');
+  $('#toastMsg').textContent = msg;
+  if (actTxt) { a.hidden = false; a.textContent = actTxt; a.onclick = () => { hideToast(); act && act(); }; }
+  else { a.hidden = true; a.onclick = null; }
+  t.classList.add('show');
+  clearTimeout(toastT);
+  toastT = setTimeout(hideToast, actTxt ? 4200 : 1900);
+}
+function hideToast(){ $('#toast').classList.remove('show'); }
+
+function askConfirm(o){
+  return new Promise(res => {
+    $('#mTitle').textContent = o.title || '确认';
+    $('#mDesc').textContent = o.desc || '';
+    $('#mYes').textContent = o.ok || '确定';
+    $('#modal').classList.add('open'); $('#mask').classList.add('open');
+    const done = v => {
+      $('#modal').classList.remove('open'); $('#mask').classList.remove('open');
+      $('#mYes').onclick = null; $('#mNo').onclick = null; res(v);
+    };
+    $('#mYes').onclick = () => done(true);
+    $('#mNo').onclick = () => done(false);
+  });
+}
+
+/* ══════════ 数据 ══════════ */
+function normalize(o){
+  if (!o) return null;
+  if (Array.isArray(o.entries)) {
+    o.entries.forEach(e => { if (e.who !== 'ta' && e.who !== 'split') e.who = 'me'; });
+    if (!Array.isArray(o.people) || o.people.length !== 2) o.people = ['我','TA'];
+    if (!o.sim || typeof o.sim !== 'object') o.sim = defaultSim();
+    if (!o.sim.daily) o.sim.daily = Object.assign({}, BASE_DAILY);
+    if (!Array.isArray(o.sim.events)) o.sim.events = BASE_EVENTS.map(e => Object.assign({id:'b'+e.d+e.k}, e));
+    if (!o.sim.horizon) o.sim.horizon = '2027-01-15';
+    return o;
+  }
+  if (Array.isArray(o.rows)) {
+    const mig = [];
+    for (const r of o.rows) {
+      if (!r || !r.act) continue;
+      for (const c of CATS) {
+        if (c.inc) continue;
+        const v = +r.act[c.k] || 0;
+        if (v > 0) mig.push({id:uid(), d:r.d, k:c.k, amt:v, note:'迁移', who:'me'});
+      }
+    }
+    return { startNet: +o.startNet || 33212.64, startGone: +o.startGone || 5377,
+             budgetDaily: +o.budgetDaily || 130, entries: mig,
+             people: ['我','TA'], sim: defaultSim() };
+  }
+  return null;
+}
+function defaultSim(){
+  return {
+    horizon: '2027-01-15', useActual: true, start: 27835.64,
+    daily: Object.assign({}, BASE_DAILY),
+    events: BASE_EVENTS.map(e => Object.assign({id:'b'+e.d+e.k}, e))
+  };
+}
+function load(){
+  for (const k of [STORE_KEY].concat(OLD_KEYS)) {
+    try {
+      const raw = localStorage.getItem(k);
+      if (!raw) continue;
+      const o = normalize(JSON.parse(raw));
+      if (o) { S = Object.assign(S, o); return; }
+    } catch(e){}
+  }
+}
+function save(){
+  S.updatedAt = Date.now();
+  try { localStorage.setItem(STORE_KEY, JSON.stringify(S)); } catch(e){}
+  pushSync();
+}
+
+/* ══════════ 计算 ══════════ */
+function entriesOn(d){ return S.entries.filter(e => e.d === d); }
+function spendOn(d){
+  return r2(entriesOn(d).reduce((a,e) => a + (CAT[e.k] && CAT[e.k].inc ? 0 : e.amt), 0));
+}
+function incomeOn(d){
+  return r2(entriesOn(d).reduce((a,e) => a + (CAT[e.k] && CAT[e.k].inc ? e.amt : 0), 0));
+}
+function totalSpend(){ return r2(S.entries.reduce((a,e) => a + (CAT[e.k] && CAT[e.k].inc ? 0 : e.amt), 0)); }
+function totalIncome(){ return r2(S.entries.reduce((a,e) => a + (CAT[e.k] && CAT[e.k].inc ? e.amt : 0), 0)); }
+function balance(){ return r2((+S.startNet||0) - (+S.startGone||0) - totalSpend() + totalIncome()); }
+function ymOf(d){ return d.slice(0,7); }
+function monthCat(ym, k){
+  return r2(S.entries.reduce((a,e) => a + (e.d.slice(0,7) === ym && e.k === k ? e.amt : 0), 0));
+}
+function burden(ym){
+  let me = 0, ta = 0, shared = 0;
+  for (const e of S.entries) {
+    const c = CAT[e.k];
+    if (c && c.inc) continue;
+    if (ym && e.d.slice(0,7) !== ym) continue;
+    if (e.who === 'split') shared += e.amt;
+    else if (e.who === 'ta') ta += e.amt;
+    else me += e.amt;
+  }
+  me += shared / 2; ta += shared / 2;
+  return { me: r2(me), ta: r2(ta), shared: r2(shared) };
+}
+function whoName(w){
+  return w === 'split' ? '平分' : (w === 'ta' ? S.people[1] : S.people[0]);
+}
+
+/* ══════════ 推演引擎 ══════════ */
+function simStart(){
+  return S.sim.useActual ? balance() : r2(+S.sim.start || 0);
+}
+/** cfg: {start, horizon, daily:{}, events:[]} */
+function project(cfg){
+  const today = todayStr();
+  const evByDay = {};
+  for (const e of cfg.events) (evByDay[e.d] = evByDay[e.d] || []).push(e);
+  const perDay = KNOBS.reduce((a,k) => a + (+cfg.daily[k.k] || 0), 0);
+  let bal = r2(cfg.start);
+  const pts = [{d: today, bal}];
+  let minBal = bal, minD = today, zeroD = null;
+  let out = 0, inc = 0, n = 0;
+  const cur = parseD(today);
+  const guard = 800;
+  while (n++ < guard) {
+    cur.setDate(cur.getDate() + 1);
+    const ds = dstr(cur);
+    if (ds > cfg.horizon) break;
+    let o = perDay, i = 0;
+    for (const ev of (evByDay[ds] || [])) {
+      if (ev.k === 'in') i += +ev.amt || 0; else o += +ev.amt || 0;
+    }
+    out += o; inc += i;
+    bal = r2(bal - o + i);
+    pts.push({d: ds, bal});
+    if (bal < minBal) { minBal = bal; minD = ds; }
+    if (!zeroD && bal <= 0) zeroD = ds;
+  }
+  return { pts, start: r2(cfg.start), endBal: bal, minBal, minD, zeroD,
+           totalOut: r2(out), totalInc: r2(inc), days: pts.length - 1, perDay };
+}
+function currentCfg(){
+  return { start: simStart(), horizon: S.sim.horizon, daily: S.sim.daily, events: S.sim.events };
+}
+function baselineCfg(){
+  return { start: simStart(), horizon: S.sim.horizon, daily: BASE_DAILY,
+           events: BASE_EVENTS.map(e => Object.assign({}, e)) };
+}
+
+/* ══════════ 渲染：记账 ══════════ */
+function renderHero(){
+  const t = todayStr();
+  const sp = spendOn(t), bud = +S.budgetDaily || 0;
+  const yuan = Math.floor(Math.abs(sp));
+  const cent = String(Math.round(Math.abs(sp) * 100) % 100).padStart(2, '0');
+  $('#hToday').innerHTML = (sp < 0 ? '-' : '') + fmt(yuan, 0) + '<small>.' + cent + '</small>';
+  const pct = bud > 0 ? Math.min(100, sp / bud * 100) : 0;
+  const tr = $('#hTrack');
+  tr.classList.toggle('over', bud > 0 && sp > bud);
+  tr.firstElementChild.style.width = pct + '%';
+  $('#hBud').textContent = fmt(bud, 0);
+  $('#hLeft').innerHTML = bud > 0
+    ? (sp > bud ? '<b style="color:#a8452e">已超 ' + fmt(sp - bud, 0) + '</b>' : '还剩 <b>' + fmt(bud - sp, 0) + '</b>')
+    : '';
+  const now = new Date();
+  $('#hMeta').textContent = (now.getMonth()+1) + ' 月 ' + now.getDate() + ' 日 · 周' + WD[now.getDay()];
+}
+
+function renderCats(){
+  $('#cats').innerHTML = CATS.map(c =>
+    '<span class="' + (c.k === S.lastCat ? 'on' : '') + '" data-k="' + c.k + '">' + c.n + '</span>'
+  ).join('');
+  const P = S.people;
+  $('#whoRow').innerHTML =
+    '<span class="' + (S.lastWho === 'me' ? 'on' : '') + '" data-w="me">' + esc(P[0]) + '</span>' +
+    '<span class="' + (S.lastWho === 'ta' ? 'on' : '') + '" data-w="ta">' + esc(P[1]) + '</span>' +
+    '<span class="' + (S.lastWho === 'split' ? 'on' : '') + '" data-w="split">一起 · 平分</span>';
+}
+
+function renderDay(){
+  const d = selDate, t = todayStr();
+  const dt = parseD(d);
+  const list = entriesOn(d).slice().sort((a,b) => (b.id > a.id ? 1 : -1));
+  const rel = d === t ? '今天' : (d === dstr(new Date(Date.now() - 864e5)) ? '昨天' : '');
+  $('#dayLabel').textContent = (dt.getMonth()+1) + ' 月 ' + dt.getDate() + ' 日 · 周' + WD[dt.getDay()] + (rel ? ' · ' + rel : '');
+  const sp = spendOn(d), inc = incomeOn(d);
+  $('#daySum').textContent = (sp ? '支出 ' + fmt(sp, sp % 1 ? 2 : 0) : '') +
+    (inc ? (sp ? '　' : '') + '收入 ' + fmt(inc, 0) : '') + (!sp && !inc ? '还没记' : '');
+
+  let h = '';
+  if (!list.length) {
+    h += '<div class="empty">' + (d === t ? '今天还没记账<br>上面输入金额就能记' : '这天没有记录') + '</div>';
+  } else {
+    for (const e of list) {
+      const c = CAT[e.k] || CAT.other;
+      h += '<div class="ent" data-id="' + e.id + '">' +
+        '<span class="t">' + esc(c.n) + (e.note ? '<u>' + esc(e.note) + '</u>' : '') + '</span>' +
+        '<span class="w ' + (e.who === 'split' ? 's' : '') + '">' + esc(whoName(e.who)) + '</span>' +
+        '<span class="m ' + (c.inc ? 'inc' : '') + '">' + (c.inc ? '+' : '') + fmt(e.amt, e.amt % 1 ? 2 : 0) + '</span>' +
+        '<button class="x" data-del="' + e.id + '">×</button></div>';
+    }
+  }
+  // 一次性事件提醒：那天有计划里的支出/收入但还没记
+  const done = new Set(S.entries.map(e => e.d + '|' + e.k + '|' + e.amt));
+  for (const ev of S.sim.events) {
+    if (ev.d !== d) continue;
+    if (done.has(ev.d + '|' + ev.k + '|' + ev.amt)) continue;
+    h += '<div class="plan"><span class="pt">计划 · ' + esc(ev.note) + ' <b>' +
+      (ev.k === 'in' ? '+' : '') + fmt(ev.amt, 0) + '</b></span>' +
+      '<button data-plan="' + ev.id + '">记下</button></div>';
+  }
+  $('#dayList').innerHTML = h;
+}
+
+function renderBars(){
+  const ym = calYM || ymOf(todayStr());
+  const rows = CATS.filter(c => !c.inc)
+    .map(c => ({ c, v: monthCat(ym, c.k) }))
+    .filter(x => x.v > 0)
+    .sort((a,b) => b.v - a.v);
+  const total = r2(rows.reduce((a,x) => a + x.v, 0));
+  const dt = ym.split('-').map(Number);
+  $('#monSum').textContent = total ? fmt(total, 0) : '';
+  if (!total) {
+    $('#bars').innerHTML = '<div class="empty" style="text-align:left;padding:6px 0">这个月还没有支出</div>';
+    return;
+  }
+  const g = rows[0].v;
+  $('#bars').innerHTML = rows.map(x =>
+    '<div class="bar"><span class="n">' + esc(x.c.n) + '</span>' +
+    '<span class="g"><i style="width:' + (x.v / g * 100).toFixed(1) + '%"></i></span>' +
+    '<span class="v">' + fmt(x.v, 0) + '</span>' +
+    '<span class="p">' + Math.round(x.v / total * 100) + '%</span></div>'
+  ).join('');
+}
+
+function renderDuo(){
+  const ym = calYM || ymOf(todayStr());
+  const b = burden(ym);
+  const total = r2(b.me + b.ta);
+  $('#duoSum').textContent = total ? fmt(total, 0) : '';
+  const g = Math.max(b.me, b.ta) || 1;
+  $('#duo').innerHTML =
+    '<div class="bar"><span class="n">' + esc(S.people[0]) + '</span>' +
+      '<span class="g"><i style="width:' + (b.me / g * 100).toFixed(1) + '%"></i></span>' +
+      '<span class="v">' + fmt(b.me, b.me % 1 ? 2 : 0) + '</span>' +
+      '<span class="p">' + (total ? Math.round(b.me / total * 100) : 0) + '%</span></div>' +
+    '<div class="bar"><span class="n">' + esc(S.people[1]) + '</span>' +
+      '<span class="g"><i style="width:' + (b.ta / g * 100).toFixed(1) + '%;background:#8d6a3f"></i></span>' +
+      '<span class="v">' + fmt(b.ta, b.ta % 1 ? 2 : 0) + '</span>' +
+      '<span class="p">' + (total ? Math.round(b.ta / total * 100) : 0) + '%</span></div>';
+  $('#duoNote').textContent = b.shared > 0
+    ? '其中一起花的 ' + fmt(b.shared, 0) + '，各承担 ' + fmt(b.shared / 2, 0)
+    : '还没有「一起 · 平分」的记录';
+}
+
+function renderCal(){
+  if (!calYM) calYM = ymOf(todayStr());
+  const a = calYM.split('-').map(Number), y = a[0], m = a[1];
+  const days = new Date(y, m, 0).getDate();
+  const lead = new Date(y, m-1, 1).getDay();
+  const t = todayStr();
+  let h = '';
+  for (let i = 0; i < lead; i++) h += '<button class="cd blank"></button>';
+  for (let d = 1; d <= days; d++) {
+    const ds = calYM + '-' + String(d).padStart(2,'0');
+    const sp = spendOn(ds), inc = incomeOn(ds);
+    const cls = ['cd'];
+    if (sp > 0 || inc > 0) cls.push('has');
+    if (sp > 0 && +S.budgetDaily > 0 && sp > +S.budgetDaily) cls.push('over');
+    if (ds === t) cls.push('today');
+    if (ds === selDate) cls.push('sel');
+    if (ds > t) cls.push('fut');
+    const done = new Set(S.entries.map(e => e.d + '|' + e.k + '|' + e.amt));
+    if (S.sim.events.some(ev => ev.d === ds && !done.has(ev.d + '|' + ev.k + '|' + ev.amt))) cls.push('plan');
+    h += '<button class="' + cls.join(' ') + '" data-d="' + ds + '">' +
+      '<span class="cn">' + d + '</span>' +
+      (sp > 0 ? '<span class="cv">' + (sp >= 1000 ? (Math.round(sp/100)/10) + 'k' : Math.round(sp)) + '</span>' : '') +
+      '</button>';
+  }
+  $('#calDays').innerHTML = h;
+  $('#calMonth').textContent = y + ' 年 ' + m + ' 月';
+}
+
+function renderAcct(){
+  const sp = totalSpend(), inc = totalIncome(), b = balance();
+  $('#acct').innerHTML =
+    '<div class="row"><span>库存现金合计</span><b>' + fmt(S.startNet, 2) + '</b></div>' +
+    '<div class="row"><span>减：已发生摊销</span><b>−' + fmt(S.startGone, 2) + '</b></div>' +
+    '<div class="row"><span>减：已记支出</span><b>−' + fmt(sp, 2) + '</b></div>' +
+    '<div class="row"><span>加：已记收入</span><b>+' + fmt(inc, 2) + '</b></div>' +
+    '<div class="row tot"><span>当前余额</span><b>' + fmt(b, 2) + '</b></div>' +
+    '<details class="set"><summary>设置</summary><div class="setgrid">' +
+      '<div><label>库存现金合计</label><input id="sNet" inputmode="decimal" value="' + S.startNet + '"></div>' +
+      '<div><label>已发生摊销</label><input id="sGone" inputmode="decimal" value="' + S.startGone + '"></div>' +
+      '<div><label>日预算</label><input id="sBud" inputmode="decimal" value="' + S.budgetDaily + '"></div>' +
+      '<div><label>&nbsp;</label></div>' +
+      '<div><label>第一个人</label><input id="p0" maxlength="6" value="' + esc(S.people[0]) + '"></div>' +
+      '<div><label>第二个人</label><input id="p1" maxlength="6" value="' + esc(S.people[1]) + '"></div>' +
+      '<div style="grid-column:1/-1"><label>账本口令（两个人填同一个就共用一本账）</label>' +
+        '<input id="sKey" placeholder="至少 6 位，例如 xiaoyu-2026" value="' + esc(syncKey) + '"></div>' +
+    '</div></details>';
+}
+
+/* ══════════ 渲染：推演 ══════════ */
+function renderKnobs(){
+  const d = S.sim.daily;
+  $('#knobs').innerHTML = KNOBS.map(k => {
+    const v = +d[k.k] || 0;
+    const base = BASE_DAILY[k.k] || 0;
+    const delta = v - base;
+    let cls = '', tip = '';
+    if (delta > 0) { cls = 'diff up'; tip = ' +' + delta; }
+    else if (delta < 0) { cls = 'diff'; tip = ' −' + (-delta); }
+    return '<div class="knob"><div class="kh">' +
+      '<span class="kn">' + k.n + '</span>' +
+      '<span class="kv ' + cls + '">' + v + '<u>元/天</u>' + (tip ? '<u style="color:inherit">' + tip + '</u>' : '') + '</span>' +
+      '</div><input class="slider" type="range" min="0" max="' + k.max + '" step="5" value="' + v + '" data-k="' + k.k + '"></div>';
+  }).join('');
+}
+
+function renderEvents(){
+  const evs = S.sim.events.slice().sort((a,b) => a.d < b.d ? -1 : 1);
+  if (!evs.length) {
+    $('#evList').innerHTML = '<div class="empty" style="text-align:left;padding:4px 0">没有一次性支出或收入</div>';
+    return;
+  }
+  $('#evList').innerHTML = evs.map(e =>
+    '<div class="evrow"><span class="d">' + md(e.d) + '</span>' +
+    '<span class="n">' + esc(e.note || (e.k === 'in' ? '收入' : '支出')) + '</span>' +
+    '<span class="a ' + (e.k === 'in' ? 'inc' : '') + '">' + (e.k === 'in' ? '+' : '−') + fmt(e.amt, 0) + '</span>' +
+    '<button class="x" data-evdel="' + e.id + '">×</button></div>'
+  ).join('');
+}
+
+function renderChart(cur, base){
+  const W = 340, H = 158, PT = 12, PB = 10, PL = 2, PR = 2;
+  const all = cur.pts.map(p => p.bal).concat(base.pts.map(p => p.bal));
+  let mn = Math.min.apply(null, all), mx = Math.max.apply(null, all);
+  if (mn === mx) { mn -= 100; mx += 100; }
+  const pad = (mx - mn) * 0.08;
+  mx += pad; mn -= pad;
+  const n = cur.pts.length;
+  const X = i => PL + (W - PL - PR) * (n <= 1 ? 0 : i / (n - 1));
+  const Y = v => PT + (H - PT - PB) * (1 - (v - mn) / (mx - mn));
+
+  const line = (pts, color, w, dash) => {
+    let d = '';
+    pts.forEach((p, i) => { d += (i ? 'L' : 'M') + X(i).toFixed(1) + ',' + Y(p.bal).toFixed(1) + ' '; });
+    return '<path d="' + d + '" fill="none" stroke="' + color + '" stroke-width="' + w +
+      '" stroke-linejoin="round" stroke-linecap="round"' + (dash ? ' stroke-dasharray="' + dash + '"' : '') + '/>';
+  };
+  let area = '';
+  cur.pts.forEach((p, i) => { area += (i ? 'L' : 'M') + X(i).toFixed(1) + ',' + Y(p.bal).toFixed(1) + ' '; });
+  area += 'L' + X(n-1).toFixed(1) + ',' + (H-PB) + ' L' + X(0).toFixed(1) + ',' + (H-PB) + ' Z';
+
+  /* 0 线 */
+  const y0 = Y(0);
+  const zeroLine = (y0 > PT && y0 < H - PB)
+    ? '<line x1="' + PL + '" y1="' + y0.toFixed(1) + '" x2="' + (W-PR) + '" y2="' + y0.toFixed(1) +
+      '" stroke="#c8b9a8" stroke-width="1" stroke-dasharray="2 3"/>' : '';
+
+  /* 最低点 */
+  let mi = 0;
+  cur.pts.forEach((p, i) => { if (p.bal < cur.pts[mi].bal) mi = i; });
+  const dot = '<circle cx="' + X(mi).toFixed(1) + '" cy="' + Y(cur.pts[mi].bal).toFixed(1) +
+    '" r="2.8" fill="#fff" stroke="#1c1b18" stroke-width="1.4"/>';
+
+  $('#chart').innerHTML =
+    '<defs><linearGradient id="ga" x1="0" y1="0" x2="0" y2="1">' +
+      '<stop offset="0%" stop-color="rgba(44,95,69,.16)"/>' +
+      '<stop offset="100%" stop-color="rgba(44,95,69,0)"/></linearGradient></defs>' +
+    zeroLine +
+    '<path d="' + area + '" fill="url(#ga)"/>' +
+    line(base.pts, '#b9b09a', 1, '4 3') +
+    line(cur.pts, '#1c1b18', 1.8) +
+    dot;
+
+  $('#axis').innerHTML = '<span>' + md(cur.pts[0].d) + '</span><span>' + md(cur.pts[cur.pts.length-1].d) + '</span>';
+}
+
+function renderKpis(cur, base){
+  const diff = r2(cur.endBal - base.endBal);
+  const safe = 5000;
+  const dcls = diff > 0 ? 'pos' : (diff < 0 ? 'neg' : '');
+  $('#kpis').innerHTML =
+    '<div class="kpi"><div class="k">期末余额</div>' +
+      '<div class="v ' + (cur.endBal < 0 ? 'neg' : (cur.endBal < safe ? 'neg' : 'pos')) + '">' + fmt(cur.endBal, 0) + '</div>' +
+      '<div class="s">按原计划 ' + fmt(base.endBal, 0) + '</div></div>' +
+    '<div class="kpi"><div class="k">与计划之差</div>' +
+      '<div class="v ' + dcls + '">' + (diff > 0 ? '+' : '') + fmt(diff, 0) + '</div>' +
+      '<div class="s">' + (diff === 0 ? '还没改动' : (diff > 0 ? '比原计划更宽裕' : '比原计划更紧')) + '</div></div>' +
+    '<div class="kpi"><div class="k">最低点</div>' +
+      '<div class="v">' + fmt(cur.minBal, 0) + '</div>' +
+      '<div class="s">' + md(cur.minD) + (cur.minBal < safe ? ' · 低于安全线' : ' · 安全线以上') + '</div></div>' +
+    '<div class="kpi"><div class="k">见底</div>' +
+      '<div class="v ' + (cur.zeroD ? 'neg' : '') + '">' + (cur.zeroD ? md(cur.zeroD) : '不会') + '</div>' +
+      '<div class="s">' + (cur.zeroD ? '余额跌破 0' : '全程为正') + '</div></div>';
+}
+
+function renderVerdict(cur, base){
+  const diff = r2(cur.endBal - base.endBal);
+  const d = S.sim.daily, b = BASE_DAILY;
+  /* 找改动最大的一项 */
+  let pick = null, maxAbs = 0;
+  for (const k of KNOBS) {
+    const dv = (+d[k.k] || 0) - (b[k.k] || 0);
+    if (Math.abs(dv) > Math.abs(maxAbs)) { maxAbs = dv; pick = k; }
+  }
+  const days = cur.days;
+  const parts = [];
+  if (Math.abs(diff) < 0.5) {
+    parts.push('当前参数和原计划一模一样，<b>' + fmt(cur.endBal, 0) + '</b> 是这条线的终点。拖动上面的滑杆看变化。');
+  } else {
+    const verb = diff > 0 ? '多剩' : '少剩';
+    let s = '按现在的设定，到 <b>' + md(S.sim.horizon) + '</b> 余额 <b>' + fmt(cur.endBal, 0) + '</b>，比原计划 <em>' +
+      verb + ' ' + fmt(Math.abs(diff), 0) + '</em>。';
+    if (pick && maxAbs !== 0) {
+      s += '主要因为' + pick.n + '从每天 ' + (b[pick.k] || 0) + ' 改成 <b>' + (+d[pick.k] || 0) + '</b>' +
+        '，' + days + ' 天下来累计差 <b>' + fmt(Math.abs(maxAbs) * days, 0) + '</b>。';
+    }
+    parts.push(s);
+  }
+  if (cur.zeroD) {
+    parts.push('<i>' + md(cur.zeroD) + ' 余额会跌破 0</i>，这条线走不通，得往下压开销或者补一笔收入。');
+  } else if (cur.minBal < 5000) {
+    parts.push('最低点 <b>' + fmt(cur.minBal, 0) + '</b> 出现在 ' + md(cur.minD) + '，已经低于 5,000 的安全线，缓冲不多。');
+  } else {
+    parts.push('全程最低 <b>' + fmt(cur.minBal, 0) + '</b>（' + md(cur.minD) + '），离见底还有余地。');
+  }
+  if (cur.totalInc > 0) {
+    parts.push('期间固定收入合计 <b>' + fmt(cur.totalInc, 0) + '</b>，撑住了 ' + fmt(cur.totalOut, 0) + ' 的支出。');
+  }
+  $('#verdict').innerHTML = parts.join('<br>');
+}
+
+function renderSim(){
+  const cur = project(currentCfg());
+  const base = project(baselineCfg());
+  $('#simHorizonLab').textContent = md(S.sim.horizon);
+  const endTxt = fmt(cur.endBal, 0);
+  $('#simEnd').innerHTML = endTxt + '<small>期末余额</small>';
+  $('#simEnd').style.color = cur.endBal < 0 ? '#a8452e' : (cur.endBal < 5000 ? '#a8452e' : '#1c1b18');
+  $('#simSub').textContent = '起点 ' + fmt(cur.start, 0) + ' · 推 ' + cur.days + ' 天 · 日均 ' + fmt(cur.perDay, 0);
+  renderKnobs(); renderEvents();
+  renderChart(cur, base);
+  renderKpis(cur, base);
+  renderVerdict(cur, base);
+}
+
+/* ══════════ 总渲染 ══════════ */
+function renderBook(){
+  renderHero(); renderCats(); renderDay(); renderBars(); renderDuo(); renderCal(); renderAcct();
+}
+function renderAll(){
+  renderBook();
+  renderSim();
+}
+
+/* ══════════ 账目操作 ══════════ */
+function addEntry(){
+  const inp = $('#amt');
+  const amt = r2(numOf(inp.value));
+  if (!(amt > 0)) { inp.focus(); toast('先填金额'); return; }
+  const note = $('#note').value.trim();
+  const e = { id: uid(), d: todayStr(), k: S.lastCat, amt, note, who: S.lastWho || 'me' };
+  S.entries.push(e);
+  selDate = e.d; calYM = ymOf(e.d);
+  inp.value = ''; $('#note').value = '';
+  save(); renderAll(); inp.focus();
+  const c = CAT[e.k];
+  toast((c.inc ? '记了收入 ' : '记了 ') + fmt(amt, amt % 1 ? 2 : 0) + ' · ' + c.n +
+    (e.who === 'split' ? ' · 平分' : ''), '撤销', () => {
+      S.entries = S.entries.filter(x => x.id !== e.id); save(); renderAll(); toast('已撤销');
+    });
+}
+function delEntry(id){
+  const i = S.entries.findIndex(e => e.id === id);
+  if (i < 0) return;
+  const e = S.entries[i];
+  S.entries.splice(i, 1);
+  S.deleted = (S.deleted || []).concat(id);
+  save(); renderAll();
+  toast('已删除', '撤销', () => {
+    S.entries.splice(i, 0, e);
+    S.deleted = (S.deleted || []).filter(x => x !== id);
+    save(); renderAll();
+  });
+}
+
+/* ══════════ 事件绑定 ══════════ */
+function bind(){
+  /* 标签页 */
+  $$('.tabs button').forEach(b => b.addEventListener('click', () => {
+    tab = b.dataset.tab;
+    $$('.tabs button').forEach(x => x.classList.toggle('on', x === b));
+    $('#viewBook').classList.toggle('on', tab === 'book');
+    $('#viewSim').classList.toggle('on', tab === 'sim');
+    if (tab === 'sim') renderSim();
+  }));
+
+  /* 记一笔 */
+  $('#cats').addEventListener('click', ev => {
+    const s = ev.target.closest('[data-k]'); if (!s) return;
+    S.lastCat = s.dataset.k; renderCats(); save();
+    if (!$('#amt').value) $('#amt').focus();
+  });
+  $('#whoRow').addEventListener('click', ev => {
+    const s = ev.target.closest('[data-w]'); if (!s) return;
+    S.lastWho = s.dataset.w; renderCats(); save();
+    if (!$('#amt').value) $('#amt').focus();
+  });
+  $('#btnAdd').addEventListener('click', addEntry);
+  $('#amt').addEventListener('keydown', e => { if (e.key === 'Enter') { e.preventDefault(); addEntry(); } });
+  $('#note').addEventListener('keydown', e => { if (e.key === 'Enter') { e.preventDefault(); addEntry(); } });
+
+  /* 明细删除 / 计划入账 */
+  $('#dayList').addEventListener('click', ev => {
+    const del = ev.target.closest('[data-del]');
+    if (del) { delEntry(del.dataset.del); return; }
+    const pl = ev.target.closest('[data-plan]');
+    if (pl) {
+      const ev2 = S.sim.events.find(x => x.id === pl.dataset.plan);
+      if (!ev2) return;
+      const e = { id: uid(), d: ev2.d, k: ev2.k, amt: ev2.amt, note: ev2.note, who: S.lastWho || 'me' };
+      S.entries.push(e); save(); renderAll();
+      toast('已记 ' + fmt(ev2.amt, 0) + ' · ' + (ev2.note || ''), '撤销', () => {
+        S.entries = S.entries.filter(x => x.id !== e.id); save(); renderAll();
+      });
+    }
+  });
+
+  /* 日历 */
+  $('#calDays').addEventListener('click', ev => {
+    const b = ev.target.closest('[data-d]'); if (!b) return;
+    selDate = b.dataset.d; renderDay(); renderCal();
+  });
+  $('#calPrev').addEventListener('click', () => {
+    const a = calYM.split('-').map(Number);
+    const d = new Date(a[0], a[1]-2, 1);
+    calYM = d.getFullYear() + '-' + String(d.getMonth()+1).padStart(2,'0');
+    renderCal(); renderBars(); renderDuo();
+  });
+  $('#calNext').addEventListener('click', () => {
+    const a = calYM.split('-').map(Number);
+    const d = new Date(a[0], a[1], 1);
+    calYM = d.getFullYear() + '-' + String(d.getMonth()+1).padStart(2,'0');
+    renderCal(); renderBars(); renderDuo();
+  });
+
+  /* 账户设置 */
+  $('#acct').addEventListener('change', e => {
+    const id = e.target.id;
+    if (id === 'sNet')  { S.startNet  = r2(numOf(e.target.value)); save(); renderAll(); return; }
+    if (id === 'sGone') { S.startGone = r2(numOf(e.target.value)); save(); renderAll(); return; }
+    if (id === 'sBud')  { S.budgetDaily = r2(numOf(e.target.value)); save(); renderAll(); return; }
+    if (id === 'p0' || id === 'p1') {
+      const v = String(e.target.value || '').trim().slice(0, 6);
+      S.people = id === 'p0' ? [v || '我', S.people[1]] : [S.people[0], v || 'TA'];
+      save(); renderAll();
+    }
+    if (id === 'sKey') {
+      const v = String(e.target.value || '').trim();
+      if (v && v.length < 6) { toast('口令至少 6 位'); e.target.value = syncKey; return; }
+      syncKey = v;
+      localStorage.setItem('cashbook_sync_key', syncKey);
+      setVer(0);
+      if (syncKey) { pullSync(); toast('正在连账本'); }
+      else { syncDot('仅本地'); toast('已改为只存本地'); }
+    }
+  });
+
+  /* 导出 / 导入 */
+  $('#btnExport').addEventListener('click', () => {
+    const blob = new Blob([JSON.stringify(S, null, 2)], {type:'application/json'});
+    const a = document.createElement('a');
+    a.href = URL.createObjectURL(blob);
+    a.download = 'cashbook-' + todayStr() + '.json';
+    a.click();
+    setTimeout(() => URL.revokeObjectURL(a.href), 2000);
+    toast('已导出 JSON');
+  });
+  $('#btnImport').addEventListener('click', () => {
+    const inp = document.createElement('input');
+    inp.type = 'file'; inp.accept = '.json,application/json';
+    inp.onchange = () => {
+      const f = inp.files[0]; if (!f) return;
+      const rd = new FileReader();
+      rd.onload = () => {
+        try {
+          const o = normalize(JSON.parse(rd.result));
+          if (!o || !Array.isArray(o.entries)) throw 0;
+          S = Object.assign(S, o);
+          selDate = todayStr(); calYM = ymOf(selDate);
+          save(); renderAll(); toast('导入成功');
+        } catch(err){ toast('文件格式不对'); }
+      };
+      rd.readAsText(f);
+    };
+    inp.click();
+  });
+
+  /* 推演：滑杆 */
+  $('#knobs').addEventListener('input', ev => {
+    const s = ev.target.closest('.slider'); if (!s) return;
+    S.sim.daily[s.dataset.k] = +s.value || 0;
+    const cur = project(currentCfg()), base = project(baselineCfg());
+    const endTxt = fmt(cur.endBal, 0);
+    $('#simEnd').innerHTML = endTxt + '<small>期末余额</small>';
+    $('#simEnd').style.color = cur.endBal < 0 ? '#a8452e' : (cur.endBal < 5000 ? '#a8452e' : '#1c1b18');
+    $('#simSub').textContent = '起点 ' + fmt(cur.start, 0) + ' · 推 ' + cur.days + ' 天 · 日均 ' + fmt(cur.perDay, 0);
+    renderChart(cur, base); renderKpis(cur, base); renderVerdict(cur, base);
+    /* 只更新数值标签，不重建滑杆，避免拖动中断 */
+    const kh = s.parentElement.querySelector('.kv');
+    const k = s.dataset.k;
+    const delta = (+s.value) - (BASE_DAILY[k] || 0);
+    kh.className = 'kv ' + (delta > 0 ? 'diff up' : (delta < 0 ? 'diff' : ''));
+    kh.innerHTML = s.value + '<u>元/天</u>' +
+      (delta ? '<u style="color:inherit">' + (delta > 0 ? ' +' : ' −') + Math.abs(delta) + '</u>' : '');
+  });
+  $('#knobs').addEventListener('change', () => save());
+
+  /* 推演：事件增删 */
+  $('#evList').addEventListener('click', ev => {
+    const b = ev.target.closest('[data-evdel]'); if (!b) return;
+    S.sim.events = S.sim.events.filter(x => x.id !== b.dataset.evdel);
+    save(); renderSim(); renderDay(); renderCal();
+  });
+  $('#evOk').addEventListener('click', () => {
+    const d = $('#evDate').value;
+    const amt = r2(numOf($('#evAmt').value));
+    const name = $('#evName').value.trim();
+    if (!d || !(amt > 0)) { toast('日期和金额都要填'); return; }
+    S.sim.events.push({ id: uid(), d, k: $('#evInc').checked ? 'in' : 'fixed', amt, note: name || (($('#evInc').checked) ? '收入' : '支出') });
+    $('#evDate').value = ''; $('#evName').value = ''; $('#evAmt').value = ''; $('#evInc').checked = false;
+    $('#evAdd').open = false;
+    save(); renderSim(); renderDay(); renderCal();
+    toast('已加上');
+  });
+
+  /* 回到原计划 */
+  $('#btnBaseline').addEventListener('click', async () => {
+    const ok = await askConfirm({
+      title: '回到原计划',
+      desc: '把每天开销和一次性事件都恢复成源表的口径。记账记录不受影响。',
+      ok: '恢复'
+    });
+    if (!ok) return;
+    S.sim.daily = Object.assign({}, BASE_DAILY);
+    S.sim.events = BASE_EVENTS.map(e => Object.assign({id: uid()}, e));
+    save(); renderSim(); toast('已恢复原计划');
+  });
+
+  $('#mask').addEventListener('click', () => {
+    $('#modal').classList.remove('open'); $('#mask').classList.remove('open');
+  });
+  document.addEventListener('keydown', e => {
+    if (e.key === 'Escape') { $('#modal').classList.remove('open'); $('#mask').classList.remove('open'); }
+  });
+}
+
+/* ══════════ 云端同步（api.ruc434s.cloud/ledger，口令即账本） ══════════ */
+const API_BASE = 'https://api.ruc434s.cloud/ledger';
+let syncKey = localStorage.getItem('cashbook_sync_key') || '';
+let syncVer = +(localStorage.getItem('cashbook_ver') || 0);
+let syncing = false;
+function syncDot(txt){ const el = $('#syncState'); if (el) el.textContent = txt; }
+
+/* 上传用的快照：只带需要共享的字段 */
+function snapshot(){
+  return {
+    updatedAt: S.updatedAt || 0,
+    people: S.people,
+    startNet: S.startNet,
+    startGone: S.startGone,
+    budgetDaily: S.budgetDaily,
+    entries: S.entries,
+    deleted: S.deleted || [],
+    sim: S.sim
+  };
+}
+/* 合并远端：条目按 id 取并集，删除用墓碑挡住，设置项取 updatedAt 更新的一方 */
+function mergeRemote(r){
+  if (!r) return false;
+  const tomb = new Set((S.deleted || []).concat(r.deleted || []));
+  const mine = {};
+  (S.entries || []).forEach(e => { mine[e.id] = e; });
+  (r.entries || []).forEach(e => { if (!mine[e.id]) mine[e.id] = e; });
+  const merged = Object.keys(mine).map(k => mine[k]).filter(e => !tomb.has(e.id));
+  const before = JSON.stringify((S.entries || []).slice().sort((a,b) => a.id > b.id ? 1 : -1));
+  const after = JSON.stringify(merged.slice().sort((a,b) => a.id > b.id ? 1 : -1));
+  let changed = before !== after || (S.deleted || []).length !== tomb.size;
+  S.entries = merged;
+  S.deleted = Array.from(tomb);
+  if ((r.updatedAt || 0) > (S.updatedAt || 0)) {
+    if (r.people) S.people = r.people;
+    if (typeof r.startNet === 'number') S.startNet = r.startNet;
+    if (typeof r.startGone === 'number') S.startGone = r.startGone;
+    if (typeof r.budgetDaily === 'number') S.budgetDaily = r.budgetDaily;
+    if (r.sim) S.sim = r.sim;
+    changed = true;
+  }
+  return changed;
+}
+function setVer(v){
+  syncVer = v || 0;
+  localStorage.setItem('cashbook_ver', String(syncVer));
+}
+function pushSync(retry){
+  if (!syncKey) { syncDot('仅本地'); return; }
+  if (syncing) return;
+  syncing = true;
+  syncDot('同步中');
+  fetch(API_BASE + '?key=' + encodeURIComponent(syncKey), {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ baseVer: syncVer, data: snapshot() })
+  }).then(r => {
+    if (r.status === 409) {
+      return r.json().then(o => {
+        syncing = false;
+        const changed = mergeRemote(o.data);
+        setVer(o.ver);
+        if (changed) { try { localStorage.setItem(STORE_KEY, JSON.stringify(S)); } catch(e){} renderAll(); }
+        if (!retry) { pushSync(true); }
+        else syncDot('已合并');
+      });
+    }
+    return r.json().then(o => {
+      syncing = false;
+      if (o && o.ver) setVer(o.ver);
+      syncDot('已同步');
+    });
+  }).catch(() => { syncing = false; syncDot('同步失败'); });
+}
+function pullSync(){
+  if (!syncKey) { syncDot('仅本地'); return; }
+  syncDot('同步中');
+  fetch(API_BASE + '?key=' + encodeURIComponent(syncKey) + '&t=' + Date.now())
+    .then(r => r.json()).then(o => {
+      if (!o) { syncDot('已同步'); return; }
+      if (o.data) {
+        const changed = mergeRemote(o.data);
+        setVer(o.ver);
+        if (changed) {
+          try { localStorage.setItem(STORE_KEY, JSON.stringify(S)); } catch(e){}
+          renderAll();
+          toast('已合并云端账本');
+        }
+      } else {
+        setVer(o.ver);
+        pushSync();          /* 云端还是空的，把本地推上去 */
+        return;
+      }
+      syncDot('已同步');
+    }).catch(() => syncDot('同步失败'));
+}
+
+/* ══════════ 启动 ══════════ */
+load();
+bind();
+renderAll();
+pullSync();
+setTimeout(() => { const a = $('#amt'); if (a && !a.value) a.focus(); }, 220);
+</script>
+</body>
+</html>
