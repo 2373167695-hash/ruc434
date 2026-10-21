@@ -268,6 +268,54 @@ details.set[open] summary::before{content:"− "}
 .simtools .grow{flex:1}
 .sync{font-size:10.5px;color:var(--ink3);letter-spacing:.02em}
 
+/* ── 分析 ── */
+.aihead{padding:22px 0 0}
+.aihead .big{font-size:26px;font-weight:300;letter-spacing:-1px;margin-top:4px;color:#14130f}
+.aihead .sub{font-size:11px;color:var(--ink3);margin-top:7px;line-height:1.7}
+.aichips{display:flex;flex-wrap:wrap;gap:8px}
+.aichips button{
+  font:inherit;font-size:11.5px;font-weight:500;color:var(--ink2);
+  background:transparent;border:1px solid var(--line);border-radius:2px;
+  padding:7px 11px;cursor:pointer;transition:.14s;text-align:left;
+}
+.aichips button:hover{background:#efece4;color:var(--ink);border-color:#d8d2c4}
+.aichat{margin-top:6px}
+.msg{border-bottom:1px solid var(--line2)}
+.msg .who{font-size:9.5px;letter-spacing:.18em;text-transform:uppercase;color:var(--ink3);font-weight:600;padding-top:16px}
+.msg .bd{font-size:13px;line-height:1.95;color:#33312c;padding:7px 0 16px;word-break:break-word}
+.msg.q .bd{color:#242320;font-weight:500;font-size:13.5px}
+.msg.a .bd b{font-weight:600;color:var(--ink)}
+.msg.a .bd .li{position:relative;padding-left:12px;margin:2px 0}
+.msg.a .bd .li::before{content:"·";position:absolute;left:2px;color:var(--ink3)}
+.msg.a .bd .sp{height:6px}
+.aiin{display:flex;gap:9px;margin-top:20px;align-items:center}
+.aiin input{
+  flex:1;min-width:0;font:inherit;font-size:13px;color:var(--ink);
+  background:transparent;border:0;border-bottom:1px solid var(--line);padding:9px 0;outline:0;
+}
+.aiin input::placeholder{color:#b8b5a9}
+.aiin input:focus{border-bottom-color:var(--ink)}
+.aifoot{font-size:10.5px;color:var(--ink3);margin-top:12px;line-height:1.7}
+.aifoot b{color:var(--ink2);font-weight:600}
+.typing{display:inline-block;color:var(--ink3)}
+.typing::after{content:"…";animation:blink 1.1s steps(2) infinite}
+@keyframes blink{50%{opacity:.25}}
+.aiempty{padding:22px 0;color:var(--ink3);font-size:12px;line-height:1.9}
+.setup{border:1px solid var(--line);background:#fffefb;padding:15px;margin-top:16px;border-radius:2px}
+.setup .st{font-size:12px;color:#242320;font-weight:600;margin-bottom:6px}
+.setup .sd{font-size:11.5px;color:var(--ink2);line-height:1.75;margin-bottom:11px}
+.setup .si{display:flex;gap:8px}
+.setup .si input{
+  flex:1;min-width:0;font:inherit;font-size:12.5px;color:var(--ink);
+  background:transparent;border:0;border-bottom:1px solid var(--line);padding:7px 0;outline:0;
+}
+.setup .si input:focus{border-bottom-color:var(--ink)}
+.setup .sbtn{
+  font:inherit;font-size:11px;font-weight:600;letter-spacing:.06em;padding:8px 14px;
+  border:1px solid var(--ink);background:var(--ink);color:var(--paper);border-radius:2px;cursor:pointer;
+}
+.setup .snote{font-size:10px;color:var(--ink3);margin-top:9px;line-height:1.7}
+
 /* ── 计提预留开关 ── */
 .srow{display:flex;align-items:center;gap:12px;padding:10px 0;border-bottom:1px solid var(--line2)}
 .srow .st{flex:1;font-size:12px;color:var(--ink2);line-height:1.5}
@@ -356,6 +404,7 @@ details.set[open] summary::before{content:"− "}
   <div class="tabs">
     <button class="on" data-tab="book">记账</button>
     <button data-tab="sim">推演</button>
+    <button data-tab="ai">分析</button>
   </div>
 
   <!-- ═══════════ 记账 ═══════════ -->
@@ -465,6 +514,30 @@ details.set[open] summary::before{content:"− "}
     <div class="simtools">
       <button class="btn ghost" id="btnBaseline">回到原计划</button>
     </div>
+
+  </section>
+
+  <!-- ═══════════ 分析 ═══════════ -->
+  <section class="view" id="viewAI">
+
+    <div class="aihead">
+      <div class="lab">财务分析师</div>
+      <div class="big" id="aiTitle">DeepSeek-V4.1-Flash</div>
+      <div class="sub" id="aiSub">基于你这本账的真实数字回答</div>
+    </div>
+
+    <div id="aiSetup"></div>
+
+    <div class="sec"><span>常问</span><i></i></div>
+    <div class="aichips" id="aiChips"></div>
+
+    <div class="aichat" id="aiChat"></div>
+
+    <div class="aiin">
+      <input id="aiQ" type="text" placeholder="问点什么，比如：这个月还能省下 500 吗" autocomplete="off">
+      <button class="btn" id="aiSend">问</button>
+    </div>
+    <div class="aifoot" id="aiFoot"></div>
 
   </section>
 
@@ -1144,6 +1217,201 @@ function renderSim(){
   renderVerdict(cur, base);
 }
 
+/* ══════════ AI 分析师 ══════════ */
+const AI_URL = 'https://api.deepseek.com/chat/completions';
+let aiKey = localStorage.getItem('cashbook_ds_key') || '';
+let aiModel = localStorage.getItem('cashbook_ds_model') || 'deepseek-flash';
+let aiMsgs = [];        /* {role:'user'|'assistant', content} */
+let aiBusy = false;
+
+/* 把整本账压成一段结构化摘要，喂给模型 */
+function aiContext(){
+  const p = budgetPool();
+  const cur = project(currentCfg());
+  const b = burden();
+  const L = [];
+  L.push('今天是 ' + todayStr() + '。');
+  L.push('【现金】库存现金合计 ' + fmt(S.cashStart, 2) + '，已记支出 ' + fmt(totalSpend(), 2) +
+         '，已记收入 ' + fmt(totalIncome(), 2) + '，手上现金 ' + fmt(cashNow(), 2) + '。');
+  L.push('【计提预算池】总额 ' + fmt(p.totalBudget, 0) + '，已花 ' + fmt(p.totalSpent, 0) +
+         '，剩余 ' + fmt(p.left, 0) + '。这批钱还没花出去，不算进现金流。');
+  for (const x of p.rows) {
+    L.push('  · ' + x.n + '：预算 ' + fmt(x.b, 0) + '，已花 ' + fmt(x.s, 0) +
+           '，' + (x.left < 0 ? '超支 ' + fmt(-x.left, 0) : '还剩 ' + fmt(x.left, 0)));
+  }
+  L.push('【推演】从今天算到 ' + S.sim.horizon + '，共 ' + cur.days + ' 天。');
+  L.push('  每天开销：' + KNOBS.map(k => k.n + ' ' + ((+S.sim.daily[k.k]) || 0)).join('、') +
+         '（合计 ' + fmt(cur.perDay, 0) + '/天）');
+  L.push('  期间一次性支出 ' + fmt(cur.totalOut - cur.perDay * cur.days, 0) +
+         '，一次性收入 ' + fmt(cur.totalInc, 0) + '。');
+  L.push('  推演把没花完的计提 ' + fmt(cur.reserve, 0) + ' 当作已预留（' +
+         (S.budgetOn ? '计入' : '不计入') + '）。');
+  L.push('  期末可用 ' + fmt(cur.endBal, 0) + '，全程最低 ' + fmt(cur.minBal, 0) + ' 在 ' + cur.minD +
+         '，' + (cur.zeroD ? '会在 ' + cur.zeroD + ' 跌破 0' : '不会穿零') + '。');
+  L.push('【两个人】' + S.people[0] + ' 承担 ' + fmt(b.me, 0) + '，' + S.people[1] + ' 承担 ' +
+         fmt(b.ta, 0) + '；其中共同开销 ' + fmt(b.shared, 0) + '（各担一半）。');
+  const recent = S.entries.slice().sort((x, y) => x.id > y.id ? 1 : -1).slice(-15);
+  if (recent.length) {
+    L.push('【最近记录的账】');
+    for (const e of recent) {
+      L.push('  · ' + e.d + '　' + (CAT[e.k] ? CAT[e.k].n : '其他') + '　' +
+             fmt(e.amt, e.amt % 1 ? 2 : 0) + (e.note ? '　' + e.note : '') + '　算' + whoName(e.who));
+    }
+  } else {
+    L.push('【最近记录的账】还没有任何记录。');
+  }
+  return L.join('\n');
+}
+const AI_SYS = '你是两个人的家庭财务分析师。你拿到的是他们账本里的真实数字。\n' +
+  '回答规矩：\n' +
+  '1. 开头一句话给结论，再给依据，最后给具体动作。\n' +
+  '2. 数字只能引用账本里的真实数字，不要编造。\n' +
+  '3. 不说空话。禁止"建议合理规划""要养成好习惯"这类废话。\n' +
+  '4. 中文，控制在 180 字内，除非对方明确要求展开。\n' +
+  '5. 能算出具体金额的，一定要算给他看。';
+
+/* 极简 markdown：粗体 + 列表 + 换行 */
+function md(s){
+  let h = esc(s);
+  h = h.replace(/\*\*(.+?)\*\*/g, '<b>$1</b>');
+  return h.split(/\n/).map(line => {
+    const m = line.match(/^\s*(?:[-*•]|\d+\.)\s+(.*)$/);
+    if (m) return '<div class="li">' + m[1] + '</div>';
+    return line ? line + '<br>' : '<div class="sp"></div>';
+  }).join('');
+}
+
+const AI_ASK = [
+  '这个月花得怎么样，有什么问题',
+  '哪里还能省下 500 块',
+  '推演里有没有会出事的节点',
+  '我设的计提预算合理吗',
+  '我们两个花得均衡吗'
+];
+
+function renderAISetup(){
+  const box = $('#aiSetup');
+  if (!box) return;
+  if (aiKey) { box.innerHTML = ''; return; }
+  box.innerHTML =
+    '<div class="setup">' +
+      '<div class="st">先填一个 DeepSeek API Key</div>' +
+      '<div class="sd">key 只存在这台设备的浏览器里，不会上传到我的服务器。请求从你的浏览器直接发到 DeepSeek。</div>' +
+      '<div class="si"><input id="aiKeyIn" type="password" placeholder="sk-..." autocomplete="off">' +
+        '<button class="sbtn" id="aiKeyOk">用这个</button></div>' +
+      '<div class="snote">用多少花多少。建议在 DeepSeek 后台单独建一个 key 并设额度上限。</div>' +
+    '</div>';
+}
+function renderChips(){
+  const box = $('#aiChips');
+  if (!box) return;
+  box.innerHTML = AI_ASK.map(q => '<button data-q="' + esc(q) + '">' + esc(q) + '</button>').join('');
+}
+function renderChat(){
+  const box = $('#aiChat');
+  if (!box) return;
+  if (!aiMsgs.length) {
+    box.innerHTML = '<div class="aiempty">还没有对话。点上面常问的，或者在下面直接问。<br>我会带着你这本账的全部数字回答。</div>';
+  } else {
+    box.innerHTML = aiMsgs.map(m =>
+      '<div class="msg ' + (m.role === 'user' ? 'q' : 'a') + '">' +
+        '<div class="who">' + (m.role === 'user' ? '你' : '分析师') + '</div>' +
+        '<div class="bd">' + (m.role === 'user' ? esc(m.content) : md(m.content)) + '</div>' +
+      '</div>'
+    ).join('');
+  }
+  const foot = $('#aiFoot');
+  if (foot) {
+    foot.innerHTML = aiKey
+      ? '模型 <b>' + esc(aiModel) + '</b>　·　每次提问都会带上当前账本摘要　·　' +
+        '<a href="#" id="aiClear" style="color:inherit">清空对话</a>　·　' +
+        '<a href="#" id="aiKeyChg" style="color:inherit">换 key</a>'
+      : '还没配置 API Key';
+  }
+}
+function renderAI(){
+  renderAISetup();
+  renderChips();
+  renderChat();
+  $('#aiTitle').textContent = aiModel === 'deepseek-flash' ? 'DeepSeek-V4.1-Flash' : aiModel;
+}
+
+async function askAI(q){
+  q = String(q || '').trim();
+  if (!q || aiBusy) return;
+  if (!aiKey) { toast('先填 API Key'); renderAISetup(); return; }
+  aiBusy = true;
+  $('#aiQ').value = '';
+  aiMsgs.push({ role: 'user', content: q });
+  renderChat();
+
+  const box = $('#aiChat');
+  const el = document.createElement('div');
+  el.className = 'msg a';
+  el.innerHTML = '<div class="who">分析师</div><div class="bd"><span class="typing">正在看你的账</span></div>';
+  box.appendChild(el);
+  const bd = el.querySelector('.bd');
+  box.scrollIntoView({ block: 'end', behavior: 'smooth' });
+
+  let out = '', think = '';
+  try {
+    const res = await fetch(AI_URL, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + aiKey },
+      body: JSON.stringify({
+        model: aiModel,
+        stream: true,
+        temperature: 0.5,
+        max_tokens: 2500,
+        effort: 'low',          /* 默认 high 会把 token 全烧在思考上，正文返回空 */
+        messages: [{ role: 'system', content: AI_SYS + '\n\n账本数据：\n' + aiContext() }].concat(aiMsgs)
+      })
+    });
+    if (!res.ok) {
+      let detail = '';
+      try { const j = await res.json(); detail = j.error && j.error.message ? j.error.message : ''; } catch(e){}
+      throw new Error(res.status + (detail ? ' · ' + detail : ''));
+    }
+    const reader = res.body.getReader();
+    const dec = new TextDecoder();
+    let buf = '';
+    while (true) {
+      const r = await reader.read();
+      if (r.done) break;
+      buf += dec.decode(r.value, { stream: true });
+      const parts = buf.split('\n\n');
+      buf = parts.pop();
+      for (const part of parts) {
+        const line = part.split('\n').find(l => l.indexOf('data:') === 0);
+        if (!line) continue;
+        const data = line.slice(5).trim();
+        if (!data || data === '[DONE]') continue;
+        try {
+          const j = JSON.parse(data);
+          const d = j.choices && j.choices[0] && j.choices[0].delta;
+          if (!d) continue;
+          if (d.reasoning_content) think += d.reasoning_content;
+          if (d.content) {
+            out += d.content;
+            bd.innerHTML = md(out);
+          } else if (think && !out) {
+            bd.innerHTML = '<span class="typing">思考中</span>';
+          }
+        } catch(e){}
+      }
+    }
+    if (!out) out = '（这次只返回了思考过程，没给出结论。再问一次，或者把问题问得更具体一点。）';
+    bd.innerHTML = md(out);
+    aiMsgs.push({ role: 'assistant', content: out });
+  } catch (e) {
+    bd.innerHTML = '<b>调不通</b><br>' + esc(String(e.message || e)) +
+      '<br><span style="color:#a8a69d">检查 API Key 是否有效、额度是否用完；也可能是网络或跨域被拦。</span>';
+    aiMsgs.push({ role: 'assistant', content: '调用失败：' + String(e.message || e) });
+  } finally {
+    aiBusy = false;
+  }
+}
+
 /* ══════════ 总渲染 ══════════ */
 function renderBook(){
   renderHero(); renderCats(); renderDay(); renderBars(); renderDuo();
@@ -1152,6 +1420,7 @@ function renderBook(){
 function renderAll(){
   renderBook();
   renderSim();
+  renderAI();
 }
 
 /* ══════════ 账目操作 ══════════ */
@@ -1193,8 +1462,38 @@ function bind(){
     $$('.tabs button').forEach(x => x.classList.toggle('on', x === b));
     $('#viewBook').classList.toggle('on', tab === 'book');
     $('#viewSim').classList.toggle('on', tab === 'sim');
+    $('#viewAI').classList.toggle('on', tab === 'ai');
     if (tab === 'sim') renderSim();
+    if (tab === 'ai') renderAI();
   }));
+
+  /* AI 分析师 */
+  $('#aiChips').addEventListener('click', e => {
+    const b = e.target.closest('[data-q]'); if (!b) return;
+    askAI(b.dataset.q);
+  });
+  $('#aiSend').addEventListener('click', () => askAI($('#aiQ').value));
+  $('#aiQ').addEventListener('keydown', e => {
+    if (e.key === 'Enter') { e.preventDefault(); askAI($('#aiQ').value); }
+  });
+  $('#aiSetup').addEventListener('click', e => {
+    if (e.target.id !== 'aiKeyOk') return;
+    const v = String($('#aiKeyIn').value || '').trim();
+    if (v.length < 10) { toast('key 看起来不对'); return; }
+    aiKey = v;
+    localStorage.setItem('cashbook_ds_key', aiKey);
+    renderAI();
+    toast('已保存，只存在这台设备');
+  });
+  $('#aiFoot').addEventListener('click', e => {
+    const id = e.target.id;
+    if (id !== 'aiClear' && id !== 'aiKeyChg') return;
+    e.preventDefault();
+    if (id === 'aiClear') { aiMsgs = []; renderChat(); toast('对话已清空'); return; }
+    aiKey = '';
+    localStorage.removeItem('cashbook_ds_key');
+    renderAI();
+  });
 
   /* 记一笔 */
   $('#cats').addEventListener('click', ev => {
