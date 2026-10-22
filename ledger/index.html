@@ -411,6 +411,9 @@ details.set[open] summary::before{content:"− "}
 .onboard .of input:focus{border-bottom-color:var(--ink)}
 .onboard .ob{width:100%;margin-top:6px}
 
+/* ── 口令小字 ── */
+.keyhint{font-size:10px;color:var(--ink3);line-height:1.6;margin-top:6px}
+
 /* ── 计提预留开关 ── */
 .srow{display:flex;align-items:center;gap:12px;padding:10px 0;border-bottom:1px solid var(--line2)}
 .srow .st{flex:1;font-size:12px;color:var(--ink2);line-height:1.5}
@@ -1263,9 +1266,12 @@ function renderAcct(){
       '<div><label>第二个人</label><input id="p1" maxlength="6" value="' + esc(S.people[1]) + '"></div>' +
       '<div style="grid-column:1/-1"><label>账本口令（两个人填同一个就共用一本账）</label>' +
         '<div style="display:flex;gap:8px;align-items:baseline">' +
-          '<input id="sKey" placeholder="至少 12 位，建议点右边生成" value="' + esc(syncKey) + '" style="flex:1">' +
+          '<input id="sKey" placeholder="至少 6 位，建议 12 位以上" value="' + esc(syncKey) + '" style="flex:1">' +
           '<button class="btn ghost" id="sKeyGen" type="button" style="padding:5px 10px;font-size:10.5px">生成</button>' +
-        '</div></div>' +
+          '<button class="btn ghost" id="sKeyCopy" type="button" style="padding:5px 10px;font-size:10.5px">复制</button>' +
+        '</div>' +
+        '<div class="keyhint">换口令等于换一本账，两台设备要一起改。用过的老口令一直有效，不会因为改版失效。</div>' +
+        '</div>' +
     '</div></details>';
 }
 
@@ -1922,6 +1928,19 @@ function bind(){
         : [S.people[0], v || 'TA'];
       save(); renderAll();
     }
+    if (id === 'sKeyCopy') {
+      const v = syncKey || $('#sKey').value.trim();
+      if (!v) { toast('还没有口令'); return; }
+      const done = () => toast('口令已复制');
+      if (navigator.clipboard && navigator.clipboard.writeText) {
+        navigator.clipboard.writeText(v).then(done).catch(() => {
+          $('#sKey').select(); document.execCommand('copy'); done();
+        });
+      } else {
+        $('#sKey').select(); document.execCommand('copy'); done();
+      }
+      return;
+    }
     if (id === 'sKeyGen') {
       const bytes = new Uint8Array(12);
       crypto.getRandomValues(bytes);
@@ -1934,7 +1953,8 @@ function bind(){
     }
     if (id === 'sKey') {
       const v = String(e.target.value || '').trim();
-      if (v && v.length < 12) { toast('口令太短，至少 12 位'); e.target.value = syncKey; return; }
+      if (v && v.length < 6) { toast('口令至少 6 位'); e.target.value = syncKey; return; }
+      if (v && v.length < 12) { toast('口令偏短，能用但不够安全'); }
       syncKey = v;
       localStorage.setItem('cashbook_sync_key', syncKey);
       setVer(0);
